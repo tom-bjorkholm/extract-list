@@ -1,0 +1,11 @@
+dist/*
+reports/*
+*.pyc
+.coverage*
+.mypy_cache*
+.pytest_cache*
+__pycache__
+venv/*
+*.egg-info
+test/*/\~\$*.xlsx
+.DS_Store
