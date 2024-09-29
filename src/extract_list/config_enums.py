@@ -5,28 +5,28 @@
 # MIT License
 
 from enum import Enum, auto
-from itertools import chain
 from excel_list_transform.config_enums import FileType as ExcFileType
 
 
-class TxtFileType(Enum):
-    """Output file type."""
-
-    TXT = len(ExcFileType) + 1
-
-
-OutOnlyFileType = Enum('OutOnlyFileType',
-                       [(i.name, i.value) for i in
-                        chain(ExcFileType, TxtFileType)])
-
-
 class InFileType(Enum):
-    """Input file type."""
+    """Input file type."""  # Code duplication due to mypy limitation
 
-    JSON = len(OutOnlyFileType) + 1
+    JSON = len(ExcFileType) + 1
     XML = auto()
 
 
-OutFileType = Enum('OutFileType',
-                   [(i.name, i.value) for i in
-                    chain(OutOnlyFileType, InFileType)])
+class OutFileType(Enum):
+    """Output file type."""  # Code duplication due to mypy limitation
+
+    EXCEL = ExcFileType.EXCEL.value
+    CSV = ExcFileType.CSV.value
+    JSON = InFileType.JSON.value
+    XML = InFileType.XML.value
+    TXT = auto()
+
+
+class MissingInputForColumn(Enum):
+    """What to do if path for column does not exist."""
+
+    ERROR = auto()
+    EMPTY = auto()

@@ -11,3 +11,4 @@ def extract_cmd(args: Optional[list[str]] = None) -> int:
     """Extract a list of columns from JSON or XML and save to excel, etc."""
     print('Not yet implemented')
     print(f'args={args}')
+    return 0

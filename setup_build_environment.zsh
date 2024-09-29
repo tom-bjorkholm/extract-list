@@ -59,5 +59,6 @@ ${PYTHON} -m pip install --upgrade flake8-docstrings
 ${PYTHON} -m pip install --upgrade pytest-pylint
 ${PYTHON} -m pip install --upgrade pytest-cov
 ${PYTHON} -m pip install --upgrade xmltodict
+${PYTHON} -m pip install --upgrade types-xmltodict
 ${PYTHON} -m pip install --upgrade Pillow
 ${PYTHON} -m pip install --upgrade wheel

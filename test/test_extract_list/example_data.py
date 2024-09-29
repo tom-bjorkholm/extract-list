@@ -20,7 +20,7 @@ class ExampleData():
                      'address': {'street': 'Some Road', 'number': 666},
                      'customer_number': 66},
                     {'name': 'Mickey Mouse',
-                     'address': {'street': 'Another Stree', 'number': 7},
+                     'address': {'street': 'Another Street', 'number': 7},
                      'customer_number': 22}
                 ],
                 'orders': {
