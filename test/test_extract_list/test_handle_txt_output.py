@@ -79,3 +79,31 @@ def test_handle_txt_output(capsys,  # pylint: disable=too-many-locals
     out, err = capsys.readouterr()
     assert '' == err
     assert '' == out
+
+
+@pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
+@pytest.mark.parametrize('cols', [['a', 'b'], ['c', 'd', 'e']])
+@pytest.mark.parametrize('fname', ['a.txt', 'b.dat'])
+@pytest.mark.parametrize('dat', [[{'a': 'h', 'b': 'i'}], []])
+def test_handle_txt_output2(capsys,  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
+                            monkeypatch, enc, cols, fname, dat):
+    """Tested mocked test cases for handle_txt_output."""
+    def mocktxtout(data, column_order, filename, encoding):
+        """Mock txt_output."""
+        mocktxtout.count += 1
+        assert data == dat
+        assert column_order == cols
+        assert filename == fname
+        assert encoding == enc
+
+    mocktxtout.count = 0
+    monkeypatch.setattr('extract_list.handle_txt_output.txt_output',
+                        mocktxtout)
+    cfg = ExtractConfig()
+    cfg.outfile_encoding = enc
+    cfg.column_order = cols
+    handle_txt_output(data=dat, filename=fname, cfg=cfg)
+    out, err = capsys.readouterr()
+    assert mocktxtout.count == 1
+    assert '' == out
+    assert '' == err

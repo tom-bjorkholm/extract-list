@@ -4,6 +4,7 @@
 # Copyright (c) 2024 Tom Björkholm
 # MIT License
 
+from copy import deepcopy
 import json
 import xmltodict
 from excel_list_transform.commontypes import get_checked_type
@@ -25,18 +26,19 @@ def append_to_key(row: Row, key: str, prefix: str) -> None:
 
 def handle_xml_output(data: Data, filename: str, cfg: ExtractConfig) -> None:
     """Handle output to XML file."""
+    indata = deepcopy(data)
     outdata: dict[str, dict[str, Value]] = {}
-    for i, row in enumerate(data):
+    for i, row in enumerate(indata):
         for key in cfg.out_xml_attributes:
             append_to_key(row=row, key=key, prefix='@')
-        for key in cfg.out_xml_elements:
-            append_to_key(row=row, key=key, prefix='#')
         rowkey = 'row_' + str(i)
         if cfg.include_key and cfg.column_name_for_key in row:
             rowkey = get_checked_type(row[cfg.column_name_for_key], str)
         outdata[rowkey] = row
+    to_output = {'data': outdata}
     with open(file=filename, mode='w', encoding=cfg.outfile_encoding) as file:
-        xmltodict.unparse(outdata, output=file, encoding=cfg.outfile_encoding)
+        xmltodict.unparse(to_output, output=file, pretty=True,
+                          encoding=cfg.outfile_encoding)
 
 
 def handle_json_output(data: Data, filename: str, cfg: ExtractConfig) -> None:

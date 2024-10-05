@@ -70,7 +70,6 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
                                         'Street', 'Street number']
         self.out_xml_attributes = ['What']
-        self.out_xml_elements = ['How many', 'Customer name']
         self.out_csv_dialect: CsvSpec = {'name': 'csv.excel',
                                          'delimiter': ',', 'quoting': None,
                                          'quotechar': '"',
