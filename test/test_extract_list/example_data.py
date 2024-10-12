@@ -5,6 +5,7 @@
 # MIT License
 
 import json
+from copy import deepcopy
 import xmltodict
 
 
@@ -38,15 +39,16 @@ class ExampleData():
     @staticmethod
     def adjust_for_xml(data):
         """Adjust digit tags to non-digit."""
-        if isinstance(data, list):
+        localdata = deepcopy(data)
+        if isinstance(localdata, list):
             ndata = []
-            for row in data:
+            for row in localdata:
                 nrow = ExampleData.adjust_for_xml(row)
                 ndata.append(nrow)
             return ndata
-        if isinstance(data, dict):
+        if isinstance(localdata, dict):
             ndata = {}
-            for key, value in data.items():
+            for key, value in localdata.items():
                 if isinstance(key, int):
                     nkey = 'i_' + str(key)
                     ndata[nkey] = ExampleData.adjust_for_xml(value)
@@ -56,20 +58,23 @@ class ExampleData():
                 else:
                     ndata[key] = ExampleData.adjust_for_xml(value)
             return ndata
-        return data
+        if isinstance(localdata, int):
+            return str(localdata)
+        return localdata
 
     @staticmethod
     def adjust_from_xml(data):
         """Reverse adjust_for_xml."""
-        if isinstance(data, list):
+        localdata = deepcopy(data)
+        if isinstance(localdata, list):
             ndata = []
-            for row in data:
+            for row in localdata:
                 nrow = ExampleData.adjust_from_xml(row)
                 ndata.append(nrow)
             return ndata
-        if isinstance(data, dict):
+        if isinstance(localdata, dict):
             ndata = {}
-            for key, value in data.items():
+            for key, value in localdata.items():
                 if not isinstance(key, str):
                     ndata[key] = ExampleData.adjust_from_xml(value)
                     continue
@@ -79,7 +84,7 @@ class ExampleData():
                 nkey = key[2:]
                 ndata[nkey] = ExampleData.adjust_from_xml(value)
             return ndata
-        return data
+        return localdata
 
     def as_json_text(self) -> str:
         """Create JSON representation of data."""

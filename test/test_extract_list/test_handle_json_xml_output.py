@@ -128,8 +128,7 @@ def test_xml_output_1(capsys,  # pylint: disable=too-many-arguments,too-many-pos
         cfg.include_key = key is not None
         cfg.column_name_for_key = key
         handle_xml_output(data=dat, filename=fname, cfg=cfg)
-        result = read_in_xml(filename=fname, encoding=enc, strip_at=False,
-                             strip_hash=True)
+        result = read_in_xml(filename=fname, encoding=enc, strip_at=False)
     out, err = capsys.readouterr()
     assert result == res
     assert '' == out

@@ -41,7 +41,7 @@ def read_txt(filename: str, cfg: ExtractConfig) -> Data:
 def read_xml(filename: str, cfg: ExtractConfig) -> Data:
     """Read from XML."""
     indata = read_in_xml(filename=filename, encoding=cfg.outfile_encoding,
-                         strip_at=True, strip_hash=True)
+                         strip_at=True)
     data: Data = list(indata['data'].values())
     return data
 

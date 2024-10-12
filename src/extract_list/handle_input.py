@@ -44,26 +44,20 @@ def strip_prefix_dict(indata: Mapping[str, Any] | JsonType,
 
 
 def read_in_xml(filename: str, encoding: str,
-                strip_at: bool, strip_hash: bool) -> JsonType:
+                strip_at: bool) -> JsonType:
     """Read data from XML file."""
     with open(file=filename, mode='r', encoding=encoding) as file:
         txt = file.read()
         data = xmltodict.parse(xml_input=txt)
-    if strip_at and strip_hash:
-        at_stripped = strip_prefix_dict(indata=data, prefix='@')
-        return strip_prefix_dict(indata=at_stripped, prefix='#')
     if strip_at:
         return strip_prefix_dict(indata=data, prefix='@')
-    if strip_hash:
-        return strip_prefix_dict(indata=data, prefix='#')
     return cast(JsonType, data)
 
 
 def handle_xml_input(filename: str, cfg: ExtractConfig) -> JsonType:
     """Handle input of data from XML§ file."""
     return read_in_xml(filename=filename, encoding=cfg.infile_encoding,
-                       strip_at=cfg.in_xml_strip_at,
-                       strip_hash=cfg.in_xml_strip_hash)
+                       strip_at=cfg.in_xml_strip_at)
 
 
 FILE_EXTESION = {

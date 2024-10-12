@@ -57,7 +57,6 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.infile_type: InFileType = InFileType.JSON
         self.infile_encoding: str = 'utf-8'
         self.in_xml_strip_at: bool = False
-        self.in_xml_strip_hash: bool = False
         self.include_key: bool = True
         self.column_name_for_key: str = 'key col'
         self.missing_input_for_column: MissingInputForColumn = \
