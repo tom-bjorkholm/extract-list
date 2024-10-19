@@ -4,7 +4,7 @@
 # Copyright (c) 2024 Tom Björkholm
 # MIT License
 
-from typing import Optional, NamedTuple, TypeAlias, TypeVar, cast
+from typing import Optional, TypeAlias, TypeVar, TypedDict, cast
 from enum import Enum
 from csv import Dialect
 import sys
@@ -18,44 +18,70 @@ from extract_list.config_enums import InFileType, OutFileType, \
 CsvSpec: TypeAlias = dict[str, Optional[str]]
 
 
-class MainLineSpec(NamedTuple):
-    """Spec how to find main line."""
+MLineDict = TypedDict('MLineDict', {'line': list[str],
+                                    'columns': dict[str, list[str]]})
+LLineDict = TypedDict('LLineDict', {'line': list[str],
+                                    'columns': dict[str, list[str]],
+                                    'linked_main_column': list[str],
+                                    'linked_column': list[str]})
 
-    line: list[str]
-    columns: dict[str, list[str]]
+
+class MainLineSpec:  # pylint: disable=too-few-public-methods
+    """Some spec."""
+
+    def __init__(self, data: Optional[MLineDict] = None,
+                 ):
+        """Construct mainline spec."""
+        self.line: list[str] = []
+        self.columns: dict[str, list[str]] = {}
+        if data is not None:
+            self.line = data['line']
+            self.columns = data['columns']
+
+    def __str__(self) -> str:
+        """Get string representation."""
+        return 'MainLineSpec(' + str(self.__dict__) + ')'
 
 
-class LinkedLineSpec(NamedTuple):
-    """Spec how to find linked line."""
+class LinkedLineSpec:  # pylint: disable=too-few-public-methods
+    """other spec."""
 
-    line: list[str]
-    columns: dict[str, list[str]]
-    linked_main_column: list[str]
-    linked_column: list[str]
+    def __init__(self, data: Optional[LLineDict] = None):
+        """Construct linked line spec."""
+        self.line: list[str] = []
+        self.columns: dict[str, list[str]] = {}
+        self.linked_main_column: list[str] = []
+        self.linked_column: list[str] = []
+        if data is not None:
+            self.line = data['line']
+            self.columns = data['columns']
+            self.linked_main_column = data['linked_main_column']
+            self.linked_column = data['linked_column']
+
+    def __str__(self) -> str:
+        """Get string representation."""
+        return 'LinkedLineSpec(' + str(self.__dict__) + ')'
 
 
 class LinkedLineList(list[LinkedLineSpec]):
     """Type trick for JSON parser."""
 
 
-LineDict: TypeAlias = dict[str, list[str] | dict[str, list[str]]]
 SomeNamedTuple = TypeVar('SomeNamedTuple', MainLineSpec, LinkedLineSpec)
 SomeCfgTyp = TypeVar('SomeCfgTyp')
 
 
-def _named_tuple_from_dict(data: LineDict,
-                           named_tuple_type: type[SomeNamedTuple]) \
-                               -> SomeNamedTuple:
+def _mline_spec_from_dict(data: MLineDict) -> MainLineSpec:
     """Get named tuple converted from dict."""
-    return named_tuple_type(**data)
+    return MainLineSpec(data=data)
 
 
-def _linked_line_from_json_array(data: list[LineDict]) -> LinkedLineList:
+def _linked_line_from_json_array(data: list[LLineDict]) -> LinkedLineList:
     """Get list of LinkedLineSpec from list of dict."""
     assert isinstance(data, list)
     ret = []
     for elem in data:
-        ret.append(_named_tuple_from_dict(elem, LinkedLineSpec))
+        ret.append(LinkedLineSpec(data=elem))
     return LinkedLineList(ret)
 
 
@@ -66,8 +92,8 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
     def example_main_line() -> MainLineSpec:
         """Get example spec for main line."""
         main_col = {'What': ['item'], 'How many': ['quantity']}
-        return MainLineSpec(line=['orders'],
-                            columns=main_col)
+        data: MLineDict = {'line': ['orders'], 'columns': main_col}
+        return MainLineSpec(data=data)
 
     @staticmethod
     def example_linked_line() -> LinkedLineSpec:
@@ -75,10 +101,10 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         columns = {'Customer name': ['name'],
                    'Street': ['address', 'street'],
                    'Street number': ['address', 'numer']}
-        return LinkedLineSpec(line=['customers'],
-                              columns=columns,
-                              linked_main_column=['customer_number'],
-                              linked_column=['customer'])
+        data: LLineDict = {'line': ['customers'], 'columns': columns,
+                           'linked_main_column': ['customer_number'],
+                           'linked_column': ['customer']}
+        return LinkedLineSpec(data=data)
 
     def __init__(self,  from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[str] = None) -> None:
@@ -96,7 +122,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.outfile_encoding: str = 'utf-8'
         self.outfile_excel_library: ExcelLib = ExcelLib.PYLIGHTXL
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
-                                        'Street', 'Street number']
+                                        'Street', 'Street number', 'key col']
         self.out_xml_attributes = ['What']
         self.out_csv_dialect: CsvSpec = {'name': 'csv.excel',
                                          'delimiter': ',', 'quoting': None,
@@ -113,7 +139,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         return self.get_csv_dialect(**self.out_csv_dialect)
 
     def _check_self(self) -> None:
-        """Check that configuration is OK after reading from file."""
+        """Check that configuration is OK after reading from file or str."""
         self._check_filetype(self.infile_type, InFileType)
         self.check_char_encoding(self.infile_encoding)
         self._check_filetype(self.outfile_type, OutFileType)
@@ -134,8 +160,35 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self._check_list_str(self.column_order, 'column_order')
         self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
-        # TODO check out_csv_dialect
-        # TODO do cross-checking column order to extracted columns
+        self.check_csv()
+        self.cross_check_columns()
+
+    def cross_check_columns(self) -> None:
+        """Do cross-check column order to extracted columns."""
+        extracted_cols: list[str] = []
+        for link in self.linked_lines:
+            extracted_cols += link.columns.keys()
+        extracted_cols += self.main_line.columns.keys()
+        if self.include_key:
+            extracted_cols.append(self.column_name_for_key)
+        for col in self.column_order:
+            if col not in extracted_cols:
+                print(f'column order includes column "{col}"\n' +
+                      'but that column is not extracted', file=sys.stderr)
+                sys.exit(1)
+        for col in extracted_cols:
+            if col not in self.column_order:
+                print(f'Extracted column "{col}" is missing in column_order',
+                      file=sys.stderr)
+
+    def check_csv(self) -> None:
+        """Check if CSV configuration is OK."""
+        try:
+            _ = self.get_out_csv_dialect()
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            print('Configured out_csv_dialect is not valid', file=sys.stderr)
+            print(str(exc), file=sys.stderr)
+            sys.exit(1)
 
     @staticmethod
     def _check_mainline_part(var: MainLineSpec | LinkedLineSpec,
@@ -247,11 +300,11 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                               args={'num_type': enum_type})
 
     @staticmethod
-    def get_converter_namedtuple(nttype: type[NamedTuple]) -> ParseConverter:
+    def get_converter_mainline(nttype: type[MainLineSpec]) -> ParseConverter:
         """Get dict for converting to given namedtuple type."""
         return ParseConverter(result_type=nttype,
-                              func=_named_tuple_from_dict,
-                              args={'named_tuple_type': nttype})
+                              func=_mline_spec_from_dict,
+                              args={})
 
     @staticmethod
     def get_converter_linkedline() -> ParseConverter:
@@ -275,7 +328,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                 'outfile_excel_library': self.get_converter_dict(ExcelLib),
                 'missing_input_for_column':
                     self.get_converter_dict(MissingInputForColumn),
-                'main_line': self.get_converter_namedtuple(MainLineSpec),
+                'main_line': self.get_converter_mainline(MainLineSpec),
                 'linked_lines': self.get_converter_linkedline()}
 
     def as_json_string(self) -> str:
@@ -284,9 +337,9 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             return super().as_json_string()
         adjusted = deepcopy(self)
         # intentionally violating typing to get wanted JSON
-        adjusted.main_line = cast(MainLineSpec, self.main_line._asdict())
+        adjusted.main_line = cast(MainLineSpec, self.main_line.__dict__)
         adjusted.linked_lines = []
         for i in self.linked_lines:
             # intentionally violating typing to get wanted JSON
-            adjusted.linked_lines.append(cast(LinkedLineSpec, i._asdict()))
+            adjusted.linked_lines.append(cast(LinkedLineSpec, i.__dict__))
         return adjusted.as_json_string()
