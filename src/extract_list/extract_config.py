@@ -180,6 +180,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             if col not in self.column_order:
                 print(f'Extracted column "{col}" is missing in column_order',
                       file=sys.stderr)
+                sys.exit(1)
 
     def check_csv(self) -> None:
         """Check if CSV configuration is OK."""

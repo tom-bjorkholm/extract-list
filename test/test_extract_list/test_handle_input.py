@@ -1,5 +1,5 @@
 #! /usr/local/bin/python3
-"""Test printing list of dicts as JSON and as XML."""
+"""Test input from JSON and as XML."""
 
 # Copyright (c) 2024 Tom Björkholm
 # MIT License

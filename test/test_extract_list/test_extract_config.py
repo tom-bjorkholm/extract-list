@@ -1,5 +1,5 @@
 #! /usr/local/bin/python3
-"""Test printing list of dicts as JSON and as XML."""
+"""Test configuration file for extract list."""
 
 # Copyright (c) 2024 Tom Björkholm
 # MIT License
@@ -183,7 +183,125 @@ def test_llinefromjson(capsys,  # pylint: disable=too-many-locals
     assert '' == err
 
 
-# TODO test check methods
+@pytest.mark.parametrize('main',
+                         [{'ab': ['cd', 'ef'], 'gh': ['ij']},
+                          {'kl': ['mn'], 'op': ['q', 'r']}])
+@pytest.mark.parametrize('linked',
+                         [[ExtractConfig.example_linked_line()]])
+@pytest.mark.parametrize('keyinc', [True, False])
+def test_cross_check_columns_ok(capsys, main, linked, keyinc):
+    """Test OK case(s) of cross_check_columns."""
+    col_order: list[str] = deepcopy(list(main.keys()))
+    for elem in linked:
+        col_order += deepcopy(list(elem.columns.keys()))
+    if keyinc:
+        col_order.append('key col')
+    cfg = ExtractConfig()
+    cfg.include_key = keyinc
+    cfg.main_line.columns = main
+    cfg.linked_lines = linked
+    cfg.column_order = col_order
+    cfg.cross_check_columns()
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('main, link, col, errmsg',
+                         [(MainLineSpec(data={'line': [],
+                                              'columns': {'a': [], 'b': []}}),
+                           [LinkedLineSpec(data={
+                               'line': [],
+                               'columns': {'c': [], 'd': []},
+                               'linked_column': [],
+                               'linked_main_column': []
+                           })], ['a', 'b', 'd'],
+                           'Extracted column "c" is missing'),
+                          (MainLineSpec(data={'line': [],
+                                              'columns': {'a': [], 'b': []}}),
+                           [LinkedLineSpec(data={
+                               'line': [],
+                               'columns': {'c': [], 'd': []},
+                               'linked_column': [],
+                               'linked_main_column': []
+                           })], ['a', 'c', 'd'],
+                           'Extracted column "b" is missing'),
+                          (MainLineSpec(data={'line': [],
+                                              'columns': {'a': [], 'b': []}}),
+                           [LinkedLineSpec(data={
+                               'line': [],
+                               'columns': {'c': [], 'd': []},
+                               'linked_column': [],
+                               'linked_main_column': []
+                           })], ['a', 'b', 'k', 'c', 'd'],
+                           'includes column "k"\nbut that column is not ex')])
+def test_cross_check_columns_nok(capsys, main, link, col, errmsg):
+    """Test not OK case(s) of cross_check_columns."""
+    cfg = ExtractConfig()
+    cfg.main_line = main
+    cfg.linked_lines = link
+    cfg.column_order = col
+    cfg.include_key = False
+    with pytest.raises(SystemExit):
+        cfg.cross_check_columns()
+    out, err = capsys.readouterr()
+    assert errmsg in err
+    assert '' == out
+
+
+def test_check_csv_ok(capsys):
+    """Test OK case of check_csv."""
+    cfg = ExtractConfig()
+    cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
+                           'delimiter': ',', 'quoting': None,
+                           'quotechar': '"',
+                           'lineterminator': None,
+                           'escapechar': None}
+    cfg.check_csv()
+    out, err = capsys.readouterr()
+    assert '' == err
+    assert '' == out
+
+
+def test_check_csv_nok1(capsys):
+    """Test not OK case 1 of check_csv."""
+    cfg = ExtractConfig()
+    cfg.out_csv_dialect = {'name': 'csv.unix_dialects',
+                           'delimiter': ',', 'quoting': None,
+                           'quotechar': '"',
+                           'lineterminator': None,
+                           'escapechar': None}
+    with pytest.raises(SystemExit):
+        cfg.check_csv()
+    out, err = capsys.readouterr()
+    assert 'Configured out_csv_dialect is not valid' in err
+    assert 'Unknown csv dialect: csv.unix_dialects' in err
+    assert '' == out
+
+
+def test_check_csv_nok2(capsys):
+    """Test not OK case 2 of check_csv."""
+    cfg = ExtractConfig()
+    cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
+                           'dellimiter': ',', 'quoting': None,
+                           'quotechar': '"',
+                           'lineterminator': None,
+                           'escapechar': None}
+    with pytest.raises(SystemExit):
+        cfg.check_csv()
+    out, err = capsys.readouterr()
+    assert 'Configured out_csv_dialect is not valid' in err
+    assert "unexpected keyword argument 'dellimiter'" in err
+    assert '' == out
+
+# TODO test check methods: _check_mainline_part
+# TODO test check methods: _check_linkedline
+# TODO test check methods: _check_dict_str_lst_str
+# TODO test check methods: _check_list_str
+# TODO test check methods: _check_enum
+# TODO test check methods: _check_type
+# TODO test check methods: _check_filetype
+
 
 def test_extract_config_nochange(capsys):
     """Test default configured ExtractConfig."""
