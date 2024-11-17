@@ -253,7 +253,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             if not isinstance(elem, str):
                 print(f'Expected a list of strings in {varname}\n' +
                       f'but found element: {elem}\n' +
-                      'of type {type(elem).__name__}',
+                      f'of type {type(elem).__name__}',
                       file=sys.stderr)
                 sys.exit(1)
 
@@ -261,7 +261,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
     def _check_enum(var: Enum, enum_type: type[Enum], varname: str) -> None:
         """Check that config variable is correct enum type."""
         ExtractConfig._check_type(var=var, oftype=enum_type, varname=varname)
-        if var not in enum_type:
+        if var not in enum_type:  # pragma: no cover
             allowed = ' ,'.join(list(enum_type))
             print(f'{varname} value {var} is not one of allowed: {allowed}',
                   file=sys.stderr)
@@ -272,7 +272,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                     varname: str) -> None:
         """Check that config variable is of type."""
         if not isinstance(var, oftype):
-            print(f'Configuration parameter "{varname}" has wrong type.',
+            print(f'Configuration parameter "{varname}" has wrong type. ',
                   file=sys.stderr)
             print(f'Type is "{type(var).__name__}", ' +
                   f'but expected type "{oftype.__name__}".', file=sys.stderr)

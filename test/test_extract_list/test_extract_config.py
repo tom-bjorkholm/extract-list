@@ -7,6 +7,7 @@
 # import sys
 # from tempfile import TemporaryDirectory
 from copy import deepcopy
+from enum import Enum, auto
 import pytest
 from extract_list.config_enums import InFileType, OutFileType
 from extract_list.extract_config import ExtractConfig, \
@@ -294,12 +295,126 @@ def test_check_csv_nok2(capsys):
     assert "unexpected keyword argument 'dellimiter'" in err
     assert '' == out
 
+
+@pytest.mark.parametrize('var, varname',
+                         [(['a', 'b', 'c'], 'abc'),
+                          (['hello world'], 'hw')])
+def test_check_list_str_ok(capsys, var, varname):
+    """Test OK cases of _check_list_str."""
+    ExtractConfig._check_list_str(var=var,  # pylint: disable=protected-access
+                                  varname=varname)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('var,name,msg',
+                         [('str', 'abc',
+                           ['Expected a list of strings in abc',
+                            'of type str']),
+                          (2, 'def',
+                           ['Expected a list of strings in def',
+                            'of type int']),
+                          ([2], 'ghi',
+                           ['Expected a list of strings in ghi',
+                            'of type int',
+                            'but found element: 2']),
+                          (['str', [2]], 'jkl',
+                           ['Expected a list of strings in jkl',
+                            'of type list',
+                            'but found element: [2]'])])
+def test_check_list_str_nok(capsys, var, name, msg):
+    """Test not OK cases of _check_list_str."""
+    with pytest.raises(SystemExit):
+        ExtractConfig._check_list_str(var=var,  # pylint: disable=protected-access  # noqa: E501
+                                      varname=name)
+    out, err = capsys.readouterr()
+    assert '' == out
+    for msg_elem in msg:
+        assert msg_elem in err
+
+
+@pytest.mark.parametrize('val,typ,name',
+                         [(1, int, 'x'), ('ab', str, 'y'),
+                          ([2], list, 'z')])
+def test_check_type_ok(capsys, val, typ, name):
+    """Test OK cases for _check_type."""
+    ExtractConfig._check_type(var=val,  # pylint: disable=protected-access
+                              oftype=typ, varname=name)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('val,typ,name, msgs',
+                         [(1, str, 'x',
+                           ['Configuration parameter "x" has wrong type',
+                            'Type is "int"',
+                            'but expected type "str"']),
+                          ('ab', int, 'y',
+                           ['Configuration parameter "y" has wrong type',
+                            'Type is "str"',
+                            'but expected type "int"']),
+                          ([2], int, 'z',
+                           ['Configuration parameter "z" has wrong type',
+                            'Type is "list"',
+                            'but expected type "int"']),
+                          ('abc', list, 'p',
+                           ['Configuration parameter "p" has wrong type',
+                            'Type is "str"',
+                            'but expected type "list"'])])
+def test_check_type_nok(capsys, val, typ, name, msgs):
+    """Test not OK cases for _check_type."""
+    with pytest.raises(SystemExit):
+        ExtractConfig._check_type(var=val,  # pylint: disable=protected-access
+                                  oftype=typ, varname=name)
+    out, err = capsys.readouterr()
+    assert '' == out
+    for single_msg in msgs:
+        assert single_msg in err
+
+
+class Abc(Enum):
+    """Enum just for testing."""
+
+    AA1 = auto()
+    BB2 = auto()
+    CC3 = auto()
+
+class Ghj(Enum):
+    """Enum just for testing."""
+
+    AA1 = auto()
+    BB2 = auto()
+    CC3 = auto()
+    GG4 = auto()
+
+@pytest.mark.parametrize('val', list(Abc))
+@pytest.mark.parametrize('name', ['name1', 'name2'])
+def test_check_enum_ok(capsys, val, name):
+    """Test OK cases for _check_enum."""
+    ExtractConfig._check_enum(var=val,  # pylint: disable=protected-access
+                              enum_type=Abc, varname=name)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert '' == err
+
+
+def test_check_enum_nok1(capsys):
+    """Test not OK cases for _check_enum."""
+    val = Ghj.GG4
+    with pytest.raises(SystemExit):
+        ExtractConfig._check_enum(var=val,  # pylint: disable=protected-access
+                                  enum_type=Abc, varname='name1')
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert 'Configuration parameter "name1" has wrong type' in err
+    assert 'Type is "Ghj", but expected type "Abc".' in err
+
+
+# TODO test check methods: _check_dict_str_lst_str
 # TODO test check methods: _check_mainline_part
 # TODO test check methods: _check_linkedline
-# TODO test check methods: _check_dict_str_lst_str
-# TODO test check methods: _check_list_str
-# TODO test check methods: _check_enum
-# TODO test check methods: _check_type
 # TODO test check methods: _check_filetype
 
 
