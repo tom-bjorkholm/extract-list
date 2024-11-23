@@ -381,6 +381,7 @@ class Abc(Enum):
     BB2 = auto()
     CC3 = auto()
 
+
 class Ghj(Enum):
     """Enum just for testing."""
 
@@ -388,6 +389,7 @@ class Ghj(Enum):
     BB2 = auto()
     CC3 = auto()
     GG4 = auto()
+
 
 @pytest.mark.parametrize('val', list(Abc))
 @pytest.mark.parametrize('name', ['name1', 'name2'])
@@ -412,7 +414,51 @@ def test_check_enum_nok1(capsys):
     assert 'Type is "Ghj", but expected type "Abc".' in err
 
 
-# TODO test check methods: _check_dict_str_lst_str
+@pytest.mark.parametrize('name', ['abc', 'def'])
+@pytest.mark.parametrize('dval',
+                         [{'ab': [], 'de': ['ef', 'gh']},
+                          {'zx': ['abc', 'def']},
+                          {'as': []}])
+def test_check_dict_str_lst_ok(capsys, name, dval):
+    """Test OK cases of _check_dict_str_lst_str."""
+    ExtractConfig._check_dict_str_lst_str(var=dval,  # pylint: disable=protected-access # noqa: E501
+                                          varname=name)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('val,name,errmsgs',
+                         [(2, 'abc',
+                           ['Expected a dict of strings to lists in abc',
+                            'but found: 2', 'of type int']),
+                          ({3: []}, 'def',
+                           ['Expected a dict of strings to lists in def',
+                            'but found key: 3', 'of type int']),
+                          ({4: ['ab', 'cd']}, 'de',
+                           ['Expected a dict of strings to lists in de',
+                            'but found key: 4', 'of type int']),
+                          ({'x': ['ab', 'cd'], 5: []}, 'fg',
+                           ['Expected a dict of strings to lists in fg',
+                            'but found key: 5', 'of type int']),
+                          ({'ab': {'cd': []}}, 'hj',
+                           ['Expected a list of strings in ab in hj',
+                            'but found: {\'cd\': []}', 'of type dict']),
+                          ({'ab': [1, 2]}, 'kl',
+                           ['Expected a list of strings in ab in kl',
+                            'but found element: 1', 'of type int']),
+                          ])
+def test_check_dict_str_lst_nok(capsys, val, name, errmsgs):
+    """Test not OK cases of _check_dict_str_lst_str."""
+    with pytest.raises(SystemExit):
+        ExtractConfig._check_dict_str_lst_str(var=val,  # pylint: disable=protected-access # noqa: E501
+                                              varname=name)
+    out, err = capsys.readouterr()
+    assert '' == out
+    for msg in errmsgs:
+        assert msg in err
+
+
 # TODO test check methods: _check_mainline_part
 # TODO test check methods: _check_linkedline
 # TODO test check methods: _check_filetype
