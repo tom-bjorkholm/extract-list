@@ -198,8 +198,9 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                              varname: str) -> None:
         """Check MainLineSpec or MainLineSpec part of LinkedLineSpec."""
         if not isinstance(var, spectype):
-            print(f'Excpected {spectype.__name__} for {varname}, but found: \n'
-                  f'{var}\nof type {type(var).__name__}')
+            print(f'Expected {spectype.__name__} for {varname}, but found: \n'
+                  f'{var}\nof type {type(var).__name__}',
+                  file=sys.stderr)
             sys.exit(1)
         ExtractConfig._check_list_str(var.line, 'line in ' + varname)
         ExtractConfig._check_dict_str_lst_str(var.columns,
@@ -287,7 +288,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             print(f'File type {ftype} is not of type {enum_type.__name__}',
                   file=sys.stderr)
             sys.exit(1)
-        if ftype not in enum_type:
+        if ftype not in enum_type:  # pragma: no cover
             allowed = ' ,'.join(list(enum_type))
             print(f'File type {ftype} is not one of allowed types: {allowed}',
                   file=sys.stderr)
