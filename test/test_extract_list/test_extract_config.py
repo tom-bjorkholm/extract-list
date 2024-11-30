@@ -670,6 +670,39 @@ def test_check_filetype_nok1(capsys):
     assert '' == out
 
 
+@pytest.mark.parametrize('attr',
+                         [['What'], ['Street'],
+                          ['How many', 'Street number']])
+def test_cross_check_attrs_ok(capsys, attr):
+    """Test OK case of cross_check_attrs."""
+    cfg = ExtractConfig()
+    cfg.out_xml_attributes = attr
+    cfg.cross_check_attrs()
+    out, err = capsys.readouterr()
+    assert '' == err
+    assert '' == out
+
+
+@pytest.mark.parametrize('attr, errmsgs',
+                         [(['Where'],
+                           ['Attribute name "Where" in out_xml_attributes']),
+                          (['Road'],
+                           ['Attribute name "Road" in out_xml_attributes']),
+                          (['How many', 'Street number', 'abc'],
+                           ['Attribute name "abc" in out_xml_attributes'])])
+def test_cross_check_attrs_nok(capsys, attr, errmsgs):
+    """Test OK case of cross_check_attrs."""
+    cfg = ExtractConfig()
+    cfg.out_xml_attributes = attr
+    with pytest.raises(SystemExit):
+        cfg.cross_check_attrs()
+    out, err = capsys.readouterr()
+    for msg in errmsgs:
+        assert msg in err
+    assert 'but no column with that name extracted' in err
+    assert '' == out
+
+
 def test_extract_config_nochange(capsys):
     """Test default configured ExtractConfig."""
     cfg = ExtractConfig()

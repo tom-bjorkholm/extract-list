@@ -162,15 +162,31 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
         self.check_csv()
         self.cross_check_columns()
+        self.cross_check_attrs()
 
-    def cross_check_columns(self) -> None:
-        """Do cross-check column order to extracted columns."""
+    def _extracted_columns(self) -> list[str]:
+        """Get list names of all extracted columns."""
         extracted_cols: list[str] = []
         for link in self.linked_lines:
             extracted_cols += link.columns.keys()
         extracted_cols += self.main_line.columns.keys()
         if self.include_key:
             extracted_cols.append(self.column_name_for_key)
+        return extracted_cols
+
+    def cross_check_attrs(self) -> None:
+        """Check that out_xml_attributes refer to existing 'columns'."""
+        extracted_cols = self._extracted_columns()
+        for att in self.out_xml_attributes:
+            if att not in extracted_cols:
+                print(f'Attribute name "{att}" in out_xml_attributes\n' +
+                      'but no column with that name extracted',
+                      file=sys.stderr)
+                sys.exit(1)
+
+    def cross_check_columns(self) -> None:
+        """Do cross-check column order to extracted columns."""
+        extracted_cols = self._extracted_columns()
         for col in self.column_order:
             if col not in extracted_cols:
                 print(f'column order includes column "{col}"\n' +
