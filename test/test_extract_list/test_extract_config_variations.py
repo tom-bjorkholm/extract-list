@@ -183,4 +183,38 @@ def test_extract_config_err1(capsys, attr, val, exc, msgs):
         assert errmsg in err
 
 
-# TODO test messages for variations of invalid configurations
+def test_extract_config_err2(capsys):
+    """Test not OK variation 2 of ExtractConfig."""
+    cfg = ExtractConfig()
+    cfg.main_line.columns['Cost'] = ['item info', 'cost']
+    txt = cfg.as_json_string()
+    with pytest.raises(SystemExit):
+        _ = ExtractConfig(from_json_data_text=txt)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert 'Extracted column "Cost" is missing in column_order' in err
+
+
+def test_extract_config_err3(capsys):
+    """Test not OK variation 3 of ExtractConfig."""
+    cfg = ExtractConfig()
+    cfg.linked_lines[0].columns['Zip'] = ['zip']
+    txt = cfg.as_json_string()
+    with pytest.raises(SystemExit):
+        _ = ExtractConfig(from_json_data_text=txt)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert 'Extracted column "Zip" is missing in column_order' in err
+
+
+def test_extract_config_err4(capsys):
+    """Test not OK variation 4 of ExtractConfig."""
+    cfg = ExtractConfig()
+    cfg.column_order.append('Zip')
+    txt = cfg.as_json_string()
+    with pytest.raises(SystemExit):
+        _ = ExtractConfig(from_json_data_text=txt)
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert 'column order includes column "Zip"' in err
+    assert 'but that column is not extracted' in err
