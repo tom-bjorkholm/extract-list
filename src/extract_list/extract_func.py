@@ -35,7 +35,7 @@ def get_at_path(indata: JsonType, path: list[str],
     if not isinstance(indata, dict):
         print('Input data does not match configuration.',
               file=sys.stderr)
-        print(f'Trying to extract data at {path} in data that is' +
+        print(f'Trying to extract data at {path} in data that is ' +
               f'{type(indata).__name__} and not dict.',
               file=sys.stderr)
         sys.exit(1)
@@ -63,6 +63,7 @@ def get_lines(indata: JsonType, missing: MissingInputForColumn,
     assert lines is not None
     if not isinstance(lines, (list, dict)):
         yield (0, lines)  # single value at path
+        return
     assert isinstance(lines, (list, dict))
     if isinstance(lines, list):
         assert isinstance(lines, list)
@@ -73,12 +74,15 @@ def get_lines(indata: JsonType, missing: MissingInputForColumn,
         assert isinstance(lines, dict)
         dlines: dict[str | int, JsonType] = \
             cast(dict[str | int, JsonType], lines)
-        # mypy does not like for skey, ddat in dlines.values()
-        for skey in dlines.keys():
+        for skey, ddat in dlines.items():
+            if not isinstance(skey, (int, str)):
+                print(f'Key "{skey}" is not str or int as expected',
+                      file=sys.stderr)
+                sys.exit(1)
             assert isinstance(skey, (int, str))
             ddat = dlines[skey]
             yield (skey, ddat)
-    else:
+    else:  # pragma: no cover
         print('internal error in get_line()', file=sys.stderr)
         print(f'lines is {type(lines).__name__}', file=sys.stderr)
         sys.exit(1)
@@ -88,7 +92,7 @@ def get_columns(inline: JsonType, colspec: dict[str, list[str]],
                 missing: MissingInputForColumn) -> Row:
     """Map data in input line to columns."""
     ret: Row = {}
-    for colname, path in colspec.values():
+    for colname, path in colspec.items():
         assert isinstance(path, list)
         val = get_at_path(indata=inline, path=path, missing=missing)
         if isinstance(val, (list, dict)):
@@ -114,13 +118,15 @@ def extract_main_line(indata: JsonType,
                   file=sys.stderr)
             sys.exit(1)
         assert line is not None
-        if not isinstance(key, (int, str)):
-            print(f'Key "{key}" is not str or int as exptected',
+        if not isinstance(key, (int, str)):  # pragma no cover
+            print(f'Key "{key}" is not str or int as expected',
                   file=sys.stderr)
             sys.exit(1)
         assert isinstance(key, (int, str))
         row = get_columns(inline=line, colspec=cfg.main_line.columns,
                           missing=cfg.missing_input_for_column)
+        if cfg.include_key:
+            row[cfg.column_name_for_key] = key
         yield MainDataLine(complete_line=line, key=key,
                            row=row)
 
@@ -130,5 +136,7 @@ def extract_data(indata: JsonType, cfg: ExtractConfig) -> Data:
     data: Data = []
     for row in extract_main_line(indata=indata, cfg=cfg):
         data.append(row.row)
-    # TODO: extract data according to linked lines
+    if cfg.linked_lines:
+        print('Sorry, extracting of linked lines not yet implemented,',
+              file=sys.stderr)
     return data
