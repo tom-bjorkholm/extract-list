@@ -9,7 +9,8 @@ import pytest
 from extract_list.config_enums import MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_func import get_at_path, \
-    get_lines, get_columns, extract_main_line, MainDataLine
+    get_lines, get_columns, extract_main_line, MainDataLine, \
+    extract_data
 
 da1 = {'ab': 'c', 'de': 'g', 'fg': 9}
 da2 = {'ax': 'h', 'bx': 'ij', 'cx': 7}
@@ -422,3 +423,79 @@ def test_extract_main_line_nok1(capsys, tbx, msgs):
     assert '' == out
     for msg in msgs:
         assert msg in err
+
+
+tc1 = (dfa, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['a']},
+       MissingInputForColumn.EMPTY, False, '',
+       [{'c1': 'de', 'c2': 4, 'c3': 'bc'},
+        {'c1': 'hi', 'c2': 5, 'c3': 'fg'},
+        {'c1': 'lm', 'c2': 6, 'c3': 'jk'},
+        {'c1': 'pq', 'c2': 7, 'c3': 'no'}])
+tc2 = (dfa, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['a']},
+       MissingInputForColumn.ERROR, False, '',
+       [{'c1': 'de', 'c2': 4, 'c3': 'bc'},
+        {'c1': 'hi', 'c2': 5, 'c3': 'fg'},
+        {'c1': 'lm', 'c2': 6, 'c3': 'jk'},
+        {'c1': 'pq', 'c2': 7, 'c3': 'no'}])
+tc3 = (dfa, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['abc']},
+       MissingInputForColumn.EMPTY, False, '',
+       [{'c1': 'de', 'c2': 4, 'c3': None},
+        {'c1': 'hi', 'c2': 5, 'c3': None},
+        {'c1': 'lm', 'c2': 6, 'c3': None},
+        {'c1': 'pq', 'c2': 7, 'c3': None}])
+tc4 = (dfm, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['a']},
+       MissingInputForColumn.EMPTY, False, '',
+       [{'c1': 'de', 'c2': 4, 'c3': 'bc'},
+        {'c1': 'hi', 'c2': 5, 'c3': 'fg'},
+        {'c1': 'lm', 'c2': 6, 'c3': 'jk'},
+        {'c1': 'pq', 'c2': 7, 'c3': 'no'}])
+tc5 = (dfm, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['a']},
+       MissingInputForColumn.ERROR, False, '',
+       [{'c1': 'de', 'c2': 4, 'c3': 'bc'},
+        {'c1': 'hi', 'c2': 5, 'c3': 'fg'},
+        {'c1': 'lm', 'c2': 6, 'c3': 'jk'},
+        {'c1': 'pq', 'c2': 7, 'c3': 'no'}])
+tc6 = (dfm, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['abc']},
+       MissingInputForColumn.EMPTY, False, '',
+       [{'c1': 'de', 'c2': 4, 'c3': None},
+        {'c1': 'hi', 'c2': 5, 'c3': None},
+        {'c1': 'lm', 'c2': 6, 'c3': None},
+        {'c1': 'pq', 'c2': 7, 'c3': None}])
+tc7 = (dfa, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['a']},
+       MissingInputForColumn.EMPTY, True, 'col_key',
+       [{'c1': 'de', 'c2': 4, 'c3': 'bc', 'col_key': 0},
+        {'c1': 'hi', 'c2': 5, 'c3': 'fg', 'col_key': 1},
+        {'c1': 'lm', 'c2': 6, 'c3': 'jk', 'col_key': 2},
+        {'c1': 'pq', 'c2': 7, 'c3': 'no', 'col_key': 3}])
+tc8 = (dfm, ['g', 'h'],
+       {'c1': ['b'], 'c2': ['c'], 'c3': ['abc']},
+       MissingInputForColumn.EMPTY, True, 'xyz',
+       [{'c1': 'de', 'c2': 4, 'c3': None, 'xyz': 'd1'},
+        {'c1': 'hi', 'c2': 5, 'c3': None, 'xyz': 'd2'},
+        {'c1': 'lm', 'c2': 6, 'c3': None, 'xyz': 'd3'},
+        {'c1': 'pq', 'c2': 7, 'c3': None, 'xyz': 'd4'}])
+
+
+@pytest.mark.parametrize('tcx',
+                         [tc1, tc2, tc2, tc3, tc4, tc5, tc6, tc7, tc8])
+def test_extract_data_mainline_ok1(capsys, tcx):
+    """Test OK cases 1 of extract_main_line."""
+    cfg = ExtractConfig()
+    cfg.missing_input_for_column = tcx[3]
+    cfg.main_line.line = tcx[1]
+    cfg.main_line.columns = tcx[2]
+    cfg.include_key = tcx[4]
+    cfg.column_name_for_key = tcx[5]
+    cfg.linked_lines = []
+    res = extract_data(indata=deepcopy(tcx[0]), cfg=cfg)
+    out, err = capsys.readouterr()
+    assert res == tcx[6]
+    assert '' == out
+    assert '' == err
