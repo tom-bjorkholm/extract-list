@@ -118,6 +118,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             MissingInputForColumn.EMPTY
         self.main_line: MainLineSpec = self.example_main_line()
         self.linked_lines: list[LinkedLineSpec] = [self.example_linked_line()]
+        self.one_output_line_per_main_line: bool = True
         self.outfile_type: OutFileType = OutFileType.EXCEL
         self.outfile_encoding: str = 'utf-8'
         self.outfile_excel_library: ExcelLib = ExcelLib.PYLIGHTXL
@@ -154,6 +155,8 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                                   varname='main_line')
         self._check_type(self.linked_lines, list, 'linked_lines')
         self._check_linkedline(self.linked_lines, 'linked_lines')
+        self._check_type(self.one_output_line_per_main_line, bool,
+                         'one_output_line_per_main_line')
         self._check_enum(self.outfile_excel_library, ExcelLib,
                          'outfile_excel_library')
         self._check_type(self.column_order, list, 'column_order')

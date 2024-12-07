@@ -10,7 +10,7 @@ from extract_list.config_enums import MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_func import get_at_path, \
     get_lines, get_columns, extract_main_line, MainDataLine, \
-    extract_data
+    extract_data, create_none_columns
 
 da1 = {'ab': 'c', 'de': 'g', 'fg': 9}
 da2 = {'ax': 'h', 'bx': 'ij', 'cx': 7}
@@ -486,7 +486,7 @@ tc8 = (dfm, ['g', 'h'],
 @pytest.mark.parametrize('tcx',
                          [tc1, tc2, tc2, tc3, tc4, tc5, tc6, tc7, tc8])
 def test_extract_data_mainline_ok1(capsys, tcx):
-    """Test OK cases 1 of extract_main_line."""
+    """Test OK cases 1 of extract_data for main_line."""
     cfg = ExtractConfig()
     cfg.missing_input_for_column = tcx[3]
     cfg.main_line.line = tcx[1]
@@ -497,5 +497,18 @@ def test_extract_data_mainline_ok1(capsys, tcx):
     res = extract_data(indata=deepcopy(tcx[0]), cfg=cfg)
     out, err = capsys.readouterr()
     assert res == tcx[6]
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('spec,res',
+                         [({}, {}),
+                          ({'qwe': ['a', 'b'], 'asd': ['c']},
+                           {'qwe': None, 'asd': None})])
+def test_create_none_columns(capsys, spec, res):
+    """Test create_none_columns."""
+    ret = create_none_columns(colspec=deepcopy(spec))
+    out, err = capsys.readouterr()
+    assert res == ret
     assert '' == out
     assert '' == err

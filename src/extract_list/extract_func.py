@@ -8,7 +8,7 @@ from typing import Optional, Tuple, Generator, cast
 import sys
 # from copy import deepcopy
 from excel_list_transform.commontypes import JsonType
-from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config import ExtractConfig, LinkedLineSpec
 from extract_list.config_enums import MissingInputForColumn
 from extract_list.commontypes import Data, Row, Value
 
@@ -131,12 +131,60 @@ def extract_main_line(indata: JsonType,
                            row=row)
 
 
+def create_none_columns(colspec: dict[str, list[str]]) -> Row:
+    """Create a row with columns and None values."""
+    ret: Row = {key: None for key in colspec.keys()}
+    return ret
+
+
+def extract_linked_line(indata: JsonType, main_line: MainDataLine,
+                        cfg: ExtractConfig,
+                        linked_spec: LinkedLineSpec) -> Data:
+    """Extract columns (with values) for linked lines from input data."""
+    if not linked_spec.columns:
+        return [{}]
+    ret: Data = []
+    main_match_value = get_at_path(indata=main_line.complete_line,
+                                   path=linked_spec.linked_main_column,
+                                   missing=MissingInputForColumn.ERROR)
+    for _, line in get_lines(indata=indata,
+                             missing=cfg.missing_input_for_column,
+                             path=linked_spec.line):
+        if line is None:
+            break
+        assert line is not None
+        link_match_val = get_at_path(indata=line,
+                                     path=linked_spec.linked_column,
+                                     missing=MissingInputForColumn.ERROR)
+        if link_match_val == main_match_value:
+            row = get_columns(inline=line, colspec=linked_spec.columns,
+                              missing=cfg.missing_input_for_column)
+            ret.append(row)
+    if not ret:
+        if cfg.missing_input_for_column == MissingInputForColumn.ERROR:
+            print('Input data not consistent with configuration.',
+                  file=sys.stderr)
+            print(f'No linked line has {linked_spec.linked_column} ' +
+                  f' with value {main_match_value}', file=sys.stderr)
+            sys.exit(1)
+        else:
+            ret.append(create_none_columns(colspec=linked_spec.columns))
+    return ret
+
+
 def extract_data(indata: JsonType, cfg: ExtractConfig) -> Data:
     """Extract columns (with values) from input data."""
     data: Data = []
     for row in extract_main_line(indata=indata, cfg=cfg):
+        for linked_spec in cfg.linked_lines:
+            linkdata = extract_linked_line(indata=indata, main_line=row,
+                                           cfg=cfg, linked_spec=linked_spec)
+            assert len(linkdata) > 0
+            if len(linkdata) > 1:
+                print('Sorry, several linked lines matching one main line' +
+                      ' not yet implemented', file=sys.stderr)
+                sys.exit(1)
+            else:
+                row.row.update(linkdata[0])
         data.append(row.row)
-    if cfg.linked_lines:
-        print('Sorry, extracting of linked lines not yet implemented,',
-              file=sys.stderr)
     return data

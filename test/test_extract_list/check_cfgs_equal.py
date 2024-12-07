@@ -21,6 +21,8 @@ def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig):
     assert len(cf1.linked_lines) == len(cf2.linked_lines)
     for elem1, elem2 in zip(cf1.linked_lines, cf2.linked_lines):
         assert elem1.line == elem2.line
+    assert cf1.one_output_line_per_main_line == \
+        cf2.one_output_line_per_main_line
     assert cf1.outfile_type == cf2.outfile_type
     assert cf1.outfile_encoding == cf2.outfile_encoding
     assert cf1.outfile_excel_library == cf2.outfile_excel_library

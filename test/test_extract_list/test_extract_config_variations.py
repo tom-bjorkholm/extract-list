@@ -131,6 +131,20 @@ def test_extract_config_var4(capsys, main, linked, order):
     assert '' == out
 
 
+@pytest.mark.parametrize('one', [True, False])
+def test_extract_config_var5(capsys, one):
+    """Test variation 5 of configured ExtractConfig."""
+    cfg = ExtractConfig()
+    cfg.one_output_line_per_main_line = deepcopy(one)
+    txt = cfg.as_json_string()
+    cf2 = ExtractConfig(from_json_data_text=txt)
+    check_cfgs_equal(cfg, cf2)
+    assert cf2.one_output_line_per_main_line == one
+    out, err = capsys.readouterr()
+    assert '' == err
+    assert '' == out
+
+
 @pytest.mark.parametrize('attr,val,exc, msgs',
                          [('infile_type', 15, ConfigBadJson,
                            ['int not str as expected']),
