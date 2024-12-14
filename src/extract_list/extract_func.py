@@ -6,7 +6,7 @@
 
 from typing import Optional, Tuple, Generator, cast
 import sys
-# from copy import deepcopy
+from copy import deepcopy
 from excel_list_transform.commontypes import JsonType
 from extract_list.extract_config import ExtractConfig, LinkedLineSpec
 from extract_list.config_enums import MissingInputForColumn
@@ -172,19 +172,39 @@ def extract_linked_line(indata: JsonType, main_line: MainDataLine,
     return ret
 
 
+def add_from_linked_to_main(from_main: Data, from_linked: Data) -> Data:
+    """Add lines from linked to lines from main."""
+    assert len(from_linked) > 0
+    assert len(from_main) > 0
+    if len(from_linked) == 1:
+        for row in from_main:
+            row.update(from_linked[0])
+        return from_main
+    ret: Data = []
+    for linkline in from_linked:
+        mainline = deepcopy(from_main)
+        for row in mainline:
+            row.update(deepcopy(linkline))
+        ret.extend(mainline)
+    return ret
+
+
 def extract_data(indata: JsonType, cfg: ExtractConfig) -> Data:
     """Extract columns (with values) from input data."""
     data: Data = []
     for row in extract_main_line(indata=indata, cfg=cfg):
+        data_for_row: Data = [row.row]
         for linked_spec in cfg.linked_lines:
             linkdata = extract_linked_line(indata=indata, main_line=row,
                                            cfg=cfg, linked_spec=linked_spec)
             assert len(linkdata) > 0
             if len(linkdata) > 1:
-                print('Sorry, several linked lines matching one main line' +
-                      ' not yet implemented', file=sys.stderr)
-                sys.exit(1)
-            else:
-                row.row.update(linkdata[0])
-        data.append(row.row)
+                if cfg.one_output_line_per_main_line:
+                    print('Several linked lines match one main line, ' +
+                          'but configuration says one line per main line',
+                          file=sys.stderr)
+                    sys.exit(1)
+            data_for_row = add_from_linked_to_main(from_main=data_for_row,
+                                                   from_linked=linkdata)
+        data.extend(data_for_row)
     return data

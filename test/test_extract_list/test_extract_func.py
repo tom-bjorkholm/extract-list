@@ -5,12 +5,15 @@
 # MIT License
 
 from copy import deepcopy
+from typing import Optional
 import pytest
 from extract_list.config_enums import MissingInputForColumn
-from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config import ExtractConfig, LinkedLineSpec, \
+    MainLineSpec
 from extract_list.extract_func import get_at_path, \
     get_lines, get_columns, extract_main_line, MainDataLine, \
-    extract_data, create_none_columns
+    extract_data, create_none_columns, add_from_linked_to_main, \
+    extract_linked_line
 
 da1 = {'ab': 'c', 'de': 'g', 'fg': 9}
 da2 = {'ax': 'h', 'bx': 'ij', 'cx': 7}
@@ -512,3 +515,286 @@ def test_create_none_columns(capsys, spec, res):
     assert res == ret
     assert '' == out
     assert '' == err
+
+
+@pytest.mark.parametrize('fma,fli,res',
+                         [([{}], [{}], [{}]),
+                          ([{'a': 'b'}], [{'c': 'd'}],
+                           [{'a': 'b', 'c': 'd'}]),
+                          ([{'a': 'b'}, {'c': 2}],
+                           [{'d': 'e'}],
+                           [{'a': 'b', 'd': 'e'}, {'c': 2, 'd': 'e'}]),
+                          ([{'a': 'b'}],
+                           [{'d': 'e'}, {'f': 3}],
+                           [{'a': 'b', 'd': 'e'}, {'a': 'b', 'f': 3}]),
+                          ([{'a': 'b'}, {'c': 2}],
+                           [{'d': 'e'}, {'f': 3}],
+                           [{'a': 'b', 'd': 'e'}, {'a': 'b', 'f': 3},
+                            {'c': 2, 'd': 'e'}, {'c': 2, 'f': 3}])])
+def test_add_fr_linked_main_ok1(capsys, fma, fli, res):
+    """Tesk OK cases 1 of add_from_linked_to_main."""
+    ret = add_from_linked_to_main(from_main=deepcopy(fma),
+                                  from_linked=deepcopy(fli))
+    out, err = capsys.readouterr()
+    assert '' == out
+    assert '' == err
+    assert len(ret) == len(res)
+    if len(res) == 0:
+        return
+    for item in ret:
+        assert item in res
+    if len(res) == 1 and res[0] == {}:
+        assert ret[0] == {}
+        return
+    assert sorted(ret, key=lambda x: sorted(list(x.keys()))[0]) == \
+        sorted(res, key=lambda x: sorted(list(x.keys()))[0])
+
+
+columns = {'C2': ['e'], 'C3': ['d']}
+
+
+@pytest.mark.parametrize('ind,conf,res',
+                         [(dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.EMPTY,
+                            LinkedLineSpec({'line': ['k'], 'columns': columns,
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']})),
+                           [{'C2': 'def', 'C3': 'abc'}]),
+                          (dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.EMPTY,
+                            LinkedLineSpec({'line': ['k'], 'columns': columns,
+                                            'linked_column': ['d'],
+                                            'linked_main_column': ['c']})),
+                           [{'C2': None, 'C3': None}]),
+                          (dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.EMPTY,
+                            LinkedLineSpec({'line': ['k2'], 'columns': columns,
+                                            'linked_column': ['d'],
+                                            'linked_main_column': ['c']})),
+                           [{'C2': None, 'C3': None}]),
+                          (dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.EMPTY,
+                            LinkedLineSpec({'line': ['k'], 'columns': {},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']})),
+                           [{}]),
+                          (dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k'], 'columns': columns,
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']})),
+                           [{'C2': 'def', 'C3': 'abc'}]),
+                          (dfa,
+                           (MainDataLine(dd3, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.EMPTY,
+                            LinkedLineSpec({'line': ['k'], 'columns': columns,
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']})),
+                           [{'C2': 'pqr', 'C3': 'mno'},
+                            {'C2': 'vwx', 'C3': 'stu'}])])
+def test_extr_linked_line_ok1(capsys, ind, conf, res):
+    """Test OK cases 1 of extract_linked_line."""
+    main_line: MainDataLine = conf[0]
+    linked_spec: LinkedLineSpec = conf[2]
+    cfg = ExtractConfig()
+    cfg.missing_input_for_column = conf[1]
+    cfg.linked_lines = [linked_spec]
+    cfg.main_line = main_line
+    ret = extract_linked_line(indata=ind, main_line=main_line,
+                              cfg=cfg, linked_spec=linked_spec)
+    out, err = capsys.readouterr()
+    assert ret == res
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('ind,conf,msgs',
+                         [(dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k'], 'columns': columns,
+                                            'linked_column': ['d'],
+                                            'linked_main_column': ['c']})),
+                           ["No linked line has ['d']",
+                            'with value 4',
+                            'Input data not consistent with configuration.']),
+                          (dfa,
+                           (MainDataLine(dd1, 0, {'C1': 'bc'}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k2'], 'columns': columns,
+                                            'linked_column': ['e'],
+                                            'linked_main_column': ['c']})),
+                           ['No such key "k2" in relevant section',
+                            'relevant section in input data'])])
+def test_extr_linked_line_nok1(capsys, ind, conf, msgs):
+    """Test not OK cases 1 of extract_linked_line."""
+    main_line: MainDataLine = conf[0]
+    linked_spec: LinkedLineSpec = conf[2]
+    cfg = ExtractConfig()
+    cfg.missing_input_for_column = conf[1]
+    cfg.linked_lines = [linked_spec]
+    cfg.main_line = main_line
+    with pytest.raises(SystemExit):
+        _ = extract_linked_line(indata=ind, main_line=main_line,
+                                cfg=cfg, linked_spec=linked_spec)
+    out, err = capsys.readouterr()
+    assert '' == out
+    for msg in msgs:
+        assert msg in err
+
+
+@pytest.mark.parametrize('ind,conf,res',
+                         [(dfa,
+                           (MainLineSpec(data={'line': ['k'],
+                                               'columns': {'C1': ['d']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['g', 'h'],
+                                            'columns': {'C2': ['b']},
+                                            'linked_column': ['c'],
+                                            'linked_main_column': ['f']}),
+                            None, True, False),
+                           [{'C1': 'abc', 'C2': 'de'},
+                            {'C1': 'ghi', 'C2': 'hi'},
+                            {'C1': 'mno', 'C2': 'lm'},
+                            {'C1': 'stu', 'C2': 'lm'},
+                            {'C1': 'yza', 'C2': 'pq'},
+                            {'C1': 'efg', 'C2': 'pq'}]),
+                          (dfa,
+                           (MainLineSpec(data={'line': ['g', 'h'],
+                                               'columns': {'C1': ['b']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k'],
+                                            'columns': {'C2': ['d']},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']}),
+                            None, False, False),
+                           [{'C1': 'de', 'C2': 'abc'},
+                            {'C1': 'hi', 'C2': 'ghi'},
+                            {'C1': 'lm', 'C2': 'mno'},
+                            {'C1': 'lm', 'C2': 'stu'},
+                            {'C1': 'pq', 'C2': 'yza'},
+                            {'C1': 'pq', 'C2': 'efg'}]),
+                          (dfa,
+                           (MainLineSpec(data={'line': ['g', 'h'],
+                                               'columns': {'C1': ['b']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k'],
+                                            'columns': {'C2': ['d']},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']}),
+                            LinkedLineSpec({'line': ['k'],
+                                            'columns': {'C3': ['e']},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']}),
+                            False, False),
+                           [{'C1': 'de', 'C2': 'abc', 'C3': 'def'},
+                            {'C1': 'hi', 'C2': 'ghi', 'C3': 'jkl'},
+                            {'C1': 'lm', 'C2': 'mno', 'C3': 'pqr'},
+                            {'C1': 'lm', 'C2': 'stu', 'C3': 'pqr'},
+                            {'C1': 'lm', 'C2': 'mno', 'C3': 'vwx'},
+                            {'C1': 'lm', 'C2': 'stu', 'C3': 'vwx'},
+                            {'C1': 'pq', 'C2': 'yza', 'C3': 'bcd'},
+                            {'C1': 'pq', 'C2': 'efg', 'C3': 'bcd'},
+                            {'C1': 'pq', 'C2': 'yza', 'C3': 'hij'},
+                            {'C1': 'pq', 'C2': 'efg', 'C3': 'hij'}]),
+                          (dfa,
+                           (MainLineSpec(data={'line': ['k'],
+                                               'columns': {'C1': ['d']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['g', 'h'],
+                                            'columns': {'C2': ['b']},
+                                            'linked_column': ['c'],
+                                            'linked_main_column': ['f']}),
+                            None, True, True),
+                           [{'C1': 'abc', 'key col': 0, 'C2': 'de'},
+                            {'C1': 'ghi', 'key col': 1, 'C2': 'hi'},
+                            {'C1': 'mno', 'key col': 2, 'C2': 'lm'},
+                            {'C1': 'stu', 'key col': 3, 'C2': 'lm'},
+                            {'C1': 'yza', 'key col': 4, 'C2': 'pq'},
+                            {'C1': 'efg', 'key col': 5, 'C2': 'pq'}]),
+                          (dfm,
+                           (MainLineSpec(data={'line': ['k'],
+                                               'columns': {'C1': ['d']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['g', 'h'],
+                                            'columns': {'C2': ['b']},
+                                            'linked_column': ['c'],
+                                            'linked_main_column': ['f']}),
+                            None, True, True),
+                           [{'C1': 'abc', 'key col': 'e1', 'C2': 'de'},
+                            {'C1': 'ghi', 'key col': 'e2', 'C2': 'hi'},
+                            {'C1': 'mno', 'key col': 'e3', 'C2': 'lm'},
+                            {'C1': 'stu', 'key col': 'e4', 'C2': 'lm'},
+                            {'C1': 'yza', 'key col': 'e5', 'C2': 'pq'},
+                            {'C1': 'efg', 'key col': 'e6', 'C2': 'pq'}])])
+def test_extract_data_ok1(capsys, ind, conf, res):
+    """Test OK cases 1 of extract_data."""
+    main_line: MainDataLine = conf[0]
+    linked_spec: LinkedLineSpec = conf[2]
+    linked_spec2: Optional[LinkedLineSpec] = conf[3]
+    cfg = ExtractConfig()
+    cfg.missing_input_for_column = conf[1]
+    cfg.linked_lines = [linked_spec]
+    if linked_spec2 is not None:
+        cfg.linked_lines.append(linked_spec2)
+    cfg.main_line = main_line
+    cfg.one_output_line_per_main_line = conf[4]
+    cfg.include_key = conf[5]
+    ret = extract_data(indata=ind, cfg=cfg)
+    out, err = capsys.readouterr()
+    assert ret == res
+    assert '' == out
+    assert '' == err
+
+
+@pytest.mark.parametrize('ind,conf,msgs',
+                         [(dfa,
+                           (MainLineSpec(data={'line': ['g', 'h'],
+                                               'columns': {'C1': ['b']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k'],
+                                            'columns': {'C2': ['d']},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']}),
+                            None, True, False),
+                           ['Several linked lines match one main line,',
+                            'but configuration says one line per main line']),
+                          (dfa,
+                           (MainLineSpec(data={'line': ['g', 'h'],
+                                               'columns': {'C1': ['b']}}),
+                            MissingInputForColumn.ERROR,
+                            LinkedLineSpec({'line': ['k'],
+                                            'columns': {'C2': ['d']},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']}),
+                            LinkedLineSpec({'line': ['k'],
+                                            'columns': {'C3': ['e']},
+                                            'linked_column': ['f'],
+                                            'linked_main_column': ['c']}),
+                            True, False),
+                           ['Several linked lines match one main line,',
+                            'but configuration says one line per main line'])])
+def test_extract_data_nok1(capsys, ind, conf, msgs):
+    """Test not OK cases 1 of extract_data."""
+    main_line: MainDataLine = conf[0]
+    linked_spec: LinkedLineSpec = conf[2]
+    linked_spec2: Optional[LinkedLineSpec] = conf[3]
+    cfg = ExtractConfig()
+    cfg.missing_input_for_column = conf[1]
+    cfg.linked_lines = [linked_spec]
+    if linked_spec2 is not None:
+        cfg.linked_lines.append(linked_spec2)
+    cfg.main_line = main_line
+    cfg.one_output_line_per_main_line = conf[4]
+    cfg.include_key = conf[5]
+    with pytest.raises(SystemExit):
+        _ = extract_data(indata=ind, cfg=cfg)
+    out, err = capsys.readouterr()
+    assert '' == out
+    for msg in msgs:
+        assert msg in err
