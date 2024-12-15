@@ -13,6 +13,9 @@ from extract_list.extract_config import ExtractConfig
 from extract_list.handle_input import read_in_json, read_in_xml
 
 
+# pylint: disable=duplicate-code
+
+
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
 @pytest.mark.parametrize('data',
                          [{'foo': ['abc', 'ÅÄÖ']},

@@ -10,7 +10,7 @@ import pytest
 from extract_list.config_enums import MissingInputForColumn
 from extract_list.extract_config import ExtractConfig, LinkedLineSpec, \
     MainLineSpec
-from extract_list.extract_func import get_at_path, \
+from extract_list.extract_data import get_at_path, \
     get_lines, get_columns, extract_main_line, MainDataLine, \
     extract_data, create_none_columns, add_from_linked_to_main, \
     extract_linked_line

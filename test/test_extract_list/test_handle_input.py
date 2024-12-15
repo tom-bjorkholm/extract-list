@@ -17,6 +17,7 @@ from extract_list.handle_input import read_in_json, \
     handle_json_input, strip_prefix_dict, read_in_xml, \
     handle_xml_input, handle_input
 
+# pylint: disable=duplicate-code
 
 DATA = [
     {'data': {'a': 'b', 'c': [2, 3, 4], 'd': 'ÅÄÖåäö'}},
