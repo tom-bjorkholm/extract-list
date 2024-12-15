@@ -249,6 +249,43 @@ def test_cross_check_columns_nok(capsys, main, link, col, errmsg):
     assert '' == out
 
 
+def test_check_extr_uniq_col_ok1(capsys):
+    """Test OK case 1 of check_extract_unique_colnames."""
+    cfg = ExtractConfig()
+    cfg.main_line.columns = {'a': ['a1'], 'b': ['b1']}
+    cfg.linked_lines = []
+    for ival in range(5):
+        lls = LinkedLineSpec(data={'line': ['i'+str(ival)],
+                                   'linked_column': ['b'],
+                                   'linked_main_column': ['c'],
+                                   'columns': {}})
+        for cnum in range(10, 13):
+            lls.columns['c' + str(cnum) + '_' + str(ival)] = ['d', str(cnum)]
+        cfg.linked_lines.append(lls)
+    cfg.check_extract_unique_colnames()
+    out, err = capsys.readouterr()
+    assert '' == err
+    assert '' == out
+
+
+def test_check_extr_uniq_col_nok1(capsys):
+    """Test not OK case 1 of check_extract_unique_colnames."""
+    cfg = ExtractConfig()
+    cfg.main_line.columns = {'a': ['a1'], 'b': ['b1']}
+    cfg.linked_lines = []
+    lls = LinkedLineSpec(data={'line': ['i'],
+                               'linked_column': ['b'],
+                               'linked_main_column': ['c'],
+                               'columns': {'c': ['c1'], 'b': ['d2']}})
+    cfg.linked_lines.append(lls)
+    with pytest.raises(SystemExit):
+        cfg.check_extract_unique_colnames()
+    out, err = capsys.readouterr()
+    assert 'Column names of extracted data must be unique' in err
+    assert 'Repeated column name(s): b' in err
+    assert '' == out
+
+
 def test_check_csv_ok(capsys):
     """Test OK case of check_csv."""
     cfg = ExtractConfig()

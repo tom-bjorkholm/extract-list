@@ -9,6 +9,7 @@ from enum import Enum
 from csv import Dialect
 import sys
 from copy import deepcopy
+from collections import Counter
 from excel_list_transform.config import Config, ParseConverter
 from excel_list_transform.config_enums import ExcelLib
 from excel_list_transform.str_to_enum import string_to_enum_best_match
@@ -165,6 +166,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
         self.check_csv()
+        self.check_extract_unique_colnames()
         self.cross_check_columns()
         self.cross_check_attrs()
 
@@ -201,6 +203,17 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                 print(f'Extracted column "{col}" is missing in column_order',
                       file=sys.stderr)
                 sys.exit(1)
+
+    def check_extract_unique_colnames(self) -> None:
+        """Check that not several extracted columns have same name."""
+        col_names = self._extracted_columns()
+        repeated = [k for k, v in Counter(col_names).items() if v > 1]
+        if repeated:
+            print('Column names of extracted data must be unique.',
+                  file=sys.stderr)
+            print('Repeated column name(s): ' + ' ,'.join(repeated),
+                  file=sys.stderr)
+            sys.exit(1)
 
     def check_csv(self) -> None:
         """Check if CSV configuration is OK."""
