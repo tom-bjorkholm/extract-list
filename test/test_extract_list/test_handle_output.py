@@ -60,6 +60,7 @@ def read_csv(filename: str, cfg: ExtractConfig) -> Data:
 def read_excel(filename: str, cfg: ExtractConfig) -> Data:
     """Read from Excel."""
     return read_excel_named(filename=filename, max_column_read=20,
+                            strip_col_names=False, strip_values=False,
                             excel_lib=cfg.outfile_excel_library)
 
 

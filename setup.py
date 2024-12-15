@@ -14,12 +14,12 @@ setup(
   package_dir={'extract_list': 'src/extract_list'},
   package_data={'extract_list': ['src/py.typed']},
   install_requires=[
-    'excel-list-transform >= 0.6.2',
+    'excel-list-transform >= 0.7.1',
     'xmltodict >= 0.13.0',
     'types-xmltodict >= 0.13.0.3',
     'pip >= 24.2',
-    'setuptools >= 75.1.0',
+    'setuptools >= 75.6.0',
     'build >= 1.2.2',
-    'wheel>=0.44.0'
+    'wheel>=0.45.1'
   ]
 )

@@ -161,6 +161,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                          'outfile_excel_library')
         self._check_type(self.column_order, list, 'column_order')
         self._check_list_str(self.column_order, 'column_order')
+        self.check_no_duplicates(self.column_order, 'column_order')
         self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
         self.check_csv()
