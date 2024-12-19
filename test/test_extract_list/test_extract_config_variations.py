@@ -8,6 +8,7 @@ from copy import deepcopy
 # from enum import Enum, auto
 import pytest
 from check_cfgs_equal import check_cfgs_equal
+from check_capsys import check_capsys
 from excel_list_transform.config_enums import ExcelLib
 from excel_list_transform.config import ConfigBadJson
 from extract_list.config_enums import InFileType, OutFileType, \
@@ -35,9 +36,7 @@ def test_extract_config_var1(capsys, inenc, infiletype, outenc, outfiletype):
     assert cf2.infile_encoding == inenc
     assert cf2.outfile_type == outfiletype
     assert cf2.outfile_encoding == outenc
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('strip', [True, False])
@@ -62,9 +61,7 @@ def test_extract_config_var2(capsys, strip, inck, miss, attr):
     assert cf2.include_key == inck
     assert cf2.missing_input_for_column == miss
     assert cf2.out_xml_attributes == attr
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('coname', ['abc', 'key column'])
@@ -88,9 +85,7 @@ def test_extract_config_var3(capsys, coname, csname, deli, excl):
     assert cf2.out_csv_dialect['name'] == csname
     assert cf2.out_csv_dialect['delimiter'] == deli
     assert cf2.outfile_excel_library == excl
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 ml1 = deepcopy(ExtractConfig.example_main_line())
@@ -126,9 +121,7 @@ def test_extract_config_var4(capsys, main, linked, order):
     assert cf2.linked_lines[0].linked_column == linked.linked_column
     assert cf2.linked_lines[0].linked_main_column == linked.linked_main_column
     assert cf2.column_order == order
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('one', [True, False])
@@ -140,9 +133,7 @@ def test_extract_config_var5(capsys, one):
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.one_output_line_per_main_line == one
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('attr,val,exc, msgs',
@@ -197,10 +188,7 @@ def test_extract_config_err1(capsys, attr, val, exc, msgs):
     txt = cfg.as_json_string()
     with pytest.raises(exc):
         _ = ExtractConfig(from_json_data_text=txt)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for errmsg in msgs:
-        assert errmsg in err
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 def test_extract_config_err2(capsys):
@@ -210,9 +198,8 @@ def test_extract_config_err2(capsys):
     txt = cfg.as_json_string()
     with pytest.raises(SystemExit):
         _ = ExtractConfig(from_json_data_text=txt)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert 'Extracted column "Cost" is missing in column_order' in err
+    check_capsys(capsys=capsys,
+                 in_err='Extracted column "Cost" is missing in column_order')
 
 
 def test_extract_config_err3(capsys):
@@ -222,9 +209,8 @@ def test_extract_config_err3(capsys):
     txt = cfg.as_json_string()
     with pytest.raises(SystemExit):
         _ = ExtractConfig(from_json_data_text=txt)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert 'Extracted column "Zip" is missing in column_order' in err
+    check_capsys(capsys=capsys,
+                 in_err='Extracted column "Zip" is missing in column_order')
 
 
 def test_extract_config_err4(capsys):
@@ -234,7 +220,6 @@ def test_extract_config_err4(capsys):
     txt = cfg.as_json_string()
     with pytest.raises(SystemExit):
         _ = ExtractConfig(from_json_data_text=txt)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert 'column order includes column "Zip"' in err
-    assert 'but that column is not extracted' in err
+    msgs = ['column order includes column "Zip"',
+            'but that column is not extracted']
+    check_capsys(capsys=capsys, in_err=msgs)

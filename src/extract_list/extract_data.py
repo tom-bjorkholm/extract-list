@@ -4,7 +4,7 @@
 # Copyright (c) 2024 Tom Björkholm
 # MIT License
 
-from typing import Optional, Tuple, Generator, cast
+from typing import Optional, Tuple, Generator, cast, Sequence
 import sys
 from copy import deepcopy
 from excel_list_transform.commontypes import JsonType
@@ -38,6 +38,7 @@ def get_at_path(indata: JsonType, path: list[str],
         print(f'Trying to extract data at {path} in data that is ' +
               f'{type(indata).__name__} and not dict.',
               file=sys.stderr)
+        print(f'indata={indata}', file=sys.stderr)
         sys.exit(1)
     assert isinstance(indata, dict)
     if pkey not in indata:
@@ -52,9 +53,52 @@ def get_at_path(indata: JsonType, path: list[str],
     return indata[pkey]
 
 
+def set_at_path(data: JsonType, path: Sequence[str | int],
+                newdata: JsonType) -> None:
+    """Set newdata at path in data, modifying data."""
+    assert isinstance(path, list)
+    assert isinstance(data, (list, dict))
+    assert len(path) > 0
+    if len(path) > 1:
+        set_at_path(data=data[path[0]], path=path[1:], newdata=newdata)
+    else:
+        data[path[0]] = newdata
+
+
+def expand_line(skey: Value, dline: JsonType,
+                expand: list[list[str]]) -> Generator[Tuple[Value, JsonType],
+                                                      None, None]:
+    """Expand json line to several lines."""
+    assert isinstance(expand, list)
+    if not expand:
+        yield (skey, dline)
+        return
+    local_expand = deepcopy(expand)
+    local_dline = deepcopy(dline)
+    path = local_expand[0]
+    assert isinstance(path, list)
+    atpath = get_at_path(indata=local_dline, path=path,
+                         missing=MissingInputForColumn.EMPTY)
+    if atpath is None:
+        for ekey, eline in expand_line(skey=skey, dline=local_dline,
+                                       expand=expand[1:]):
+            yield (ekey, eline)
+        return
+    alt = deepcopy(atpath)
+    if isinstance(alt, list):
+        for elem in alt:
+            set_at_path(local_dline, path, elem)
+            for ekey, eline in expand_line(skey=skey, dline=local_dline,
+                                           expand=expand[1:]):
+                yield (ekey, eline)
+        return
+    yield (skey, local_dline)
+
+
 def get_lines(indata: JsonType, missing: MissingInputForColumn,
-              path: list[str]) -> Generator[Tuple[Value, JsonType],
-                                            None, None]:
+              path: list[str],
+              expand_at: list[list[str]]) -> Generator[Tuple[Value, JsonType],
+                                                       None, None]:
     """Get (as generator) all items in indata under path."""
     lines: JsonType = get_at_path(indata=indata, path=path, missing=missing)
     if lines is None:
@@ -81,7 +125,11 @@ def get_lines(indata: JsonType, missing: MissingInputForColumn,
                 sys.exit(1)
             assert isinstance(skey, (int, str))
             ddat = dlines[skey]
-            yield (skey, ddat)
+            if len(expand_at) == 0:
+                yield (skey, ddat)
+            else:
+                for expkey, expline in expand_line(skey, ddat, expand_at):
+                    yield (expkey, expline)
     else:  # pragma: no cover
         print('internal error in get_line()', file=sys.stderr)
         print(f'lines is {type(lines).__name__}', file=sys.stderr)
@@ -111,7 +159,8 @@ def extract_main_line(indata: JsonType,
     """Extract columns with values according to main_line spec."""
     for key, line in get_lines(indata=indata,
                                missing=cfg.missing_input_for_column,
-                               path=cfg.main_line.line):
+                               path=cfg.main_line.line,
+                               expand_at=cfg.main_line.expand_at):
         if line is None:
             print('No data matching main line in input', file=sys.stderr)
             print(f'Main line path is {cfg.main_line.line}',
@@ -149,7 +198,8 @@ def extract_linked_line(indata: JsonType, main_line: MainDataLine,
                                    missing=MissingInputForColumn.ERROR)
     for _, line in get_lines(indata=indata,
                              missing=cfg.missing_input_for_column,
-                             path=linked_spec.line):
+                             path=linked_spec.line,
+                             expand_at=linked_spec.expand_at):
         if line is None:
             break
         assert line is not None

@@ -42,7 +42,8 @@ def test_mainlinespec_1(capsys, lin, col):
 def test_mainlinespec_2(capsys, lin, col):
     """Test MainLineSprec (case 2)."""
     mld: MLineDict = {'line': deepcopy(lin),
-                      'columns': deepcopy(col)}
+                      'columns': deepcopy(col),
+                      'expand_at': []}
     spec = MainLineSpec(mld)
     txt = str(spec)
     out, err = capsys.readouterr()
@@ -65,7 +66,8 @@ def test_mainlinespec_2(capsys, lin, col):
 def test_mlinespecfromdict(capsys, lin, col):
     """Test _mline_spec_from_dict."""
     mld: MLineDict = {'line': deepcopy(lin),
-                      'columns': deepcopy(col)}
+                      'columns': deepcopy(col),
+                      'expand_at': []}
     spec = _mline_spec_from_dict(data=mld)
     txt = str(spec)
     out, err = capsys.readouterr()
@@ -122,7 +124,8 @@ def test_linklinespec_2(capsys,  # pylint: disable=too-many-locals
     lld: LLineDict = {'line': deepcopy(lin),
                       'columns': deepcopy(col),
                       'linked_main_column': deepcopy(lmc),
-                      'linked_column': deepcopy(lcol)}
+                      'linked_column': deepcopy(lcol),
+                      'expand_at': []}
     spec = LinkedLineSpec(data=lld)
     txt = str(spec)
     out, err = capsys.readouterr()
@@ -156,7 +159,8 @@ def test_llinefromjson(capsys,  # pylint: disable=too-many-locals
     lld: LLineDict = {'line': deepcopy(lin),
                       'columns': deepcopy(col),
                       'linked_main_column': deepcopy(lmc),
-                      'linked_column': deepcopy(lcol)}
+                      'linked_column': deepcopy(lcol),
+                      'expand_at': []}
     speclist = _linked_line_from_json_array(data=[lld, lld])
     assert len(speclist) == 2
     assert speclist[0].line == speclist[1].line
@@ -209,30 +213,36 @@ def test_cross_check_columns_ok(capsys, main, linked, keyinc):
 
 @pytest.mark.parametrize('main, link, col, errmsg',
                          [(MainLineSpec(data={'line': [],
-                                              'columns': {'a': [], 'b': []}}),
+                                              'columns': {'a': [], 'b': []},
+                                              'expand_at': []}),
                            [LinkedLineSpec(data={
                                'line': [],
                                'columns': {'c': [], 'd': []},
                                'linked_column': [],
-                               'linked_main_column': []
+                               'linked_main_column': [],
+                               'expand_at': []
                            })], ['a', 'b', 'd'],
                            'Extracted column "c" is missing'),
                           (MainLineSpec(data={'line': [],
-                                              'columns': {'a': [], 'b': []}}),
+                                              'columns': {'a': [], 'b': []},
+                                              'expand_at': []}),
                            [LinkedLineSpec(data={
                                'line': [],
                                'columns': {'c': [], 'd': []},
                                'linked_column': [],
-                               'linked_main_column': []
+                               'linked_main_column': [],
+                               'expand_at': []
                            })], ['a', 'c', 'd'],
                            'Extracted column "b" is missing'),
                           (MainLineSpec(data={'line': [],
-                                              'columns': {'a': [], 'b': []}}),
+                                              'columns': {'a': [], 'b': []},
+                                              'expand_at': []}),
                            [LinkedLineSpec(data={
                                'line': [],
                                'columns': {'c': [], 'd': []},
                                'linked_column': [],
-                               'linked_main_column': []
+                               'linked_main_column': [],
+                               'expand_at': []
                            })], ['a', 'b', 'k', 'c', 'd'],
                            'includes column "k"\nbut that column is not ex')])
 def test_cross_check_columns_nok(capsys, main, link, col, errmsg):
@@ -258,7 +268,8 @@ def test_check_extr_uniq_col_ok1(capsys):
         lls = LinkedLineSpec(data={'line': ['i'+str(ival)],
                                    'linked_column': ['b'],
                                    'linked_main_column': ['c'],
-                                   'columns': {}})
+                                   'columns': {},
+                                   'expand_at': []})
         for cnum in range(10, 13):
             lls.columns['c' + str(cnum) + '_' + str(ival)] = ['d', str(cnum)]
         cfg.linked_lines.append(lls)
@@ -276,7 +287,8 @@ def test_check_extr_uniq_col_nok1(capsys):
     lls = LinkedLineSpec(data={'line': ['i'],
                                'linked_column': ['b'],
                                'linked_main_column': ['c'],
-                               'columns': {'c': ['c1'], 'b': ['d2']}})
+                               'columns': {'c': ['c1'], 'b': ['d2']},
+                               'expand_at': []})
     cfg.linked_lines.append(lls)
     with pytest.raises(SystemExit):
         cfg.check_extract_unique_colnames()

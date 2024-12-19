@@ -20,24 +20,27 @@ CsvSpec: TypeAlias = dict[str, Optional[str]]
 
 
 MLineDict = TypedDict('MLineDict', {'line': list[str],
-                                    'columns': dict[str, list[str]]})
+                                    'columns': dict[str, list[str]],
+                                    'expand_at': list[list[str]]})
 LLineDict = TypedDict('LLineDict', {'line': list[str],
                                     'columns': dict[str, list[str]],
                                     'linked_main_column': list[str],
-                                    'linked_column': list[str]})
+                                    'linked_column': list[str],
+                                    'expand_at': list[list[str]]})
 
 
 class MainLineSpec:  # pylint: disable=too-few-public-methods
     """Some spec."""
 
-    def __init__(self, data: Optional[MLineDict] = None,
-                 ):
+    def __init__(self, data: Optional[MLineDict] = None):
         """Construct mainline spec."""
         self.line: list[str] = []
         self.columns: dict[str, list[str]] = {}
+        self.expand_at: list[list[str]] = []
         if data is not None:
             self.line = data['line']
             self.columns = data['columns']
+            self.expand_at = data['expand_at']
 
     def __str__(self) -> str:
         """Get string representation."""
@@ -53,11 +56,13 @@ class LinkedLineSpec:  # pylint: disable=too-few-public-methods
         self.columns: dict[str, list[str]] = {}
         self.linked_main_column: list[str] = []
         self.linked_column: list[str] = []
+        self.expand_at: list[list[str]] = []
         if data is not None:
             self.line = data['line']
             self.columns = data['columns']
             self.linked_main_column = data['linked_main_column']
             self.linked_column = data['linked_column']
+            self.expand_at = data['expand_at']
 
     def __str__(self) -> str:
         """Get string representation."""
@@ -92,8 +97,10 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def example_main_line() -> MainLineSpec:
         """Get example spec for main line."""
-        main_col = {'What': ['item'], 'How many': ['quantity']}
-        data: MLineDict = {'line': ['orders'], 'columns': main_col}
+        main_col = {'What': ['items', 'item'],
+                    'How many': ['items', 'quantity']}
+        data: MLineDict = {'line': ['orders'], 'columns': main_col,
+                           'expand_at': [['items']]}
         return MainLineSpec(data=data)
 
     @staticmethod
@@ -101,10 +108,11 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         """Get example spec for linked line."""
         columns = {'Customer name': ['name'],
                    'Street': ['address', 'street'],
-                   'Street number': ['address', 'numer']}
+                   'Street number': ['address', 'number']}
         data: LLineDict = {'line': ['customers'], 'columns': columns,
-                           'linked_main_column': ['customer_number'],
-                           'linked_column': ['customer']}
+                           'linked_main_column': ['customer'],
+                           'linked_column': ['customer_number'],
+                           'expand_at': []}
         return LinkedLineSpec(data=data)
 
     def __init__(self,  from_json_data_text: Optional[str] = None,
