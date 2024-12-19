@@ -6,7 +6,17 @@
 
 from typing import Optional, TypeAlias
 from datetime import datetime
+from enum import Enum, auto
 
 Value: TypeAlias = Optional[str | int | bool | float | datetime]
 Row: TypeAlias = dict[str, Value]
 Data: TypeAlias = list[Row]
+
+
+class CfgTypes(Enum):
+    """Types of example configurations."""
+
+    SW_JSON_TO_RRS = auto()
+    SW_XML_TO_RRS = auto()
+    EXAMPLE_JSON = auto()
+    EXAMPLE_XML = auto()
