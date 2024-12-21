@@ -129,11 +129,11 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
         del fixed_args[0]
     if len(fixed_args) > 2 and '-m' == fixed_args[0]:
         del fixed_args[0]
-    while len(fixed_args) > 1 and fixed_args[0][-3:] == '.py':
+    while len(fixed_args) >= 1 and fixed_args[0][-3:] == '.py':
         del fixed_args[0]
     desc = GENERAL_DESCRIPTION + \
         USAGE_ORDER
-    parser = argparse.ArgumentParser(description=desc, epilog=epimain)
+    parser = argparse.ArgumentParser(prog='extract_list', description=desc, epilog=epimain)
     subparsers = parser.add_subparsers(dest='subparser_name', required=True)
     gen_cfg_args(subparsers)
     extract_args(subparsers)
