@@ -133,7 +133,8 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
         del fixed_args[0]
     desc = GENERAL_DESCRIPTION + \
         USAGE_ORDER
-    parser = argparse.ArgumentParser(prog='extract_list', description=desc, epilog=epimain)
+    parser = argparse.ArgumentParser(prog='extract_list', description=desc,
+                                     epilog=epimain)
     subparsers = parser.add_subparsers(dest='subparser_name', required=True)
     gen_cfg_args(subparsers)
     extract_args(subparsers)

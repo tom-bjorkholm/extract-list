@@ -21,7 +21,8 @@ def _check_out_stream(out_err: str, in_it: Optional[str | list[str]],
                 'Expected output list is not list of str'
             assert len(item) > 0, \
                 'Expected item in output, but item empty'
-            assert item in out_err
+            assert item in out_err, \
+                f'Expected {item} in {name}, but it is {out_err}'
     else:
         assert isinstance(in_it, str), \
             f'Expecting something that is {type(in_it).__name__} ' + \
