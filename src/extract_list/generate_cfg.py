@@ -9,9 +9,26 @@ from enum import Enum
 import sys
 from excel_list_transform.str_to_enum import string_to_enum_best_match
 from excel_list_transform.file_extension import fix_file_extension
-from extract_list.config_enums import OutFileType
+from extract_list.config_enums import OutFileType, InFileType
+from extract_list.extract_config import ExtractConfig
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt import generate_txt_nyi
+
+
+def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
+                         outtype: OutFileType) -> int:
+    """Generate cfg file for example."""
+    assert cfgtype in (CfgTypes.EXAMPLE_JSON, CfgTypes.EXAMPLE_XML)
+    cfg = ExtractConfig()
+    cfg.outfile_type = outtype
+    if cfgtype == CfgTypes.EXAMPLE_JSON:
+        cfg.infile_type = InFileType.JSON
+    else:  # XML
+        cfg.infile_type = InFileType.XML
+        cfg.main_line.line.insert(0, 'data')
+        cfg.linked_lines[0].line.insert(0, 'data')
+    cfg.write(to_json_filename=outfilename)
+    return 0
 
 
 def generate_cfg_nyi(outfilename: str, cfgtype: CfgTypes,
@@ -47,8 +64,8 @@ TXTFUNCS = {CfgTypes.EXAMPLE_JSON: generate_txt_nyi,
             CfgTypes.SW_JSON_TO_RRS: generate_txt_nyi,
             CfgTypes.SW_XML_TO_RRS: generate_txt_nyi}
 
-CFGFUNCS = {CfgTypes.EXAMPLE_JSON: generate_cfg_nyi,
-            CfgTypes.EXAMPLE_XML: generate_cfg_nyi,
+CFGFUNCS = {CfgTypes.EXAMPLE_JSON: generate_cfg_example,
+            CfgTypes.EXAMPLE_XML: generate_cfg_example,
             CfgTypes.SW_JSON_TO_RRS: generate_cfg_nyi,
             CfgTypes.SW_XML_TO_RRS: generate_cfg_nyi}
 
