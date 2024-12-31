@@ -12,7 +12,9 @@ from excel_list_transform.file_extension import fix_file_extension
 from extract_list.config_enums import OutFileType, InFileType
 from extract_list.extract_config import ExtractConfig
 from extract_list.commontypes import CfgTypes
-from extract_list.generate_txt import generate_txt_nyi
+from extract_list.generate_txt_syntax import generate_txt_nyi
+from extract_list.generate_txt_example_json import generate_txt_example_json
+from extract_list.generate_txt_example_xml import generate_txt_example_xml
 
 
 def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
@@ -59,8 +61,8 @@ def get_out_file_types() -> list[str]:
     return _lower_str_enum(OutFileType)
 
 
-TXTFUNCS = {CfgTypes.EXAMPLE_JSON: generate_txt_nyi,
-            CfgTypes.EXAMPLE_XML: generate_txt_nyi,
+TXTFUNCS = {CfgTypes.EXAMPLE_JSON: generate_txt_example_json,
+            CfgTypes.EXAMPLE_XML: generate_txt_example_xml,
             CfgTypes.SW_JSON_TO_RRS: generate_txt_nyi,
             CfgTypes.SW_XML_TO_RRS: generate_txt_nyi}
 
@@ -79,7 +81,7 @@ def generate_example_cfg(filename: str, cfgtype: str,
     cfgout = fix_file_extension(filename=filename, ext_to_add='.cfg')
     ret = CFGFUNCS[type_of_cfg](outfilename=cfgout, cfgtype=type_of_cfg,
                                 outtype=type_out)
-    if ret != 0:
+    if ret != 0:  # pragma: no cover
         return ret
     txtout = fix_file_extension(filename=filename, ext_to_add='.txt',
                                 ext_to_remove='.cfg')

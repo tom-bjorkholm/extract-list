@@ -5,7 +5,9 @@
 # MIT License
 
 from tempfile import TemporaryDirectory
+from json import loads as json_loads
 import pytest
+from excel_list_transform.file_extension import fix_file_extension
 from example_data import ExampleData
 from test_handle_output import read_csv, read_excel, read_json
 from check_capsys import check_capsys
@@ -56,8 +58,22 @@ def test_gen_cfg_ex_ok1(capsys, outp, inp):
     check_capsys(capsys=capsys)
 
 
-# TODO  This test requires generate txt to be implemented
-@pytest.mark.skip
+def check_txt_file_for_cfg_file(cfg_fname):
+    """Check that text file for cfg file has all information."""
+    txt_fname = fix_file_extension(filename=cfg_fname, ext_to_add='.txt',
+                                   ext_to_remove='.cfg', for_reading=False)
+    cfg = ExtractConfig(from_json_filename=cfg_fname)
+    cfg_data = json_loads(cfg.as_json_string())
+    num_keys_checked = 0
+    with open(file=txt_fname, mode='r', encoding='utf-8') as file:
+        txt = file.read()
+        for key in cfg_data.keys():
+            match_txt = '"' + key + '"'
+            assert match_txt in txt
+            num_keys_checked += 1
+    assert num_keys_checked > 10
+
+
 @pytest.mark.parametrize('outp',
                          [('excel', read_excel,
                            'b.xlsx'),
@@ -87,12 +103,13 @@ def test_gen_cfg_ex_ok2(capsys,  # pylint: disable=too-many-locals
         extr_cmd = ['extract', '-i', in_fname, '-o', out_fname,
                     '-c', cfg_fname]
         ret2 = extract_cmd(extr_cmd)
+        with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
+            cfgtxt = file.read().lower()
+            assert '"outfile_type": "' + outp[0].lower() + '"' in cfgtxt
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](filename=out_fname, cfg=cfg)
         assert ret == 0
         assert ret2 == 0
         check_result(result_data=data)
-        with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
-            cfgtxt = file.read()
-            assert '"outfile_type": "' + outp[0].name + '"' in cfgtxt
+        check_txt_file_for_cfg_file(cfg_fname=cfg_fname)
     check_capsys(capsys=capsys)
