@@ -6,13 +6,13 @@
 
 # from typing import TextIO
 from enum import Enum
-import sys
 from excel_list_transform.str_to_enum import string_to_enum_best_match
 from excel_list_transform.file_extension import fix_file_extension
-from extract_list.config_enums import OutFileType, InFileType
+from extract_list.config_enums import OutFileType, InFileType, \
+    MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.commontypes import CfgTypes
-from extract_list.generate_txt_syntax import generate_txt_nyi
+from extract_list.generate_txt_sw_to_rrs import generate_txt_sw_to_rrs
 from extract_list.generate_txt_example_json import generate_txt_example_json
 from extract_list.generate_txt_example_xml import generate_txt_example_xml
 
@@ -33,17 +33,38 @@ def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
     return 0
 
 
-def generate_cfg_nyi(outfilename: str, cfgtype: CfgTypes,
-                     outtype: OutFileType) -> int:
-    """Inform of for not yet implemented function."""
-    print("Sorry. Generation of example config file not yet implemented,",
-          file=sys.stderr)
-    with open(file=outfilename, mode='wt', encoding='utf-8') as file:
-        print("Sorry. Generation of example config file not yet implemented,",
-              file=file)
-    assert isinstance(cfgtype, CfgTypes)
-    assert isinstance(outtype, OutFileType)
-    return 1
+def generate_cfg_sw_to_rrs(outfilename: str, cfgtype: CfgTypes,
+                           outtype: OutFileType) -> int:
+    """Generate cfg file for SailWave to RRS."""
+    assert cfgtype in (CfgTypes.SW_JSON_TO_RRS, CfgTypes.SW_XML_TO_RRS)
+    cfg = ExtractConfig()
+    cfg.infile_encoding = 'cp1252'
+    cfg.outfile_type = outtype
+    cfg.linked_lines = []
+    cfg.main_line.line = ['competitors']
+    cfg.main_line.expand_at = []
+    cfg.main_line.columns = {'Class': ['compclass'],
+                             'Division': ['compdivision'],
+                             'Nationality': ['compnat'],
+                             'Sail Number': ['compsailno'],
+                             'Boat Name': ['compboat'],
+                             'Name': ['comphelmname'],
+                             'Club Name': ['compclub'],
+                             'Email': ['comphelmemail'],
+                             'Phone': ['comphelmphone']}
+    cfg.include_key = False
+    cfg.column_order = ['Class', 'Division', 'Nationality', 'Sail Number',
+                        'Boat Name', 'Name', 'Club Name', 'Email', 'Phone']
+    cfg.missing_input_for_column = MissingInputForColumn.EMPTY
+    cfg.out_xml_attributes = []
+    if cfgtype == CfgTypes.SW_JSON_TO_RRS:
+        cfg.infile_type = InFileType.JSON
+    else:  # XML
+        cfg.infile_type = InFileType.XML
+        cfg.main_line.line.insert(0, 'sailwave-data')
+        cfg.main_line.line.append('competitor')
+    cfg.write(to_json_filename=outfilename)
+    return 0
 
 
 def _lower_str_enum(etype: type[Enum]) -> list[str]:
@@ -63,13 +84,13 @@ def get_out_file_types() -> list[str]:
 
 TXTFUNCS = {CfgTypes.EXAMPLE_JSON: generate_txt_example_json,
             CfgTypes.EXAMPLE_XML: generate_txt_example_xml,
-            CfgTypes.SW_JSON_TO_RRS: generate_txt_nyi,
-            CfgTypes.SW_XML_TO_RRS: generate_txt_nyi}
+            CfgTypes.SW_JSON_TO_RRS: generate_txt_sw_to_rrs,
+            CfgTypes.SW_XML_TO_RRS: generate_txt_sw_to_rrs}
 
 CFGFUNCS = {CfgTypes.EXAMPLE_JSON: generate_cfg_example,
             CfgTypes.EXAMPLE_XML: generate_cfg_example,
-            CfgTypes.SW_JSON_TO_RRS: generate_cfg_nyi,
-            CfgTypes.SW_XML_TO_RRS: generate_cfg_nyi}
+            CfgTypes.SW_JSON_TO_RRS: generate_cfg_sw_to_rrs,
+            CfgTypes.SW_XML_TO_RRS: generate_cfg_sw_to_rrs}
 
 
 def generate_example_cfg(filename: str, cfgtype: str,

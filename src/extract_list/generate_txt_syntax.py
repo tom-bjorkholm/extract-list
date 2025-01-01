@@ -5,9 +5,7 @@
 # MIT License
 
 from typing import TextIO
-import sys
 from extract_list.config_enums import OutFileType, InFileType
-from extract_list.commontypes import CfgTypes
 
 
 def generate_syntax_txt(file: TextIO) -> None:
@@ -37,7 +35,7 @@ def generate_syntax_txt(file: TextIO) -> None:
     msg += ' ,'.join(['"' + x.name + '"' for x in InFileType])
     msg += '''
 
-    As both JSON ans XML are syntax in text files, the text files can have an
+    As both JSON and XML are syntax in text files, the text files can have an
     encoding for the text in the files.
     https://en.wikipedia.org/wiki/Character_encoding
     This is specified with "infile_encoding".
@@ -53,7 +51,7 @@ def generate_syntax_txt(file: TextIO) -> None:
     msg += ' ,'.join(['"' + x.name + '"' for x in OutFileType])
     msg += '''
 
-    As CSV, TXT, JSON ans XML are syntaxes in text files, the text files can
+    As CSV, TXT, JSON and XML are syntaxes in text files, the text files can
     have an encoding for the text in the files.
     https://en.wikipedia.org/wiki/Character_encoding
     This is specified with "outfile_encoding". Unless you know that you need
@@ -181,15 +179,3 @@ def generate_syntax_txt(file: TextIO) -> None:
     in the output column order.
     '''
     print(msg, file=file)
-
-
-def generate_txt_nyi(file: TextIO, cfgtype: CfgTypes,
-                     outtype: OutFileType) -> int:
-    """Inform of not yet implemented function."""
-    print("Sorry. Generation of example text file not yet implemented,",
-          file=sys.stderr)
-    print("Sorry. Generation of example text file not yet implemented,",
-          file=file)
-    assert isinstance(cfgtype, CfgTypes)
-    assert isinstance(outtype, OutFileType)
-    return 1

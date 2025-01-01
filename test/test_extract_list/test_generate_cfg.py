@@ -6,13 +6,15 @@
 
 from tempfile import TemporaryDirectory
 from json import loads as json_loads
+from shutil import copyfile
 import pytest
 from excel_list_transform.file_extension import fix_file_extension
 from example_data import ExampleData
 from test_handle_output import read_csv, read_excel, read_json
 from check_capsys import check_capsys
 from check_result import check_result
-from extract_list.generate_cfg import generate_cfg_example
+from extract_list.generate_cfg import generate_cfg_example, \
+    generate_cfg_sw_to_rrs
 from extract_list.extract_config import ExtractConfig
 from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
@@ -58,6 +60,55 @@ def test_gen_cfg_ex_ok1(capsys, outp, inp):
     check_capsys(capsys=capsys)
 
 
+sw_res_data = [
+    {'Class': 'Optimist', 'Division': 'y-div', 'Nationality': 'USA',
+     'Sail Number': '123', 'Boat Name': 'Sally', 'Name': 'Donald Duck',
+     'Club Name': 'ABC',
+     'Email': 'd.duck@gmail.com.us', 'Phone': '+1555123456'},
+    {'Class': 'Dragon', 'Division': 'b-div', 'Nationality': 'CAN',
+     'Sail Number': '456', 'Boat Name': 'Molly', 'Name': 'Mickey Mouse',
+     'Club Name': 'DEF',
+     'Email': 'm.mouse@icloud.com.can', 'Phone': '+1555234567'}
+]
+
+
+@pytest.mark.parametrize('outp',
+                         [(OutFileType.EXCEL, read_excel,
+                           'b.xlsx'),
+                          (OutFileType.CSV, read_csv,
+                           'b.csv'),
+                          (OutFileType.JSON, read_json,
+                           'b.json')])
+@pytest.mark.parametrize('inp',
+                         [(CfgTypes.SW_JSON_TO_RRS,
+                           'test/test_extract_list/SW.json',
+                           'a.json'),
+                          (CfgTypes.SW_XML_TO_RRS,
+                           'test/test_extract_list/SW.xml',
+                           'a.xml')])
+def test_gen_cfg_sw_ok1(capsys, outp, inp):
+    """Test OK cases 1 of generate cfg exmaple."""
+    with TemporaryDirectory() as folder:
+        out_fname = folder + '/' + outp[2]
+        in_fname = folder + '/' + inp[2]
+        cfg_fname = folder + '/' + 'c.cfg'
+        copyfile(src=inp[1], dst=in_fname)
+        ret = generate_cfg_sw_to_rrs(outfilename=cfg_fname,
+                                     cfgtype=inp[0],
+                                     outtype=outp[0])
+        ret2 = extract_func(in_file_name=in_fname, cfg_file_name=cfg_fname,
+                            out_file_name=out_fname)
+        cfg = ExtractConfig(from_json_filename=cfg_fname)
+        data = outp[1](filename=out_fname, cfg=cfg)
+        assert ret == 0
+        assert ret2 == 0
+        check_result(result_data=data, other_result=sw_res_data)
+        with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
+            cfgtxt = file.read()
+            assert '"outfile_type": "' + outp[0].name + '"' in cfgtxt
+    check_capsys(capsys=capsys)
+
+
 def check_txt_file_for_cfg_file(cfg_fname):
     """Check that text file for cfg file has all information."""
     txt_fname = fix_file_extension(filename=cfg_fname, ext_to_add='.txt',
@@ -72,6 +123,44 @@ def check_txt_file_for_cfg_file(cfg_fname):
             assert match_txt in txt
             num_keys_checked += 1
     assert num_keys_checked > 10
+
+
+@pytest.mark.parametrize('outp',
+                         [('excel', read_excel,
+                           'b.xlsx'),
+                          ('csv', read_csv,
+                           'b.csv')])
+@pytest.mark.parametrize('inp',
+                         [('sw_json_to_rrs',
+                           'test/test_extract_list/SW.json',
+                           'a.json'),
+                          ('sw_xml_to_rrs',
+                           'test/test_extract_list/SW.xml',
+                           'a.xml')])
+def test_gen_cfg_sw_ok2(capsys,  # pylint: disable=too-many-locals
+                        outp, inp):
+    """Test OK cases 2 of generate cfg exmaple."""
+    with TemporaryDirectory() as folder:
+        out_fname = folder + '/' + outp[2]
+        in_fname = folder + '/' + inp[2]
+        cfg_fname = folder + '/' + 'c.cfg'
+        copyfile(src=inp[1], dst=in_fname)
+        gen_cmd = ['cfg-example', '-k', inp[0], '-t', outp[0],
+                   '-o', cfg_fname]
+        ret = extract_cmd(gen_cmd)
+        extr_cmd = ['extract', '-i', in_fname, '-o', out_fname,
+                    '-c', cfg_fname]
+        ret2 = extract_cmd(extr_cmd)
+        with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
+            cfgtxt = file.read().lower()
+            assert '"outfile_type": "' + outp[0].lower() + '"' in cfgtxt
+        cfg = ExtractConfig(from_json_filename=cfg_fname)
+        data = outp[1](filename=out_fname, cfg=cfg)
+        assert ret == 0
+        assert ret2 == 0
+        check_result(result_data=data, other_result=sw_res_data)
+        check_txt_file_for_cfg_file(cfg_fname=cfg_fname)
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('outp',
