@@ -9,6 +9,7 @@ from copy import deepcopy
 import pytest
 import xmltodict
 from example_data import ExampleData
+from check_capsys import check_capsys
 from extract_list.handle_json_xml_output import \
     json_output
 from extract_list.extract_config import ExtractConfig
@@ -35,9 +36,7 @@ def test_read_in_json_ok1(capsys, dat, enc):
         json_output(data=dat, filename=fname, encoding=enc)
         res = read_in_json(filename=fname, encoding=enc)
         assert res == expected
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -50,9 +49,7 @@ def test_read_in_json_ok2(capsys, enc):
             file.write(txt)
         res = read_in_json(filename=fname, encoding=enc)
         assert res == [{'b': 'c1'}, {'d': 'åäö'}]
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('dat', DATA)
@@ -67,9 +64,7 @@ def test_handle_json_input_ok1(capsys, dat, enc):
         json_output(data=dat, filename=fname, encoding=enc)
         res = handle_json_input(filename=fname, cfg=cfg)
         assert res == expected
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -84,9 +79,7 @@ def test_handle_json_input_ok2(capsys, enc):
             file.write(txt)
         res = handle_json_input(filename=fname, cfg=cfg)
         assert res == [{'b': 'c1'}, {'d': 'åäö'}]
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('ind, pre, res',
@@ -101,10 +94,8 @@ def test_handle_json_input_ok2(capsys, enc):
 def test_strip_prefix_dict_ok1(capsys, ind, pre, res):
     """Test OK cases for strip_prefix_dict."""
     result = strip_prefix_dict(indata=ind, prefix=pre)
-    out, err = capsys.readouterr()
     assert result == res
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 XDATA = [
@@ -138,10 +129,8 @@ def test_read_in_xml(capsys,  # pylint: disable=too-many-arguments,too-many-posi
                               output=file, encoding=enc,
                               pretty=True)
         result = read_in_xml(filename=fname, encoding=enc, strip_at=at)
-    out, err = capsys.readouterr()
     assert result == outd[index]
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -167,10 +156,8 @@ def test_handle_xml_input(capsys,  # pylint: disable=too-many-arguments,too-many
                               output=file, encoding=enc,
                               pretty=True)
         result = handle_xml_input(filename=fname, cfg=incfg)
-    out, err = capsys.readouterr()
     assert result == outd[index]
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -199,10 +186,8 @@ def test_handle_input_c_xml(capsys,  # pylint: disable=too-many-arguments,too-ma
                               output=file, encoding=enc,
                               pretty=True)
         result = handle_input(filename=infname, cfg=incfg)
-    out, err = capsys.readouterr()
     assert result == outd[index]
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('dat', DATA)
@@ -220,9 +205,7 @@ def test_handle_input_c_json(capsys, dat, enc, name):
         json_output(data=dat, filename=fname, encoding=enc)
         res = handle_input(filename=infname, cfg=cfg)
         assert res == expected
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -237,9 +220,7 @@ def test_handle_input_c2_json(capsys, enc):
         exdata.write_json_to_file(filename=fname, encoding=enc)
         res = handle_input(filename=fname, cfg=cfg)
         assert res == exdata.data
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -260,6 +241,4 @@ def test_handle_input_c2_xml(capsys, enc):
         assert len(res1) == len(exp1)
         for key in res1.keys():
             assert res1[key] == exp1[key]
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)

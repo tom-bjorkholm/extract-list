@@ -8,6 +8,7 @@ from copy import deepcopy
 from enum import Enum, auto
 import pytest
 from check_cfgs_equal import check_cfgs_equal
+from check_capsys import check_capsys
 from extract_list.extract_config import ExtractConfig, \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
     LinkedLineSpec, LLineDict, _linked_line_from_json_array
@@ -24,15 +25,13 @@ def test_mainlinespec_1(capsys, lin, col):
     spec.line = deepcopy(lin)
     spec.columns = deepcopy(col)
     txt = str(spec)
-    out, err = capsys.readouterr()
     for lpart in lin:
         assert lpart in txt
     for key, val in col.items():
         assert key in txt
         for elem in val:
             assert elem in txt
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('lin, col',
@@ -46,7 +45,6 @@ def test_mainlinespec_2(capsys, lin, col):
                       'expand_at': []}
     spec = MainLineSpec(mld)
     txt = str(spec)
-    out, err = capsys.readouterr()
     for lpart in lin:
         assert lpart in txt
     for key, val in col.items():
@@ -55,8 +53,7 @@ def test_mainlinespec_2(capsys, lin, col):
             assert elem in txt
     assert lin == spec.line
     assert col == spec.columns
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('lin, col',
@@ -70,7 +67,6 @@ def test_mlinespecfromdict(capsys, lin, col):
                       'expand_at': []}
     spec = _mline_spec_from_dict(data=mld)
     txt = str(spec)
-    out, err = capsys.readouterr()
     for lpart in lin:
         assert lpart in txt
     for key, val in col.items():
@@ -79,8 +75,7 @@ def test_mlinespecfromdict(capsys, lin, col):
             assert elem in txt
     assert lin == spec.line
     assert col == spec.columns
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('lin, col, lmc, lcol',
@@ -97,7 +92,6 @@ def test_linklinespec_1(capsys, lin, col, lmc, lcol):
     spec.linked_main_column = deepcopy(lmc)
     spec.linked_column = deepcopy(lcol)
     txt = str(spec)
-    out, err = capsys.readouterr()
     for lpart in lin:
         assert lpart in txt
     for key, val in col.items():
@@ -108,8 +102,7 @@ def test_linklinespec_1(capsys, lin, col, lmc, lcol):
         assert lmpart in txt
     for lcp in lcol:
         assert lcp in txt
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('lin, col, lmc, lcol',
@@ -128,7 +121,7 @@ def test_linklinespec_2(capsys,  # pylint: disable=too-many-locals
                       'expand_at': []}
     spec = LinkedLineSpec(data=lld)
     txt = str(spec)
-    out, err = capsys.readouterr()
+    check_capsys(capsys=capsys)
     for lpart in lin:
         assert lpart in txt
     for key, val in col.items():
@@ -143,8 +136,6 @@ def test_linklinespec_2(capsys,  # pylint: disable=too-many-locals
     assert col == spec.columns
     assert lmc == spec.linked_main_column
     assert lcol == spec.linked_column
-    assert '' == out
-    assert '' == err
 
 
 @pytest.mark.parametrize('lin, col, lmc, lcol',
@@ -168,7 +159,7 @@ def test_llinefromjson(capsys,  # pylint: disable=too-many-locals
     assert speclist[0].linked_main_column == speclist[1].linked_main_column
     spec = speclist[0]
     txt = str(spec)
-    out, err = capsys.readouterr()
+    check_capsys(capsys=capsys)
     for lpart in lin:
         assert lpart in txt
     for key, val in col.items():
@@ -183,8 +174,6 @@ def test_llinefromjson(capsys,  # pylint: disable=too-many-locals
     assert col == spec.columns
     assert lmc == spec.linked_main_column
     assert lcol == spec.linked_column
-    assert '' == out
-    assert '' == err
 
 
 @pytest.mark.parametrize('main',
@@ -206,9 +195,7 @@ def test_cross_check_columns_ok(capsys, main, linked, keyinc):
     cfg.linked_lines = linked
     cfg.column_order = col_order
     cfg.cross_check_columns()
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('main, link, col, errmsg',
@@ -254,9 +241,7 @@ def test_cross_check_columns_nok(capsys, main, link, col, errmsg):
     cfg.include_key = False
     with pytest.raises(SystemExit):
         cfg.cross_check_columns()
-    out, err = capsys.readouterr()
-    assert errmsg in err
-    assert '' == out
+    check_capsys(capsys=capsys, in_err=errmsg)
 
 
 def test_check_extr_uniq_col_ok1(capsys):
@@ -274,9 +259,7 @@ def test_check_extr_uniq_col_ok1(capsys):
             lls.columns['c' + str(cnum) + '_' + str(ival)] = ['d', str(cnum)]
         cfg.linked_lines.append(lls)
     cfg.check_extract_unique_colnames()
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 def test_check_extr_uniq_col_nok1(capsys):
@@ -292,10 +275,11 @@ def test_check_extr_uniq_col_nok1(capsys):
     cfg.linked_lines.append(lls)
     with pytest.raises(SystemExit):
         cfg.check_extract_unique_colnames()
-    out, err = capsys.readouterr()
-    assert 'Column names of extracted data must be unique' in err
-    assert 'Repeated column name(s): b' in err
-    assert '' == out
+    errmsg = [
+        'Column names of extracted data must be unique',
+        'Repeated column name(s): b'
+    ]
+    check_capsys(capsys=capsys, in_err=errmsg)
 
 
 def test_check_csv_ok(capsys):
@@ -307,9 +291,7 @@ def test_check_csv_ok(capsys):
                            'lineterminator': None,
                            'escapechar': None}
     cfg.check_csv()
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 def test_check_csv_nok1(capsys):
@@ -322,10 +304,9 @@ def test_check_csv_nok1(capsys):
                            'escapechar': None}
     with pytest.raises(SystemExit):
         cfg.check_csv()
-    out, err = capsys.readouterr()
-    assert 'Configured out_csv_dialect is not valid' in err
-    assert 'Unknown csv dialect: csv.unix_dialects' in err
-    assert '' == out
+    errmsg = ['Configured out_csv_dialect is not valid',
+              'Unknown csv dialect: csv.unix_dialects']
+    check_capsys(capsys=capsys, in_err=errmsg)
 
 
 def test_check_csv_nok2(capsys):
@@ -338,10 +319,9 @@ def test_check_csv_nok2(capsys):
                            'escapechar': None}
     with pytest.raises(SystemExit):
         cfg.check_csv()
-    out, err = capsys.readouterr()
-    assert 'Configured out_csv_dialect is not valid' in err
-    assert "unexpected keyword argument 'dellimiter'" in err
-    assert '' == out
+    errmsgs = ['Configured out_csv_dialect is not valid',
+               "unexpected keyword argument 'dellimiter'"]
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 @pytest.mark.parametrize('var, varname',
@@ -351,9 +331,7 @@ def test_check_list_str_ok(capsys, var, varname):
     """Test OK cases of _check_list_str."""
     ExtractConfig._check_list_str(var=var,  # pylint: disable=protected-access
                                   varname=varname)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('var,name,msg',
@@ -376,10 +354,7 @@ def test_check_list_str_nok(capsys, var, name, msg):
     with pytest.raises(SystemExit):
         ExtractConfig._check_list_str(var=var,  # pylint: disable=protected-access  # noqa: E501
                                       varname=name)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for msg_elem in msg:
-        assert msg_elem in err
+    check_capsys(capsys=capsys, in_err=msg)
 
 
 @pytest.mark.parametrize('val,typ,name',
@@ -389,9 +364,7 @@ def test_check_type_ok(capsys, val, typ, name):
     """Test OK cases for _check_type."""
     ExtractConfig._check_type(var=val,  # pylint: disable=protected-access
                               oftype=typ, varname=name)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('val,typ,name, msgs',
@@ -416,10 +389,7 @@ def test_check_type_nok(capsys, val, typ, name, msgs):
     with pytest.raises(SystemExit):
         ExtractConfig._check_type(var=val,  # pylint: disable=protected-access
                                   oftype=typ, varname=name)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for single_msg in msgs:
-        assert single_msg in err
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 class Abc(Enum):
@@ -445,9 +415,7 @@ def test_check_enum_ok(capsys, val, name):
     """Test OK cases for _check_enum."""
     ExtractConfig._check_enum(var=val,  # pylint: disable=protected-access
                               enum_type=Abc, varname=name)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 def test_check_enum_nok1(capsys):
@@ -456,10 +424,9 @@ def test_check_enum_nok1(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_enum(var=val,  # pylint: disable=protected-access
                                   enum_type=Abc, varname='name1')
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert 'Configuration parameter "name1" has wrong type' in err
-    assert 'Type is "Ghj", but expected type "Abc".' in err
+    msgs = ['Configuration parameter "name1" has wrong type',
+            'Type is "Ghj", but expected type "Abc".']
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 @pytest.mark.parametrize('name', ['abc', 'def'])
@@ -471,9 +438,7 @@ def test_check_dict_str_lst_ok(capsys, name, dval):
     """Test OK cases of _check_dict_str_lst_str."""
     ExtractConfig._check_dict_str_lst_str(var=dval,  # pylint: disable=protected-access # noqa: E501
                                           varname=name)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('val,name,errmsgs',
@@ -501,10 +466,7 @@ def test_check_dict_str_lst_nok(capsys, val, name, errmsgs):
     with pytest.raises(SystemExit):
         ExtractConfig._check_dict_str_lst_str(var=val,  # pylint: disable=protected-access # noqa: E501
                                               varname=name)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for msg in errmsgs:
-        assert msg in err
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_mainline_part_ok1(capsys):
@@ -514,9 +476,7 @@ def test_check_mainline_part_ok1(capsys):
     a.columns = {'name': ['ef'], 'address': ['gh']}
     ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                        MainLineSpec, 'a')
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 def test_check_mainline_part_ok2(capsys):
@@ -528,9 +488,7 @@ def test_check_mainline_part_ok2(capsys):
     a.linked_column = ['ab', 'cd', 'ef']
     ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                        LinkedLineSpec, 'a')
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 def test_check_mainline_part_nok1(capsys):
@@ -543,10 +501,9 @@ def test_check_mainline_part_nok1(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                            MainLineSpec, 'a')
-    out, err = capsys.readouterr()
-    assert 'Expected MainLineSpec for a, but found' in err
-    assert 'of type LinkedLineSpec' in err
-    assert '' == out
+    errmsgs = ['Expected MainLineSpec for a, but found',
+               'of type LinkedLineSpec']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_mainline_part_nok2(capsys):
@@ -557,11 +514,9 @@ def test_check_mainline_part_nok2(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                            MainLineSpec, 'a')
-    out, err = capsys.readouterr()
-    assert 'Expected a list of strings in line in a' in err
-    assert 'but found element: 1' in err
-    assert 'of type int' in err
-    assert '' == out
+    errmsgs = ['Expected a list of strings in line in a',
+               'but found element: 1', 'of type int']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_mainline_part_nok3(capsys):
@@ -572,11 +527,9 @@ def test_check_mainline_part_nok3(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                            MainLineSpec, 'a')
-    out, err = capsys.readouterr()
-    assert 'Expected a list of strings in name in columns in a' in err
-    assert 'but found element: 1' in err
-    assert 'of type int' in err
-    assert '' == out
+    errmsgs = ['Expected a list of strings in name in columns in a',
+               'but found element: 1', 'of type int']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_linkedline_ok1(capsys):
@@ -588,9 +541,7 @@ def test_check_linkedline_ok1(capsys):
     a.linked_column = ['ab', 'cd', 'ef']
     ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                     'a')
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 def test_check_linkedline_nok0(capsys):
@@ -603,10 +554,9 @@ def test_check_linkedline_nok0(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline(a,  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    out, err = capsys.readouterr()
-    assert 'Expected a list of LinkedLineSpec in a' in err
-    assert 'of type LinkedLineSpec' in err
-    assert '' == out
+    errmsgs = ['Expected a list of LinkedLineSpec in a',
+               'of type LinkedLineSpec']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_linkedline_nok1(capsys):
@@ -619,10 +569,9 @@ def test_check_linkedline_nok1(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    out, err = capsys.readouterr()
-    assert 'Expected LinkedLineSpec for element in a, but found:' in err
-    assert 'of type MainLineSpec' in err
-    assert '' == out
+    errmsgs = ['Expected LinkedLineSpec for element in a, but found:',
+               'of type MainLineSpec']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_linkedline_nok2(capsys):
@@ -635,10 +584,9 @@ def test_check_linkedline_nok2(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    out, err = capsys.readouterr()
-    assert 'Expected a list of strings in line in element in a' in err
-    assert 'of type int' in err
-    assert '' == out
+    errmsgs = ['Expected a list of strings in line in element in a',
+               'of type int']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_linkedline_nok3(capsys):
@@ -651,10 +599,10 @@ def test_check_linkedline_nok3(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    out, err = capsys.readouterr()
-    assert 'Expected a list of strings in linked_main_column in element in a' in err  # noqa: E501
-    assert 'of type int' in err
-    assert '' == out
+    errmsgs = [
+        'Expected a list of strings in linked_main_column in element in a',
+        'of type int']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_linkedline_nok4(capsys):
@@ -667,10 +615,9 @@ def test_check_linkedline_nok4(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    out, err = capsys.readouterr()
-    assert 'Expected a list of strings in linked_column in element in a' in err  # noqa: E501
-    assert 'of type int' in err
-    assert '' == out
+    errmsgs = ['Expected a list of strings in linked_column in element in a',
+               'of type int']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 def test_check_linkedline_nok5(capsys):
@@ -683,10 +630,9 @@ def test_check_linkedline_nok5(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a, 2],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    out, err = capsys.readouterr()
-    assert 'Expected LinkedLineSpec for element in a' in err
-    assert 'of type int' in err
-    assert '' == out
+    errmsgs = ['Expected LinkedLineSpec for element in a',
+               'of type int']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 @pytest.mark.parametrize('fval', list(InFileType))
@@ -694,9 +640,7 @@ def test_check_filetype_ok1(capsys, fval):
     """Test OK cases 1 of _check_filetype."""
     ExtractConfig._check_filetype(fval,  # pylint: disable=protected-access # noqa: E501
                                   InFileType)
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('fval', list(OutFileType))
@@ -704,9 +648,7 @@ def test_check_filetype_ok(capsys, fval):
     """Test OK cases  2 of _check_filetype."""
     ExtractConfig._check_filetype(fval,  # pylint: disable=protected-access # noqa: E501
                                   OutFileType)
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 def test_check_filetype_nok1(capsys):
@@ -714,9 +656,8 @@ def test_check_filetype_nok1(capsys):
     with pytest.raises(SystemExit):
         ExtractConfig._check_filetype(1,  # pylint: disable=protected-access # noqa: E501
                                       OutFileType)
-    out, err = capsys.readouterr()
-    assert 'File type 1 is not of type OutFileType' in err
-    assert '' == out
+    check_capsys(capsys=capsys,
+                 in_err='File type 1 is not of type OutFileType')
 
 
 @pytest.mark.parametrize('attr',
@@ -727,9 +668,7 @@ def test_cross_check_attrs_ok(capsys, attr):
     cfg = ExtractConfig()
     cfg.out_xml_attributes = attr
     cfg.cross_check_attrs()
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('attr, errmsgs',
@@ -745,11 +684,9 @@ def test_cross_check_attrs_nok(capsys, attr, errmsgs):
     cfg.out_xml_attributes = attr
     with pytest.raises(SystemExit):
         cfg.cross_check_attrs()
-    out, err = capsys.readouterr()
-    for msg in errmsgs:
-        assert msg in err
-    assert 'but no column with that name extracted' in err
-    assert '' == out
+    checkmsg = deepcopy(errmsgs)
+    checkmsg.append('but no column with that name extracted')
+    check_capsys(capsys=capsys, in_err=checkmsg)
 
 
 def test_extract_config_nochange(capsys):
@@ -758,6 +695,4 @@ def test_extract_config_nochange(capsys):
     txt = cfg.as_json_string()
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)

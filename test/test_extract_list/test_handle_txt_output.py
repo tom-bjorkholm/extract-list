@@ -6,6 +6,7 @@
 
 from tempfile import TemporaryDirectory
 import pytest
+from check_capsys import check_capsys
 from extract_list.handle_txt_output import handle_txt_output, print_col
 from extract_list.extract_config import ExtractConfig
 
@@ -23,9 +24,7 @@ def test_print_col_ok(capsys, txt, length):
             res = file.readline()
             assert len(res) == length
             assert res.strip() == txt
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 def column_starts(line: str) -> list[str]:
@@ -76,9 +75,7 @@ def test_handle_txt_output(capsys,  # pylint: disable=too-many-locals
                     assert prev_col_start == col_start
                 result.append(row.split())
             assert res == result
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -103,7 +100,5 @@ def test_handle_txt_output2(capsys,  # pylint: disable=too-many-positional-argum
     cfg.outfile_encoding = enc
     cfg.column_order = cols
     handle_txt_output(data=dat, filename=fname, cfg=cfg)
-    out, err = capsys.readouterr()
     assert mocktxtout.count == 1
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)

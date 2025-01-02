@@ -7,6 +7,7 @@
 from tempfile import TemporaryDirectory
 from copy import deepcopy
 import pytest
+from check_capsys import check_capsys
 from extract_list.handle_json_xml_output import \
     json_output, handle_json_output, append_to_key, handle_xml_output
 from extract_list.extract_config import ExtractConfig
@@ -30,9 +31,7 @@ def test_json_output_ok1(capsys, data, enc):
         json_output(data=data, filename=fname, encoding=enc)
         res = read_in_json(filename=fname, encoding=enc)
         assert res == data
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -51,9 +50,7 @@ def test_json_output_ok2(capsys, data, enc):
         handle_json_output(data=data, filename=fname, cfg=cfg)
         res = read_in_json(filename=fname, encoding=enc)
         assert res == data
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
@@ -79,9 +76,7 @@ def test_json_output_ok3(capsys, monkeypatch, dat, enc, fname):
     monkeypatch.setattr('extract_list.handle_json_xml_output.json_output',
                         mock_j_out)
     handle_json_output(data=dat, filename=fname, cfg=cfg)
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('row, key, pre, res',
@@ -95,10 +90,8 @@ def test_append_to_key_ok(capsys, row, key, pre, res):
     """Test OK cases of append_to_key."""
     rowarg = deepcopy(row)
     append_to_key(row=rowarg, key=key, prefix=pre)
-    out, err = capsys.readouterr()
     assert rowarg == res
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('enc', ['utf8', 'iso8859-1'])
@@ -132,10 +125,8 @@ def test_xml_output_1(capsys,  # pylint: disable=too-many-arguments,too-many-pos
         cfg.column_name_for_key = key
         handle_xml_output(data=dat, filename=fname, cfg=cfg)
         result = read_in_xml(filename=fname, encoding=enc, strip_at=False)
-    out, err = capsys.readouterr()
     assert result == res
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 def dict_add(thedict, dictkey, addtxt):
@@ -187,7 +178,6 @@ def test_xml_output_2(capsys,  # pylint: disable=too-many-arguments,too-many-pos
     cfg.column_name_for_key = key
     cfg.out_xml_attributes = attr
     handle_xml_output(data=dat, filename='/tmp/a.xml', cfg=cfg)
-    out, err = capsys.readouterr()
     assert mock_unparse.count == 1
     if len(attr) != 0:
         assert len(mock_key_append.calls) == 1
@@ -198,5 +188,4 @@ def test_xml_output_2(capsys,  # pylint: disable=too-many-arguments,too-many-pos
         assert cattr == mock_key_append.calls['@']
     else:
         assert len(mock_key_append.calls) == 0
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)

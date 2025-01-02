@@ -48,10 +48,8 @@ def test_get_at_path_ok2(capsys, ind, pat, res):
     """Test OK cases 2 of get_at_path."""
     ret = get_at_path(indata=deepcopy(ind), path=pat,
                       missing=MissingInputForColumn.EMPTY)
-    out, err = capsys.readouterr()
     assert ret == res
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('mis',
@@ -78,10 +76,7 @@ def test_get_at_path_nok1(capsys, mis, ind, pat, msgs):
     """Test OK cases 1 of get_at_path."""
     with pytest.raises(SystemExit):
         _ = get_at_path(indata=deepcopy(ind), path=pat, missing=mis)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for errmsg in msgs:
-        assert errmsg in err
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 @pytest.mark.parametrize('ind,pat,msgs',
@@ -102,10 +97,7 @@ def test_get_at_path_nok2(capsys, ind, pat, msgs):
     with pytest.raises(SystemExit):
         _ = get_at_path(indata=deepcopy(ind), path=pat,
                         missing=MissingInputForColumn.ERROR)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for errmsg in msgs:
-        assert errmsg in err
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 dd1 = {'a': 'bc', 'b': 'de', 'c': 4}
@@ -144,9 +136,7 @@ def test_get_lines_ok1(capsys, mis, inp, pat, res):
         assert line == result[index]
         counter += 1
     assert len(result) == counter
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('inp,pat',
@@ -166,9 +156,7 @@ def test_get_lines_ok2(capsys, inp, pat):
         counter += 1
         assert 0 == index
     assert 1 == counter
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('inp,pat',
@@ -189,10 +177,8 @@ def test_get_lines_nok1(capsys, inp, pat):
             counter += 1
             assert 0 == index
     assert 0 == counter
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert 'No such key ' in err
-    assert ' in relevant section' in err
+    errmsgs = ['No such key ', ' in relevant section']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 @pytest.mark.parametrize('inp, pat',
@@ -212,10 +198,9 @@ def test_get_lines_nok2(capsys, inp, pat):
             counter += 1
             assert 0 == index
     assert 0 == counter
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert 'Key "MissingInputForColumn.EMPTY" is not str' in err
-    assert ' is not str or int as expected' in err
+    errmsgs = ['Key "MissingInputForColumn.EMPTY" is not str',
+               ' is not str or int as expected']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 @pytest.mark.parametrize('mis', [MissingInputForColumn.EMPTY,
@@ -229,10 +214,8 @@ def test_get_columns_ok1(capsys, mis, inp, spec, res):
     """Test OK cases 1 of get_columns."""
     ret = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
                       missing=mis)
-    out, err = capsys.readouterr()
     assert res == ret
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('inp,spec,res',
@@ -244,10 +227,8 @@ def test_get_columns_ok2(capsys, inp, spec, res):
     """Test OK cases 2 of get_columns."""
     ret = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
                       missing=MissingInputForColumn.EMPTY)
-    out, err = capsys.readouterr()
     assert res == ret
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('inp,spec,msg',
@@ -260,10 +241,8 @@ def test_get_columns_nok1(capsys, inp, spec, msg):
     with pytest.raises(SystemExit):
         _ = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
                         missing=MissingInputForColumn.ERROR)
-    out, err = capsys.readouterr()
-    assert msg in err
-    assert '' == out
-    assert '" in relevant section in input data.' in err
+    errmsgs = [msg, '" in relevant section in input data.']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 @pytest.mark.parametrize('inp,spec,msg',
@@ -276,10 +255,8 @@ def test_get_columns_nok2(capsys, inp, spec, msg):
     with pytest.raises(SystemExit):
         _ = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
                         missing=MissingInputForColumn.ERROR)
-    out, err = capsys.readouterr()
-    assert msg in err
-    assert '' == out
-    assert 'but found data of type' in err
+    errmsgs = [msg, 'but found data of type']
+    check_capsys(capsys=capsys, in_err=errmsgs)
 
 
 ta1 = (dfa, ['g', 'h'],
@@ -393,9 +370,7 @@ def test_extract_main_line_ok1(capsys, tax):
     for _ in extract_main_line(indata=tax[0], cfg=cfg):
         num += 1
     assert num == len(tax[6])
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 tb1 = (dfm, ['g', 'k'],
@@ -424,10 +399,7 @@ def test_extract_main_line_nok1(capsys, tbx, msgs):
     with pytest.raises(SystemExit):
         for _ in extract_main_line(indata=tbx[0], cfg=cfg):
             pass
-    out, err = capsys.readouterr()
-    assert '' == out
-    for msg in msgs:
-        assert msg in err
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 tc1 = (dfa, ['g', 'h'],
@@ -500,10 +472,8 @@ def test_extract_data_mainline_ok1(capsys, tcx):
     cfg.column_name_for_key = tcx[5]
     cfg.linked_lines = []
     res = extract_data(indata=deepcopy(tcx[0]), cfg=cfg)
-    out, err = capsys.readouterr()
     assert res == tcx[6]
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('spec,res',
@@ -513,10 +483,8 @@ def test_extract_data_mainline_ok1(capsys, tcx):
 def test_create_none_columns(capsys, spec, res):
     """Test create_none_columns."""
     ret = create_none_columns(colspec=deepcopy(spec))
-    out, err = capsys.readouterr()
     assert res == ret
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('fma,fli,res',
@@ -537,9 +505,7 @@ def test_add_fr_linked_main_ok1(capsys, fma, fli, res):
     """Tesk OK cases 1 of add_from_linked_to_main."""
     ret = add_from_linked_to_main(from_main=deepcopy(fma),
                                   from_linked=deepcopy(fli))
-    out, err = capsys.readouterr()
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
     assert len(ret) == len(res)
     if len(res) == 0:
         return
@@ -615,10 +581,8 @@ def test_extr_linked_line_ok1(capsys, ind, conf, res):
     cfg.main_line = main_line
     ret = extract_linked_line(indata=ind, main_line=main_line,
                               cfg=cfg, linked_spec=linked_spec)
-    out, err = capsys.readouterr()
     assert ret == res
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('ind,conf,msgs',
@@ -652,10 +616,7 @@ def test_extr_linked_line_nok1(capsys, ind, conf, msgs):
     with pytest.raises(SystemExit):
         _ = extract_linked_line(indata=ind, main_line=main_line,
                                 cfg=cfg, linked_spec=linked_spec)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for msg in msgs:
-        assert msg in err
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 @pytest.mark.parametrize('ind,conf,res',
@@ -767,10 +728,8 @@ def test_extract_data_ok1(capsys, ind, conf, res):
     cfg.one_output_line_per_main_line = conf[4]
     cfg.include_key = conf[5]
     ret = extract_data(indata=ind, cfg=cfg)
-    out, err = capsys.readouterr()
     assert ret == res
-    assert '' == out
-    assert '' == err
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('ind,conf,msgs',
@@ -820,7 +779,4 @@ def test_extract_data_nok1(capsys, ind, conf, msgs):
     cfg.include_key = conf[5]
     with pytest.raises(SystemExit):
         _ = extract_data(indata=ind, cfg=cfg)
-    out, err = capsys.readouterr()
-    assert '' == out
-    for msg in msgs:
-        assert msg in err
+    check_capsys(capsys=capsys, in_err=msgs)

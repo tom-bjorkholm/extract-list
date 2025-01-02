@@ -6,6 +6,7 @@
 
 from tempfile import TemporaryDirectory
 import pytest
+from check_capsys import check_capsys
 from excel_list_transform.handle_csv import read_csv_named
 from excel_list_transform.handle_excel import read_excel_named
 from extract_list.handle_output import handle_output
@@ -86,6 +87,4 @@ def test_handle_output_ok1(capsys,  # pylint: disable=too-many-arguments,too-man
         res_fname = dirname + '/' + resfile
         res_data = reader(filename=res_fname, cfg=cfg)
         assert res_data == dat
-    out, err = capsys.readouterr()
-    assert '' == err
-    assert '' == out
+    check_capsys(capsys=capsys)
