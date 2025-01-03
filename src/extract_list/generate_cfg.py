@@ -10,11 +10,14 @@ from excel_list_transform.str_to_enum import string_to_enum_best_match
 from excel_list_transform.file_extension import fix_file_extension
 from extract_list.config_enums import OutFileType, InFileType, \
     MissingInputForColumn
-from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config import ExtractConfig, \
+    MLineDict, MainLineSpec, LLineDict, LinkedLineSpec
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_sw_to_rrs import generate_txt_sw_to_rrs
-from extract_list.generate_txt_example_json import generate_txt_example_json
-from extract_list.generate_txt_example_xml import generate_txt_example_xml
+from extract_list.generate_txt_example_json import \
+    generate_txt_example_json, generate_txt_example2_json
+from extract_list.generate_txt_example_xml import \
+    generate_txt_example_xml, generate_txt_example2_xml
 
 
 def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
@@ -29,6 +32,47 @@ def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
         cfg.infile_type = InFileType.XML
         cfg.main_line.line.insert(0, 'data')
         cfg.linked_lines[0].line.insert(0, 'data')
+    cfg.write(to_json_filename=outfilename)
+    return 0
+
+
+def generate_cfg_example2(outfilename: str, cfgtype: CfgTypes,
+                          outtype: OutFileType) -> int:
+    """Generate cfg file for example."""
+    assert cfgtype in (CfgTypes.EXAMPLE2_JSON, CfgTypes.EXAMPLE2_XML)
+    cfg = ExtractConfig()
+    main_col = {'Customer name': ['name'],
+                'Street': ['address', 'street'],
+                'Street number': ['address', 'number']}
+    mline: MLineDict = {'line': ['customers'], 'columns': main_col,
+                        'expand_at': []}
+    cfg.main_line = MainLineSpec(data=mline)
+    l1col = {'What': ['items', 'item'],
+             'How many': ['items', 'quantity']}
+    l1line: LLineDict = {'line': ['orders'], 'columns': l1col,
+                         'linked_column': ['customer'],
+                         'linked_main_column': ['customer_number'],
+                         'expand_at':  [['items']]}
+    l2col = {'Deliver by': ['deliver_by']}
+    l2line: LLineDict = {'line': ['delivery_method'], 'columns': l2col,
+                         'linked_column': ['for_street'],
+                         'linked_main_column': ['address', 'street'],
+                         'expand_at':  []}
+    cfg.linked_lines = [LinkedLineSpec(data=l1line),
+                        LinkedLineSpec(data=l2line)]
+    cfg.outfile_type = outtype
+    cfg.one_output_line_per_main_line = False
+    cfg.column_order = ['What', 'How many', 'Customer name',
+                        'Street', 'Street number', 'Deliver by']
+    cfg.include_key = False
+    cfg.missing_input_for_column = MissingInputForColumn.ERROR
+    if cfgtype == CfgTypes.EXAMPLE2_JSON:
+        cfg.infile_type = InFileType.JSON
+    else:  # XML
+        cfg.infile_type = InFileType.XML
+        cfg.main_line.line.insert(0, 'data')
+        cfg.linked_lines[0].line.insert(0, 'data')
+        cfg.linked_lines[1].line.insert(0, 'data')
     cfg.write(to_json_filename=outfilename)
     return 0
 
@@ -84,11 +128,15 @@ def get_out_file_types() -> list[str]:
 
 TXTFUNCS = {CfgTypes.EXAMPLE_JSON: generate_txt_example_json,
             CfgTypes.EXAMPLE_XML: generate_txt_example_xml,
+            CfgTypes.EXAMPLE2_JSON: generate_txt_example2_json,
+            CfgTypes.EXAMPLE2_XML: generate_txt_example2_xml,
             CfgTypes.SW_JSON_TO_RRS: generate_txt_sw_to_rrs,
             CfgTypes.SW_XML_TO_RRS: generate_txt_sw_to_rrs}
 
 CFGFUNCS = {CfgTypes.EXAMPLE_JSON: generate_cfg_example,
             CfgTypes.EXAMPLE_XML: generate_cfg_example,
+            CfgTypes.EXAMPLE2_JSON: generate_cfg_example2,
+            CfgTypes.EXAMPLE2_XML: generate_cfg_example2,
             CfgTypes.SW_JSON_TO_RRS: generate_cfg_sw_to_rrs,
             CfgTypes.SW_XML_TO_RRS: generate_cfg_sw_to_rrs}
 

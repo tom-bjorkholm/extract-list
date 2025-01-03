@@ -27,7 +27,8 @@ def _check_out_stream(out_err: str, in_it: Optional[str | list[str]],
         assert isinstance(in_it, str), \
             f'Expecting something that is {type(in_it).__name__} ' + \
             'not str in output.'
-        assert in_it in out_err
+        assert in_it in out_err, \
+            f'Expected {in_it} in {name}, but it is {out_err}'
 
 
 def check_capsys(capsys, in_out: Optional[str | list[str]] = None,

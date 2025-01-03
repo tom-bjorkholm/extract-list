@@ -7,6 +7,8 @@
 from typing import Optional, Tuple, Generator, cast, Sequence
 import sys
 from copy import deepcopy
+from datetime import datetime
+from functools import cmp_to_key
 from excel_list_transform.commontypes import JsonType
 from extract_list.extract_config import ExtractConfig, LinkedLineSpec
 from extract_list.config_enums import MissingInputForColumn
@@ -239,6 +241,49 @@ def add_from_linked_to_main(from_main: Data, from_linked: Data) -> Data:
     return ret
 
 
+class RowCompare:  # pylint: disable=too-few-public-methods
+    """Function object class to compare rows for sorting."""
+
+    def __init__(self, cols: list[str]) -> None:
+        """Construct object that will be used to compare rows."""
+        self.cols: list[str] = cols
+
+    def compare(self, left_row: Row, right_row: Row) -> int:
+        """Compare two Rows."""
+        for col in self.cols:
+            left = left_row[col]
+            right = right_row[col]
+            if left is None and right is not None:
+                return -1
+            if left is not None and col is None:
+                return 1
+            if left is None and right is None:
+                continue
+            assert left is not None  # keep mypy happy
+            assert right is not None  # keep mypy happy
+            if isinstance(left, (str, datetime)) or \
+               isinstance(right, (str, datetime)):
+                # keep mypy happy
+                if str(left) < str(right):
+                    return -1
+                if str(right) < str(left):
+                    return 1
+            else:
+                assert not isinstance(left, (str, datetime))
+                assert not isinstance(right, (str, datetime))
+                if left < right:
+                    return -1
+                if right < left:
+                    return 1
+        return 0
+
+
+def sort_rows(data: Data, cfg: ExtractConfig) -> Data:
+    """Sort the rows in data as configured."""
+    cmp = RowCompare(cfg.get_order_rows_by())
+    return sorted(data, key=cmp_to_key(cmp.compare))
+
+
 def extract_data(indata: JsonType, cfg: ExtractConfig) -> Data:
     """Extract columns (with values) from input data."""
     data: Data = []
@@ -257,4 +302,4 @@ def extract_data(indata: JsonType, cfg: ExtractConfig) -> Data:
             data_for_row = add_from_linked_to_main(from_main=data_for_row,
                                                    from_linked=linkdata)
         data.extend(data_for_row)
-    return data
+    return sort_rows(data=data, cfg=cfg)

@@ -20,3 +20,5 @@ class CfgTypes(Enum):
     SW_XML_TO_RRS = auto()
     EXAMPLE_JSON = auto()
     EXAMPLE_XML = auto()
+    EXAMPLE2_JSON = auto()
+    EXAMPLE2_XML = auto()

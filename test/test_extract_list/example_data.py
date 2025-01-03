@@ -31,9 +31,13 @@ class ExampleData():
                                       {'item': 'orange', 'quantity': 6}],
                             'customer': 22},
                     '345': {'items': [{'item': 'carrot', 'quantity': 2},
-                                      {'item': 'orange', 'quantity': 20}],
-                            'customer': 66},
-                }
+                                      {'item': 'orange', 'quantity': 70}],
+                            'customer': 66}
+                },
+                'delivery_method': [
+                    {'for_street': 'Another Street', 'deliver_by': 'bike'},
+                    {'for_street': 'Some Road', 'deliver_by': 'car'}
+                ]
             }
 
     @staticmethod

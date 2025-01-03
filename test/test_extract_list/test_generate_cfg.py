@@ -12,9 +12,9 @@ from excel_list_transform.file_extension import fix_file_extension
 from example_data import ExampleData
 from test_handle_output import read_csv, read_excel, read_json
 from check_capsys import check_capsys
-from check_result import check_result
+from check_result import check_result, ex_res, ex2_res
 from extract_list.generate_cfg import generate_cfg_example, \
-    generate_cfg_sw_to_rrs
+    generate_cfg_example2, generate_cfg_sw_to_rrs
 from extract_list.extract_config import ExtractConfig
 from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
@@ -32,10 +32,16 @@ from extract_list.extract_cmd import extract_cmd
 @pytest.mark.parametrize('inp',
                          [(CfgTypes.EXAMPLE_JSON,
                            ExampleData.write_json_to_file,
-                           'a.json'),
+                           'a.json', ex_res, generate_cfg_example),
                           (CfgTypes.EXAMPLE_XML,
                            ExampleData.write_xml_to_file,
-                           'a.xml')])
+                           'a.xml', ex_res, generate_cfg_example),
+                          (CfgTypes.EXAMPLE2_JSON,
+                           ExampleData.write_json_to_file,
+                           'd.json', ex2_res, generate_cfg_example2),
+                          (CfgTypes.EXAMPLE2_XML,
+                           ExampleData.write_xml_to_file,
+                           'd.xml', ex2_res, generate_cfg_example2)])
 def test_gen_cfg_ex_ok1(capsys, outp, inp):
     """Test OK cases 1 of generate cfg exmaple."""
     with TemporaryDirectory() as folder:
@@ -44,16 +50,15 @@ def test_gen_cfg_ex_ok1(capsys, outp, inp):
         cfg_fname = folder + '/' + 'c.cfg'
         example = ExampleData()
         inp[1](example, filename=in_fname)
-        ret = generate_cfg_example(outfilename=cfg_fname,
-                                   cfgtype=inp[0],
-                                   outtype=outp[0])
+        ret = inp[4](outfilename=cfg_fname, cfgtype=inp[0],
+                     outtype=outp[0])
         ret2 = extract_func(in_file_name=in_fname, cfg_file_name=cfg_fname,
                             out_file_name=out_fname)
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](filename=out_fname, cfg=cfg)
         assert ret == 0
         assert ret2 == 0
-        check_result(result_data=data)
+        check_result(result_data=data, other_result=inp[3])
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
             assert '"outfile_type": "' + outp[0].name + '"' in cfgtxt
@@ -61,14 +66,14 @@ def test_gen_cfg_ex_ok1(capsys, outp, inp):
 
 
 sw_res_data = [
-    {'Class': 'Optimist', 'Division': 'y-div', 'Nationality': 'USA',
-     'Sail Number': '123', 'Boat Name': 'Sally', 'Name': 'Donald Duck',
-     'Club Name': 'ABC',
-     'Email': 'd.duck@gmail.com.us', 'Phone': '+1555123456'},
     {'Class': 'Dragon', 'Division': 'b-div', 'Nationality': 'CAN',
      'Sail Number': '456', 'Boat Name': 'Molly', 'Name': 'Mickey Mouse',
      'Club Name': 'DEF',
-     'Email': 'm.mouse@icloud.com.can', 'Phone': '+1555234567'}
+     'Email': 'm.mouse@icloud.com.can', 'Phone': '+1555234567'},
+    {'Class': 'Optimist', 'Division': 'y-div', 'Nationality': 'USA',
+     'Sail Number': '123', 'Boat Name': 'Sally', 'Name': 'Donald Duck',
+     'Club Name': 'ABC',
+     'Email': 'd.duck@gmail.com.us', 'Phone': '+1555123456'}
 ]
 
 
@@ -173,10 +178,16 @@ def test_gen_cfg_sw_ok2(capsys,  # pylint: disable=too-many-locals
 @pytest.mark.parametrize('inp',
                          [('example_json',
                            ExampleData.write_json_to_file,
-                           'a.json'),
+                           'a.json', ex_res),
                           ('example_xml',
                            ExampleData.write_xml_to_file,
-                           'a.xml')])
+                           'a.xml', ex_res),
+                          ('example2_json',
+                           ExampleData.write_json_to_file,
+                           'd.json', ex2_res),
+                          ('example2_xml',
+                           ExampleData.write_xml_to_file,
+                           'd.xml', ex2_res)])
 def test_gen_cfg_ex_ok2(capsys,  # pylint: disable=too-many-locals
                         outp, inp):
     """Test OK cases 2 of generate cfg exmaple."""
@@ -199,6 +210,6 @@ def test_gen_cfg_ex_ok2(capsys,  # pylint: disable=too-many-locals
         data = outp[1](filename=out_fname, cfg=cfg)
         assert ret == 0
         assert ret2 == 0
-        check_result(result_data=data)
+        check_result(result_data=data, other_result=inp[3])
         check_txt_file_for_cfg_file(cfg_fname=cfg_fname)
     check_capsys(capsys=capsys)

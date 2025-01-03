@@ -177,5 +177,17 @@ def generate_syntax_txt(file: TextIO) -> None:
     Specifying a column in the output column order that has not been extracted
     is an error. It is also an error to extract a column and not specify it
     in the output column order.
+
+    Output line order
+    =================
+
+    The configuration parameter "order_rows_by" specifies that lines produced
+    shall be sorted based on these columns. The most significant column shall
+    be first in the list of column names.
+
+    The default order or lines produced is to order them based on the list
+    of columns in the "column_order" configuration parameter. Leave
+    "order_rows_by" as empty list unless you have a reason to request
+    another specific order than the default.
     '''
     print(msg, file=file)

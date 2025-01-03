@@ -471,6 +471,7 @@ def test_extract_data_mainline_ok1(capsys, tcx):
     cfg.include_key = tcx[4]
     cfg.column_name_for_key = tcx[5]
     cfg.linked_lines = []
+    cfg.column_order = []
     res = extract_data(indata=deepcopy(tcx[0]), cfg=cfg)
     assert res == tcx[6]
     check_capsys(capsys=capsys)
@@ -727,6 +728,7 @@ def test_extract_data_ok1(capsys, ind, conf, res):
     cfg.main_line = main_line
     cfg.one_output_line_per_main_line = conf[4]
     cfg.include_key = conf[5]
+    cfg.column_order = []
     ret = extract_data(indata=ind, cfg=cfg)
     assert ret == res
     check_capsys(capsys=capsys)

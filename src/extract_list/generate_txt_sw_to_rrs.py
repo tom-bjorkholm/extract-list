@@ -10,8 +10,6 @@ from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_syntax import generate_syntax_txt
 
-# pylint: disable=duplicate-code
-
 
 def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
                            outtype: OutFileType) -> int:

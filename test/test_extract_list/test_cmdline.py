@@ -193,22 +193,26 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                           ('cfg-example -k abc -t csv -o out.cfg',
                            ['usage: extract_list cfg-example [-h] -k',
                             '{sw_json_to_rrs,sw_xml_to_rrs,' +
-                            'example_json,example_xml}',
+                            'example_json,example_xml,' +
+                            'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             "invalid choice: 'abc' (choose from " +
                             "'sw_json_to_rrs', 'sw_xml_to_rrs', " +
-                            "'example_json', 'example_xml')"]),
+                            "'example_json', 'example_xml', " +
+                            "'example2_json', 'example2_xml')"]),
                           ('cfg-example -t csv -o out.cfg',
                            ['usage: extract_list cfg-example [-h] -k',
                             '{sw_json_to_rrs,sw_xml_to_rrs,' +
-                            'example_json,example_xml}',
+                            'example_json,example_xml,' +
+                            'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: -k/--kind']),
                           ('cfg-example -k sw_json_to_rrs -o out.cfg',
                            ['usage: extract_list cfg-example [-h] -k',
                             '{sw_json_to_rrs,sw_xml_to_rrs,' +
-                            'example_json,example_xml}',
+                            'example_json,example_xml,' +
+                            'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: ' +
@@ -216,7 +220,8 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                           ('cfg-example -k sw_json_to_rrs -t abc -o out.cfg',
                            ['usage: extract_list cfg-example [-h] -k',
                             '{sw_json_to_rrs,sw_xml_to_rrs,' +
-                            'example_json,example_xml}',
+                            'example_json,example_xml,' +
+                            'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             "extract_list cfg-example: error: argument " +
                             "-t/--typeofoutput: invalid choice: 'abc' " +
@@ -225,7 +230,8 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                           ('cfg-example -k sw_json_to_rrs -t csv',
                            ['usage: extract_list cfg-example [-h] -k',
                             '{sw_json_to_rrs,sw_xml_to_rrs,' +
-                            'example_json,example_xml}',
+                            'example_json,example_xml,' +
+                            'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: ' +

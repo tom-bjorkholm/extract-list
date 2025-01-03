@@ -133,6 +133,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.outfile_excel_library: ExcelLib = ExcelLib.PYLIGHTXL
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
                                         'Street', 'Street number', 'key col']
+        self.order_rows_by: list[str] = []
         self.out_xml_attributes = ['What']
         self.out_csv_dialect: CsvSpec = {'name': 'csv.excel',
                                          'delimiter': ',', 'quoting': None,
@@ -170,6 +171,8 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                          'outfile_excel_library')
         self._check_type(self.column_order, list, 'column_order')
         self._check_list_str(self.column_order, 'column_order')
+        self._check_type(self.order_rows_by, list, 'order_rows_by')
+        self._check_list_str(self.order_rows_by, 'order_rows_by')
         self.check_no_duplicates(self.column_order, 'column_order')
         self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
@@ -187,6 +190,12 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         if self.include_key:
             extracted_cols.append(self.column_name_for_key)
         return extracted_cols
+
+    def get_order_rows_by(self) -> list[str]:
+        """Get list of columns to use for sorting rows."""
+        if self.order_rows_by:
+            return self.order_rows_by
+        return self.column_order
 
     def cross_check_attrs(self) -> None:
         """Check that out_xml_attributes refer to existing 'columns'."""
@@ -210,6 +219,11 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             if col not in self.column_order:
                 print(f'Extracted column "{col}" is missing in column_order',
                       file=sys.stderr)
+                sys.exit(1)
+        for col in self.order_rows_by:
+            if col not in extracted_cols:
+                print(f'order rows by includes column "{col}"\n' +
+                      'but that column is not extracted', file=sys.stderr)
                 sys.exit(1)
 
     def check_extract_unique_colnames(self) -> None:

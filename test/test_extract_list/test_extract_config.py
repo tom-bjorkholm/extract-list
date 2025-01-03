@@ -176,13 +176,26 @@ def test_llinefromjson(capsys,  # pylint: disable=too-many-locals
     assert lcol == spec.linked_column
 
 
-@pytest.mark.parametrize('main',
-                         [{'ab': ['cd', 'ef'], 'gh': ['ij']},
-                          {'kl': ['mn'], 'op': ['q', 'r']}])
+@pytest.mark.parametrize('cols, order_row, res',
+                         [(['a', 'b'], ['d', 'e'], ['d', 'e']),
+                          (['a', 'b'], [], ['a', 'b'])])
+def test_get_order_rows_by(capsys, cols, order_row, res):
+    """Test get_order_rows_by."""
+    cfg = ExtractConfig()
+    cfg.column_order = cols
+    cfg.order_rows_by = order_row
+    ret = cfg.get_order_rows_by()
+    assert ret == res
+    check_capsys(capsys=capsys)
+
+
+@pytest.mark.parametrize('main, rworder',
+                         [({'ab': ['cd', 'ef'], 'gh': ['ij']}, ['ab', 'gh']),
+                          ({'kl': ['mn'], 'op': ['q', 'r']}, ['op'])])
 @pytest.mark.parametrize('linked',
                          [[ExtractConfig.example_linked_line()]])
 @pytest.mark.parametrize('keyinc', [True, False])
-def test_cross_check_columns_ok(capsys, main, linked, keyinc):
+def test_cross_check_columns_ok(capsys, main, rworder, linked, keyinc):
     """Test OK case(s) of cross_check_columns."""
     col_order: list[str] = deepcopy(list(main.keys()))
     for elem in linked:
@@ -194,11 +207,12 @@ def test_cross_check_columns_ok(capsys, main, linked, keyinc):
     cfg.main_line.columns = main
     cfg.linked_lines = linked
     cfg.column_order = col_order
+    cfg.order_rows_by = rworder
     cfg.cross_check_columns()
     check_capsys(capsys=capsys)
 
 
-@pytest.mark.parametrize('main, link, col, errmsg',
+@pytest.mark.parametrize('main, link, col, orw, errmsg',
                          [(MainLineSpec(data={'line': [],
                                               'columns': {'a': [], 'b': []},
                                               'expand_at': []}),
@@ -208,7 +222,7 @@ def test_cross_check_columns_ok(capsys, main, linked, keyinc):
                                'linked_column': [],
                                'linked_main_column': [],
                                'expand_at': []
-                           })], ['a', 'b', 'd'],
+                           })], ['a', 'b', 'd'], [],
                            'Extracted column "c" is missing'),
                           (MainLineSpec(data={'line': [],
                                               'columns': {'a': [], 'b': []},
@@ -219,7 +233,7 @@ def test_cross_check_columns_ok(capsys, main, linked, keyinc):
                                'linked_column': [],
                                'linked_main_column': [],
                                'expand_at': []
-                           })], ['a', 'c', 'd'],
+                           })], ['a', 'c', 'd'], [],
                            'Extracted column "b" is missing'),
                           (MainLineSpec(data={'line': [],
                                               'columns': {'a': [], 'b': []},
@@ -229,15 +243,28 @@ def test_cross_check_columns_ok(capsys, main, linked, keyinc):
                                'columns': {'c': [], 'd': []},
                                'linked_column': [],
                                'linked_main_column': [],
+                               'expand_at': []})],
+                           ['a', 'b', 'k', 'c', 'd'], [],
+                           'includes column "k"\nbut that column is not ex'),
+                          (MainLineSpec(data={'line': [],
+                                              'columns': {'a': [], 'b': []},
+                                              'expand_at': []}),
+                           [LinkedLineSpec(data={
+                               'line': [],
+                               'columns': {'c': [], 'd': []},
+                               'linked_column': [],
+                               'linked_main_column': [],
                                'expand_at': []
-                           })], ['a', 'b', 'k', 'c', 'd'],
-                           'includes column "k"\nbut that column is not ex')])
-def test_cross_check_columns_nok(capsys, main, link, col, errmsg):
+                           })], ['a', 'b', 'c', 'd'], ['c', 'b', 'f'],
+                           'order rows by includes column "f"\nbut that')])
+def test_cross_check_columns_nok(capsys,  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
+                                 main, link, col, orw, errmsg):
     """Test not OK case(s) of cross_check_columns."""
     cfg = ExtractConfig()
     cfg.main_line = main
     cfg.linked_lines = link
     cfg.column_order = col
+    cfg.order_rows_by = orw
     cfg.include_key = False
     with pytest.raises(SystemExit):
         cfg.cross_check_columns()

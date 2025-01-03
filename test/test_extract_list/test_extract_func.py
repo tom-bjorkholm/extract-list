@@ -78,7 +78,7 @@ def test_extract_func_ok1(capsys,  # pylint: disable=too-many-arguments,too-many
                 assert str(row['key col']) in ['345', 'i_345']
             if row['What'] == 'orange' and 'Donald' in row['Customer name']:
                 incr_calls(num_calls, 'orange', 345)
-                assert int(row['How many']) == 20
+                assert int(row['How many']) == 70
                 assert row['Customer name'] == 'Donald Duck'
                 assert row['Street'] == 'Some Road'
                 assert int(row['Street number']) == 666
