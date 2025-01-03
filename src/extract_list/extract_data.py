@@ -248,14 +248,15 @@ class RowCompare:  # pylint: disable=too-few-public-methods
         """Construct object that will be used to compare rows."""
         self.cols: list[str] = cols
 
-    def compare(self, left_row: Row, right_row: Row) -> int:
+    def compare(self,  # pylint: disable=too-many-return-statements
+                left_row: Row, right_row: Row) -> int:
         """Compare two Rows."""
         for col in self.cols:
             left = left_row[col]
             right = right_row[col]
             if left is None and right is not None:
                 return -1
-            if left is not None and col is None:
+            if left is not None and right is None:
                 return 1
             if left is None and right is None:
                 continue

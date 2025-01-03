@@ -124,15 +124,20 @@ def test_extract_config_var4(capsys, main, linked, order):
     check_capsys(capsys=capsys)
 
 
+@pytest.mark.parametrize('ord_row', [['How many', 'What'],
+                                     ['Street']])
 @pytest.mark.parametrize('one', [True, False])
-def test_extract_config_var5(capsys, one):
+def test_extract_config_var5(capsys, one, ord_row):
     """Test variation 5 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.one_output_line_per_main_line = deepcopy(one)
+    cfg.order_rows_by = deepcopy(ord_row)
     txt = cfg.as_json_string()
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.one_output_line_per_main_line == one
+    assert cf2.order_rows_by == ord_row
+    assert cfg.get_order_rows_by() == ord_row
     check_capsys(capsys=capsys)
 
 
@@ -180,7 +185,14 @@ def test_extract_config_var5(capsys, one):
                            ['Attribute name "nothing" in out_xml_attributes',
                             'but no column with that name extracted']),
                           ('out_csv_dialect', 'dial', KeyError,
-                           'Not dictionary for out_csv_dialect')])
+                           'Not dictionary for out_csv_dialect'),
+                          ('order_rows_by', ['Whatt'], SystemExit,
+                           ['order rows by includes column "Whatt"',
+                            'but that column is not extracted']),
+                          ('order_rows_by', 'What', SystemExit,
+                          'Type is "str", but expected type "list"'),
+                          ('order_rows_by', [7], SystemExit,
+                          'Expected a list of strings in order_rows_by')])
 def test_extract_config_err1(capsys, attr, val, exc, msgs):
     """Test not OK variations 1 of ExtractConfig."""
     cfg = ExtractConfig()
