@@ -9,7 +9,8 @@ from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_syntax import generate_syntax_txt
 from extract_list.generate_txt_ex_common import \
-    EX1_ORDERS, EX1_CUST_AND_REST, EX2_CUST, EX2_ORDERS_AND_REST, DELIVERY_COL
+    EX1_ORDERS, EX1_CUST_AND_REST, EX2_CUST, EX2_ORDERS_AND_REST, \
+    DELIVERY_COL, EXAMPLE1_INTRO, EXAMPLE2_INTRO
 
 
 EXAMPLE_JSON = '''
@@ -79,15 +80,6 @@ We choose "orders" as one linked line in "linked_lines".
 In the following decription we refer to this linked line record
 as the order record'''
 
-EXAMPLE1_INTRO = '''
-This is an example created especially to demonstrate how to use the
-configuration file with extract_list.
-'''
-
-EXAMPLE2_INTRO = '''
-This is another example created especially to demonstrate how to
-use the configuration file with extract_list.
-'''
 
 def generate_txt_example_json(file: TextIO, cfgtype: CfgTypes,
                               outtype: OutFileType) -> int:

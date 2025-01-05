@@ -4,6 +4,18 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
+
+EXAMPLE1_INTRO = '''
+This is an example created especially to demonstrate how to use the
+configuration file with extract_list.
+'''
+
+EXAMPLE2_INTRO = '''
+This is another example created especially to demonstrate how to
+use the configuration file with extract_list.
+'''
+
+
 ORDERS_KEY_COL = '''
 The dictionary key directly following "orders" will be included in the
 output with the column name "key col".'''
@@ -61,7 +73,7 @@ MANY_PER_MAIN = '''
 "one_output_line_per_main_line" is set to false, meaning that
 it will be OK to have several linked lines map to the same
 main line. This is needed as one customer may have several
-orders. 
+orders.
 '''
 
 DELIVERY_COL = '''

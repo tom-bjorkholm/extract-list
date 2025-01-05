@@ -240,7 +240,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             sys.exit(1)
 
     def check_valid_xml_colnames(self) -> None:
-        """Check and warn for """
+        """Check and warn for column names that are not valid XML."""
         if self.outfile_type != OutFileType.XML:
             return
         for colname in self.column_order:

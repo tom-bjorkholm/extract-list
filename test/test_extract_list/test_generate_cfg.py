@@ -214,7 +214,6 @@ def test_gen_cfg_sw_warn(capsys,  # pylint: disable=too-many-locals
     check_capsys(capsys=capsys, in_err=notice_msgs)
 
 
-
 @pytest.mark.parametrize('outp',
                          [('excel', read_excel,
                            'b.xlsx'),
