@@ -7,6 +7,7 @@
 from tempfile import TemporaryDirectory
 from json import loads as json_loads
 from shutil import copyfile
+from typing import Optional
 import pytest
 from excel_list_transform.file_extension import fix_file_extension
 from example_data import ExampleData
@@ -114,7 +115,8 @@ def test_gen_cfg_sw_ok1(capsys, outp, inp):
     check_capsys(capsys=capsys)
 
 
-def check_txt_file_for_cfg_file(cfg_fname):
+def check_txt_file_for_cfg_file(cfg_fname: str,
+                                othermsgs: Optional[list[str]] = None):
     """Check that text file for cfg file has all information."""
     txt_fname = fix_file_extension(filename=cfg_fname, ext_to_add='.txt',
                                    ext_to_remove='.cfg', for_reading=False)
@@ -127,6 +129,9 @@ def check_txt_file_for_cfg_file(cfg_fname):
             match_txt = '"' + key + '"'
             assert match_txt in txt
             num_keys_checked += 1
+        if othermsgs is not None:
+            for msg in othermsgs:
+                assert msg in txt
     assert num_keys_checked > 10
 
 
@@ -166,6 +171,48 @@ def test_gen_cfg_sw_ok2(capsys,  # pylint: disable=too-many-locals
         check_result(result_data=data, other_result=sw_res_data)
         check_txt_file_for_cfg_file(cfg_fname=cfg_fname)
     check_capsys(capsys=capsys)
+
+
+@pytest.mark.parametrize('outp',
+                         [('json', read_json,
+                           'b.json')])
+@pytest.mark.parametrize('inp',
+                         [('sw_json_to_rrs',
+                           'test/test_extract_list/SW.json',
+                           'a.json'),
+                          ('sw_xml_to_rrs',
+                           'test/test_extract_list/SW.xml',
+                           'a.xml')])
+def test_gen_cfg_sw_warn(capsys,  # pylint: disable=too-many-locals
+                         outp, inp):
+    """Test OK cases of generate cfg exmaple with warnings."""
+    with TemporaryDirectory() as folder:
+        out_fname = folder + '/' + outp[2]
+        in_fname = folder + '/' + inp[2]
+        cfg_fname = folder + '/' + 'c.cfg'
+        copyfile(src=inp[1], dst=in_fname)
+        gen_cmd = ['cfg-example', '-k', inp[0], '-t', outp[0],
+                   '-o', cfg_fname]
+        ret = extract_cmd(gen_cmd)
+        extr_cmd = ['extract', '-i', in_fname, '-o', out_fname,
+                    '-c', cfg_fname]
+        ret2 = extract_cmd(extr_cmd)
+        notice_msgs = [
+            'Notice: The expected next step excel-list-transform',
+            'will require input in excel or CSV format!',
+            'But the selected output type is:'
+        ]
+        with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
+            cfgtxt = file.read().lower()
+            assert '"outfile_type": "' + outp[0].lower() + '"' in cfgtxt
+        cfg = ExtractConfig(from_json_filename=cfg_fname)
+        data = outp[1](filename=out_fname, cfg=cfg)
+        assert ret == 0
+        assert ret2 == 0
+        check_result(result_data=data, other_result=sw_res_data)
+        check_txt_file_for_cfg_file(cfg_fname=cfg_fname, othermsgs=notice_msgs)
+    check_capsys(capsys=capsys, in_err=notice_msgs)
+
 
 
 @pytest.mark.parametrize('outp',

@@ -8,6 +8,7 @@ from typing import Optional, TypeAlias, TypeVar, TypedDict, cast
 from enum import Enum
 from csv import Dialect
 import sys
+from string import whitespace
 from copy import deepcopy
 from collections import Counter
 from excel_list_transform.config import Config, ParseConverter
@@ -180,6 +181,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.check_extract_unique_colnames()
         self.cross_check_columns()
         self.cross_check_attrs()
+        self.check_valid_xml_colnames()
 
     def _extracted_columns(self) -> list[str]:
         """Get list names of all extracted columns."""
@@ -236,6 +238,17 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             print('Repeated column name(s): ' + ' ,'.join(repeated),
                   file=sys.stderr)
             sys.exit(1)
+
+    def check_valid_xml_colnames(self) -> None:
+        """Check and warn for """
+        if self.outfile_type != OutFileType.XML:
+            return
+        for colname in self.column_order:
+            if True in [c in colname for c in whitespace]:
+                msg = f'Warning: Column name "{colname}" is not a valid ' +\
+                    f'column name in XML,\nas "{colname}" contains white' +\
+                    ' space.'
+                print(msg, file=sys.stderr)
 
     def check_csv(self) -> None:
         """Check if CSV configuration is OK."""

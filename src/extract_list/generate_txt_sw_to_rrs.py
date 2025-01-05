@@ -17,8 +17,8 @@ def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
     assert cfgtype in (CfgTypes.SW_JSON_TO_RRS, CfgTypes.SW_XML_TO_RRS)
     if outtype not in (OutFileType.CSV, OutFileType.EXCEL):
         noticemsg = '\nNotice: The expected next step excel-list-transform\n'
-        noticemsg += '       will require input in excel or CSV format!\n'
-        noticemsg += '       But the selected output type is: '
+        noticemsg += '        will require input in excel or CSV format!\n'
+        noticemsg += '        But the selected output type is: '
         noticemsg += outtype.name
         noticemsg += '!\n\n'
         print(noticemsg, file=sys.stderr)

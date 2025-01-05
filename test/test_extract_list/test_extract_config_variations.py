@@ -36,7 +36,11 @@ def test_extract_config_var1(capsys, inenc, infiletype, outenc, outfiletype):
     assert cf2.infile_encoding == inenc
     assert cf2.outfile_type == outfiletype
     assert cf2.outfile_encoding == outenc
-    check_capsys(capsys=capsys)
+    xmlerr = ['Warning: Column name ',
+              'is not a valid column name in XML,',
+              'contains white space.']
+    errs = None if outfiletype != OutFileType.XML else xmlerr
+    check_capsys(capsys=capsys, in_err=errs)
 
 
 @pytest.mark.parametrize('strip', [True, False])

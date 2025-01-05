@@ -9,9 +9,10 @@ from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_syntax import generate_syntax_txt
 from extract_list.generate_txt_ex_common import \
-    EX1_ORDERS, EX1_CUST_AND_REST, EX2_ORDERS, EX2_CUST_AND_REST
+    EX1_ORDERS, EX1_CUST_AND_REST, EX2_CUST, EX2_ORDERS_AND_REST, DELIVERY_COL
 
 EXAMPLE_XML = '''
+
 This example is based on XML input data in this format:
 
 <?xml version="1.0" encoding="utf-8"?>
@@ -74,26 +75,48 @@ This example is based on XML input data in this format:
 </data>
 '''
 
-ORDERS_LINE_XML = '''
+ORDERS_MAIN_LINE_XML = '''
 
-Here we choose ["data", "orders"] to be the path of to the main line.'''
+Here we choose ["data", "orders"] to be the path of to the main line.
+In the following decription we refer to this main line record
+as the order record.'''
 
-CUST_LINE_XML = '''
-We choose ["data", "customers"] as the single linked line in
-"linked_lines". '''
+CUST_MAIN_LINE_XML = '''
+
+Here we choose ["data", "customers"] to be the path to main line.
+In the following decription we refer to this main line record
+as the customer record.'''
+
+CUST_LLINE_XML = '''
+We choose ["data", "customers"] as the single linked line in "linked_lines".
+In the following description we refer to this linked line record
+as the customer record.'''
+
+ORDERS_LLINE_XML = '''
+We choose ["data", "orders"] as one linked line in "linked_lines".
+In the following decription we refer to this linked line record
+as the order record'''
+
+EXAMPLE1_INTRO = '''
+This is an example created especially to demonstrate how to use the
+configuration file with extract_list.
+'''
+
+EXAMPLE2_INTRO = '''
+This is another example created especially to demonstrate how to
+use the configuration file with extract_list.
+'''
 
 
 def generate_txt_example_xml(file: TextIO, cfgtype: CfgTypes,
                              outtype: OutFileType) -> int:
     """Write text describing configuration example_xml."""
     assert cfgtype == CfgTypes.EXAMPLE_XML
-    msg = f'''
-    This is an example created especially to demonstrate how to use the
-    configuration file with extract_list. The example will create an
-    output file in {outtype.name} format.'''
+    msg = EXAMPLE1_INTRO + \
+        f'The example will create an output file in {outtype.name} format.'
     msg += EXAMPLE_XML
-    msg += ORDERS_LINE_XML + EX1_ORDERS
-    msg += CUST_LINE_XML + EX1_CUST_AND_REST
+    msg += ORDERS_MAIN_LINE_XML + EX1_ORDERS
+    msg += CUST_LLINE_XML + EX1_CUST_AND_REST
     print(msg, file=file)
     generate_syntax_txt(file=file)
     return 0
@@ -103,14 +126,13 @@ def generate_txt_example2_xml(file: TextIO, cfgtype: CfgTypes,
                               outtype: OutFileType) -> int:
     """Write text describing configuration example_xml."""
     assert cfgtype == CfgTypes.EXAMPLE2_XML
-    msg = f'''
-    This is another example created especially to demonstrate how to use the
-    configuration file with extract_list. The example will create an
-    output file in {outtype.name} format.'''
-    msg += EXAMPLE_XML
-    # TODO make correct description for example 2
-    msg += ORDERS_LINE_XML + EX2_ORDERS
-    msg += CUST_LINE_XML + EX2_CUST_AND_REST
+    msg = EXAMPLE2_INTRO + \
+        f'The example will create an output file in {outtype.name} format.'
+    msg += EXAMPLE_XML + CUST_MAIN_LINE_XML + EX2_CUST
+    msg += EX2_ORDERS_AND_REST
+    msg += '\nWe choose ["data", "delivery_method"] and the second ' +\
+        'linked line.'
+    msg += DELIVERY_COL
     print(msg, file=file)
     generate_syntax_txt(file=file)
     return 0
