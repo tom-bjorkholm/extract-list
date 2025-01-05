@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Read input from file in chosen format."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from typing import OrderedDict, cast, Mapping, Any

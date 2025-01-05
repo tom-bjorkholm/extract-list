@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Generate text describing example configuration."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from typing import TextIO

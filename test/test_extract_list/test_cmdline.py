@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Test command line parsing of extract_list (mocked functionality)."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 import pytest

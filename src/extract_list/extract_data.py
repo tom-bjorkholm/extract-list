@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Functions for actual extractions of list of columns from JSON or XML."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from typing import Optional, Tuple, Generator, cast, Sequence

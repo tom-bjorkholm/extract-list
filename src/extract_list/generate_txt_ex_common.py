@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Text describing example configuration for both JSON and XML."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 ORDERS_KEY_COL = '''

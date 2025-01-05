@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Check tested code output to stdour and stderr."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from typing import Optional

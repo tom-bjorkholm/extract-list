@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Test input from JSON and as XML."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from tempfile import TemporaryDirectory

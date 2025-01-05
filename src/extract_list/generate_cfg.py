@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Generate example configuration for extracting a list from JSON or XML."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 # from typing import TextIO

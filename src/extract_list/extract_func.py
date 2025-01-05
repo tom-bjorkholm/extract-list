@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Function for handling data extraction with files."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from excel_list_transform.file_extension import fix_file_extension

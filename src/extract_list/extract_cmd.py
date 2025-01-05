@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Extract a list of columns from JSON or XML and save to excel, CSV, etc."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 from sys import argv as sys_argv

@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Check that two configurations for extract list are equal."""
 
-# Copyright (c) 2024 Tom Björkholm
+# Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
 
