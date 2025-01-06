@@ -45,7 +45,7 @@ def generate_syntax_txt(file: TextIO) -> None:
     Type of output file
     ===================
 
-    The type of output file to produde is determined by "outfile_type".
+    The type of output file to produce is determined by "outfile_type".
     "outfile_type" can have the values:
     '''
     msg += ' ,'.join(['"' + x.name + '"' for x in OutFileType])
@@ -57,7 +57,7 @@ def generate_syntax_txt(file: TextIO) -> None:
     This is specified with "outfile_encoding". Unless you know that you need
     another encoding leave this as in the generated example configuration.
 
-    Comma separated values files (CSV files) may differ slightly depening on
+    Comma separated values files (CSV files) may differ slightly depending on
     the programs used to read/write them and the locale used.
     "out_csv_dialect" changes how CSV files are written. It is always needed
     in the configuration file, but is only used if the output is CSV.
@@ -75,16 +75,16 @@ def generate_syntax_txt(file: TextIO) -> None:
     ===============
 
     The input files (JSON or XML) is likely to include a lot more data than
-    what is interesting to extract. The data to extract is specifiec using
+    what is interesting to extract. The data to extract is specified using
     "main_line" and "linked_lines" parameters in the configuration file.
 
     The "main_line" specifies what part of the input file should be the
     main part of the output line(s). The linked lines have some data linking
-    then to the main line: A linked line is linked to the main line if
+    them to the main line: A linked line is linked to the main line if
     some item in the linked line has the same value as some other item in
     the main line.
 
-    The "line" sup-parameter of the the "main_line" and "linked_lines"
+    The "line" sub-parameter of the the "main_line" and "linked_lines"
     configuration parameters includes a list of strings. This list of
     strings is the path of keywords to the records. Directly below this
     path is either a list or a dictionary of the records.
@@ -94,7 +94,7 @@ def generate_syntax_txt(file: TextIO) -> None:
     of a dictionary). If you want this index (also known as key) to be
     included in the output, set configuration  parameter "include_key" to
     true. To exclude this index (key) from the output set "include_key" to
-    false. The output kolumn name for this key (index) is set using the
+    false. The output column name for this key (index) is set using the
     configuration parameter "column_name_for_key".
 
     The "columns" sub-parameter of the "main_line" and "linked_lines"
@@ -104,9 +104,9 @@ def generate_syntax_txt(file: TextIO) -> None:
     that has the value for this column.
 
     Sometimes a single record in the input, defined as the item in the list or
-    dictionary referenced by the "line" sub-paramenter, can contain several
+    dictionary referenced by the "line" sub-parameter, can contain several
     sub-records. For instance if the record is a purchase order, then the
-    order may include several purchesed items. As the output format of a list
+    order may include several purchased items. As the output format of a list
     of columns does not support such nesting, the single input redord needs
     to be split into several output lines. The common items in the input
     record is then duplicated on all such lines split from the same input
@@ -117,7 +117,7 @@ def generate_syntax_txt(file: TextIO) -> None:
     paths (list of list of strings), this expansion can be configured to be
     done on zero, one or several places in the input record.
 
-    There can be only one main line, denoted ty the "main_line" configuration
+    There can be only one main line, denoted by the "main_line" configuration
     parameter. In contrast there may be any number of linked lines.
     The linked lines are described be an array for the the "linked_lines"
     configuration parameter. The sub-parameters described for the "main_line"

@@ -77,7 +77,7 @@ orders.
 '''
 
 DELIVERY_COL = '''
-We give the column name "Deliver by to the relative path "deliver by"
+We give the column name "Deliver by to the relative path "deliver_by"
 in the delivery method linked line.
 The relative path ["address", "street] in the main line customer records
 is tied to the relative path ["for_street"] in the linked line delivery

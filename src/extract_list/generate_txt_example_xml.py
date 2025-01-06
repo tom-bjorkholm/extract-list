@@ -79,23 +79,25 @@ This example is based on XML input data in this format:
 ORDERS_MAIN_LINE_XML = '''
 
 Here we choose ["data", "orders"] to be the path of to the main line.
-In the following decription we refer to this main line record
+In the following description we refer to this main line record
 as the order record.'''
 
 CUST_MAIN_LINE_XML = '''
 
 Here we choose ["data", "customers"] to be the path to main line.
-In the following decription we refer to this main line record
+In the following description we refer to this main line record
 as the customer record.'''
 
 CUST_LLINE_XML = '''
+
 We choose ["data", "customers"] as the single linked line in "linked_lines".
 In the following description we refer to this linked line record
 as the customer record.'''
 
 ORDERS_LLINE_XML = '''
+
 We choose ["data", "orders"] as one linked line in "linked_lines".
-In the following decription we refer to this linked line record
+In the following description we refer to this linked line record
 as the order record'''
 
 
@@ -120,8 +122,8 @@ def generate_txt_example2_xml(file: TextIO, cfgtype: CfgTypes,
     msg = EXAMPLE2_INTRO + \
         f'The example will create an output file in {outtype.name} format.'
     msg += EXAMPLE_XML + CUST_MAIN_LINE_XML + EX2_CUST
-    msg += EX2_ORDERS_AND_REST
-    msg += '\nWe choose ["data", "delivery_method"] and the second ' +\
+    msg += ORDERS_LLINE_XML + EX2_ORDERS_AND_REST
+    msg += '\nWe choose ["data", "delivery_method"] as the second ' +\
         'linked line.'
     msg += DELIVERY_COL
     print(msg, file=file)

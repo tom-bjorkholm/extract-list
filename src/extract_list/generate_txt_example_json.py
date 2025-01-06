@@ -61,23 +61,25 @@ This example is based on JSON input data in this format:
 ORDERS_MAIN_LINE_JSON = '''
 
 Here we choose "orders" to be the path of to the main line.
-In the following decription we refer to this main line record
+In the following description we refer to this main line record
 as the order record.'''
 
 CUST_MAIN_LINE_JSON = '''
 
 Here we choose "customers" to be the path to main line.
-In the following decription we refer to this main line record
+In the following description we refer to this main line record
 as the customer record.'''
 
 CUST_LLINE_JSON = '''
+
 We choose "customers" as the single linked line in "linked_lines".
 In the following description we refer to this linked line record
 as the customer record.'''
 
 ORDERS_LLINE_JSON = '''
+
 We choose "orders" as one linked line in "linked_lines".
-In the following decription we refer to this linked line record
+In the following description we refer to this linked line record
 as the order record'''
 
 
@@ -101,8 +103,8 @@ def generate_txt_example2_json(file: TextIO, cfgtype: CfgTypes,
     msg = EXAMPLE2_INTRO + \
         f'The example will create an output file in {outtype.name} format.'
     msg += EXAMPLE_JSON + CUST_MAIN_LINE_JSON + EX2_CUST
-    msg += EX2_ORDERS_AND_REST
-    msg += '\nWe choose "delivery_method" and the second linked line.'
+    msg += ORDERS_LLINE_JSON + EX2_ORDERS_AND_REST
+    msg += '\nWe choose "delivery_method" as the second linked line.'
     msg += DELIVERY_COL
     print(msg, file=file)
     generate_syntax_txt(file=file)
