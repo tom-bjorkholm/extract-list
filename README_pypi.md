@@ -35,6 +35,13 @@ pip3 install extract-list
 pip install extract-list
 ````
 
+## Version history
+
+| Version | Date        | Python version  | Description                         |
+|---------|-------------|-----------------|-------------------------------------|
+| 0.2     | 06 Jan 2025 | 3.12.6 or newer | First released version              |
+| 0.2.2   | 23 Mar 2025 | 3.13.2 or newer | Adapted to Python 3.13.2            |
+
 ## Running the application
 
 ### Running the application on mac and Linux
