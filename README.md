@@ -26,13 +26,13 @@ If you want to use it install it using pip from [https://pypi.org/project/extrac
 ### Installing on mac and Linux
 
 ````sh
-pip3 install extract-list
+pip3 install --upgrade extract-list
 ````
 
 ### Installing on Microsoft Windows
 
 ````sh
-pip install extract-list
+pip install --upgrade extract-list
 ````
 
 ### Information for use

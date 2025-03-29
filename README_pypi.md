@@ -21,18 +21,18 @@ How this is done is governed by a configuration file. The application can create
 
 ## Installing it
 
-If you want to use it, install it using pip. A precondition is that you have Python 3.13.2 or newer installed on you computer. Python can be downloaded from [https://www.python.org/downloads/](https://www.python.org/downloads/).
+If you want to use it, install it using pip. A precondition is that you have Python installed on you computer. Python can be downloaded from [https://www.python.org/downloads/](https://www.python.org/downloads/).
 
 ### Installing on mac and Linux
 
 ````sh
-pip3 install extract-list
+pip3 install --upgrade extract-list
 ````
 
 ### Installing on Microsoft Windows
 
 ````sh
-pip install extract-list
+pip install --upgrade extract-list
 ````
 
 ## Version history
