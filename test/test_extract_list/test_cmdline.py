@@ -4,6 +4,8 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
+import sys
+from importlib.metadata import version as metadata_version
 import pytest
 from check_capsys import check_capsys
 from extract_list.extract_cmd import extract_cmd
@@ -16,10 +18,11 @@ def test_help_main(capsys, hflag):
     with pytest.raises(SystemExit):
         _ = extract_cmd(cmd)
     msgs = [
-        'usage: extract_list [-h] {cfg-example,extract}',
+        'usage: extract_list [-h] {cfg-example,extract,version}',
         'Extract data from an input file in JSON or XML format',
         'Generate example configuration file',
-        'Extract list of columns of data from JSON or XML'
+        'Extract list of columns of data from JSON or XML',
+        'Only print versions of extract_list'
     ]
     check_capsys(capsys=capsys, in_out=msgs)
 
@@ -54,6 +57,19 @@ def test_help_example(capsys, hflag):
         '-t {excel,csv,json,xml,txt}',
         '--typeofoutput {excel,csv,json,xml,txt}',
         '-o, --output OUTPUT'
+    ]
+    check_capsys(capsys=capsys, in_out=msgs)
+
+
+@pytest.mark.parametrize('hflag', ['-h', '--help'])
+def test_help_version(capsys, hflag):
+    """Test help printout of cfg-example sub-command."""
+    cmd = ['version', hflag]
+    with pytest.raises(SystemExit):
+        _ = extract_cmd(cmd)
+    msgs = [
+        'usage: extract_list version [-h]',
+        'Only print versions of extract_list',
     ]
     check_capsys(capsys=capsys, in_out=msgs)
 
@@ -172,8 +188,9 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
 @pytest.mark.parametrize('line,errmsgs',
                          [('-o out.xlsx -c cfg.cfg -i in.json',
                            ['error: argument subparser_name: invalid choice',
-                            'usage: extract_list [-h] {cfg-example,extract}',
-                            "(choose from cfg-example, extract)"]),
+                            'usage: extract_list [-h] {cfg-example,extract,'
+                            'version}',
+                            "(choose from cfg-example, extract, version)"]),
                           ('extract -i in.jspon -o out.xlsx -c a.cfg -b',
                            ['extract_list: error: unrecognized ' +
                             'arguments: -b']),
@@ -241,3 +258,14 @@ def test_cmdline_nok1(capsys, line, errmsgs):
     with pytest.raises(SystemExit):
         _ = extract_cmd(arguments=line.split())
     check_capsys(capsys=capsys, in_err=errmsgs)
+
+
+def test_version_cmd1(capsys):
+    """Test command to print version information."""
+    extract_cmd(['version'])
+    out, err = capsys.readouterr()
+    assert '' == err
+    assert f'Python .............. {".".join(map(str, sys.version_info))}' \
+        in out
+    assert f'extract_list ........ {metadata_version("extract_list")}'\
+        in out

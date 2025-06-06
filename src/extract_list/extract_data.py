@@ -113,7 +113,7 @@ def get_lines(indata: JsonType, missing: MissingInputForColumn,
     assert isinstance(lines, (list, dict))
     if isinstance(lines, list):
         assert isinstance(lines, list)
-        llines: list[JsonType] = cast(list[JsonType], lines)
+        llines: list[JsonType] = lines
         for key, dat in enumerate(llines):
             yield (key, dat)
     elif isinstance(lines, dict):

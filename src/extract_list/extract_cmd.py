@@ -11,6 +11,7 @@ import argparse
 from extract_list.generate_cfg import generate_example_cfg, \
     get_types_of_cfg, get_out_file_types
 from extract_list.extract_func import extract_func
+from extract_list.xl_version import XlVersion
 
 
 def gen_cfg_cmd(args: argparse.Namespace) -> int:
@@ -31,6 +32,13 @@ def do_extract_cmd(args: argparse.Namespace) -> int:
     return extract_func(in_file_name=infilename,
                         out_file_name=outfilename,
                         cfg_file_name=cfgfilename)
+
+
+def version_cmd(_: argparse.Namespace) -> int:
+    """Print version information."""
+    vers = XlVersion()
+    vers.print()
+    return 0
 
 
 USAGE_ORDER = '''
@@ -119,6 +127,17 @@ def extract_args(subparsers: SubParseAct) -> None:
                                 required=True)
 
 
+def version_args(subparsers: SubParseAct) -> None:
+    """Add arguments for version sub-command."""
+    version_help = 'Only print versions of extract_list '
+    version_help += 'and of main modules used by it and of Python.'
+    version_parser = subparsers.add_parser('version', help=version_help,
+                                           epilog=USAGE_ORDER,
+                                           description=version_help +
+                                           SEE_MAIN_HELP)
+    version_parser.set_defaults(func=version_cmd)
+
+
 def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     """Extract a list of columns from JSON or XML and save to excel, etc."""
     epimain = 'More detailed help is available for each sub-command.'
@@ -138,6 +157,7 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     subparsers = parser.add_subparsers(dest='subparser_name', required=True)
     gen_cfg_args(subparsers)
     extract_args(subparsers)
+    version_args(subparsers)
     args = parser.parse_args(args=fixed_args)
     ret = args.func(args)
     assert isinstance(ret, int)
