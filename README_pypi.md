@@ -43,8 +43,8 @@ pip install --upgrade extract-list
 | 0.2.2   | 23 Mar 2025 | 3.13.2 or newer | Adapted to Python 3.13.2            |
 | 0.2.3   | 23 Mar 2025 | 3.13.2 or newer | Fix in README only                  |
 | 0.2.5   | 09 Apr 2025 | 3.13.3 or newer | Using newer dependencies            |
-| 0.2.7   | 10 Jun 2025 | 3.12.x          | add version sub-command             |
-| 0.2.8   | 10 Jun 2025 | 3.13 or newer   | add version sub-command             |
+| 0.2.7   | 09 Jun 2025 | 3.12.x          | add version sub-command             |
+| 0.2.8   | 09 Jun 2025 | 3.13 or newer   | add version sub-command             |
 
 ## Running the application
 
