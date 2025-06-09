@@ -49,7 +49,7 @@ For running the script and running the test suite you need a mac or a Linux comp
 
 #### Python version
 
-Please see README_pypi.md for the required python version.
+Please see README_pypi.md for the required python version. Newest Python version is used for master branch.
 
 #### Zsh
 
