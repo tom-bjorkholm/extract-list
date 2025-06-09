@@ -5,11 +5,11 @@ from setuptools import setup
 
 setup(
   name='extract-list',
-  version='0.2.8',
+  version='0.2.7',
   description='Extract a list from JSON or XML, save to excel, csv, etc.',
   author='Tom Björkholm',
   author_email='klausuler_linnet0q@icloud.com',
-  python_requires='>=3.13',
+  python_requires='>=3.12,<3.13',
   packages=['extract_list'],
   package_dir={'extract_list': 'src/extract_list'},
   package_data={'extract_list': ['src/py.typed']},

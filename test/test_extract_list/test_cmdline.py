@@ -37,9 +37,9 @@ def test_help_extract(capsys, hflag):
         'usage: extract_list extract [-h] -c CFG -i INPUT -o OUTPUT',
         'Extract list of columns of data from JSON or XML input.',
         'See also help text for', 'main command without sub-commands.',
-        '-c, --cfg CFG', 'Configuation file name to use.',
-        '-i, --input INPUT',
-        '-o, --output OUTPUT'
+        '-c CFG', 'Configuation file name to use.',
+        '-i INPUT',
+        '-o OUTPUT'
     ]
     check_capsys(capsys=capsys, in_out=msgs)
 
@@ -56,7 +56,7 @@ def test_help_example(capsys, hflag):
         '-k {sw_json_to_rrs,sw_xml_to_rrs',
         '-t {excel,csv,json,xml,txt}',
         '--typeofoutput {excel,csv,json,xml,txt}',
-        '-o, --output OUTPUT'
+        '-o OUTPUT'
     ]
     check_capsys(capsys=capsys, in_out=msgs)
 
@@ -190,7 +190,8 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                            ['error: argument subparser_name: invalid choice',
                             'usage: extract_list [-h] {cfg-example,extract,'
                             'version}',
-                            "(choose from cfg-example, extract, version)"]),
+                            "(choose from 'cfg-example', 'extract', " +
+                            "'version')"]),
                           ('extract -i in.jspon -o out.xlsx -c a.cfg -b',
                            ['extract_list: error: unrecognized ' +
                             'arguments: -b']),
@@ -209,17 +210,17 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                             '-k/--kind, -t/--typeofoutput, -o/--output']),
                           ('cfg-example -k abc -t csv -o out.cfg',
                            ['usage: extract_list cfg-example [-h]',
-                            '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
+                            '{sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             "invalid choice: 'abc' (choose from " +
-                            "sw_json_to_rrs, sw_xml_to_rrs, " +
-                            "example_json, example_xml, " +
-                            "example2_json, example2_xml)"]),
+                            "'sw_json_to_rrs', 'sw_xml_to_rrs', " +
+                            "'example_json', 'example_xml', " +
+                            "'example2_json', 'example2_xml')"]),
                           ('cfg-example -t csv -o out.cfg',
                            ['usage: extract_list cfg-example [-h]',
-                            '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
+                            '{sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
@@ -227,7 +228,7 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                             'following arguments are required: -k/--kind']),
                           ('cfg-example -k sw_json_to_rrs -o out.cfg',
                            ['usage: extract_list cfg-example [-h]',
-                            '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
+                            '{sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
@@ -236,17 +237,17 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                             '-t/--typeofoutput']),
                           ('cfg-example -k sw_json_to_rrs -t abc -o out.cfg',
                            ['usage: extract_list cfg-example [-h]',
-                            '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
+                            '{sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
                             "extract_list cfg-example: error: argument " +
                             "-t/--typeofoutput: invalid choice: 'abc' " +
-                            "(choose from excel, csv, json, xml, " +
-                            "txt)"]),
+                            "(choose from 'excel', 'csv', 'json', 'xml', " +
+                            "'txt')"]),
                           ('cfg-example -k sw_json_to_rrs -t csv',
                            ['usage: extract_list cfg-example [-h]',
-                            '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
+                            '{sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
                             '-t {excel,csv,json,xml,txt} -o OUTPUT',
