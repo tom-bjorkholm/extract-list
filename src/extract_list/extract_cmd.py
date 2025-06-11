@@ -141,6 +141,7 @@ def version_args(subparsers: SubParseAct) -> None:
 def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     """Extract a list of columns from JSON or XML and save to excel, etc."""
     epimain = 'More detailed help is available for each sub-command.'
+    XlVersion().check_if_unsupported_python()
     if arguments is None:  # pragma: no cover
         arguments = sys_argv
     fixed_args = deepcopy(arguments)
