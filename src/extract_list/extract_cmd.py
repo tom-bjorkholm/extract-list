@@ -1,4 +1,5 @@
 #! /usr/local/bin/python3
+# PYTHON_ARGCOMPLETE_OK
 """Extract a list of columns from JSON or XML and save to excel, CSV, etc."""
 
 # Copyright (c) 2024 - 2025 Tom Björkholm
@@ -8,6 +9,7 @@ from sys import argv as sys_argv
 from copy import deepcopy
 from typing import Optional, TypeAlias
 import argparse
+import argcomplete
 from extract_list.generate_cfg import generate_example_cfg, \
     get_types_of_cfg, get_out_file_types
 from extract_list.extract_func import extract_func
@@ -159,6 +161,7 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     gen_cfg_args(subparsers)
     extract_args(subparsers)
     version_args(subparsers)
+    argcomplete.autocomplete(parser)
     args = parser.parse_args(args=fixed_args)
     ret = args.func(args)
     assert isinstance(ret, int)
