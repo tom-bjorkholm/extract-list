@@ -4,10 +4,10 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-import sys
 from datetime import date
 from importlib.metadata import version as metadata_version
 import pytest
+from excel_list_transform.version_information import VersionInformation
 from check_capsys import check_capsys
 from extract_list.extract_cmd import extract_cmd
 
@@ -266,7 +266,7 @@ def test_version_cmd1(capsys):
     extract_cmd(['version'])
     out, err = capsys.readouterr()
     assert '' == err
-    assert f'Python .............. {".".join(map(str, sys.version_info))}' \
+    assert f'Python .............. {VersionInformation.python_version()}' \
         in out
     assert f'extract_list ........ {metadata_version("extract_list")}'\
         in out
@@ -281,15 +281,14 @@ def test_version_cmd1(capsys):
                            date(year=2027, month=12, day=25), True)])
 def test_version_check_if_u(capsys, monkeypatch, ver, dat, errprint):
     """Test version check if unsupported python widh old Python."""
-    monkeypatch.setattr('excel_list_transform.version.sys.version_info',
-                        ver)
+    mod = 'excel_list_transform.version_information.'
+    monkeypatch.setattr(mod + 'sys.version_info', ver)
 
     def mock_day(_) -> date:
         """Mock Version._today."""
         return dat
 
-    monkeypatch.setattr('excel_list_transform.version.Version._today',
-                        mock_day)
+    monkeypatch.setattr(mod + 'VersionInformation._today', mock_day)
     with pytest.raises(SystemExit):
         extract_cmd(['--help'])
     out, err = capsys.readouterr()
