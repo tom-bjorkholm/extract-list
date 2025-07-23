@@ -45,6 +45,8 @@ pip install --upgrade extract-list
 | 0.2.5   | 09 Apr 2025 | 3.13.3 or newer | Using newer dependencies            |
 | 0.2.7   | 09 Jun 2025 | 3.12.x          | add version sub-command             |
 | 0.2.8   | 09 Jun 2025 | 3.13 or newer   | add version sub-command             |
+| 0.2.10  | 23 Jul 2025 | 3.12.x          | updated dependencies                |
+| 0.2.11  | 23 Jul 2025 | 3.13 or newer   | updated dependencies                |
 
 ## Running the application
 

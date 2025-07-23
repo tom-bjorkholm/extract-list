@@ -4,10 +4,10 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from excel_list_transform.version import Version
+from excel_list_transform.version_information import VersionInformation
 
 
-class XlVersion(Version):
+class XlVersion(VersionInformation):
     """Get and print version information."""
 
     def module_names(self) -> list[str]:
