@@ -4,7 +4,7 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, TypeAlias, TypeVar, TypedDict, cast
+from typing import Optional, TypeVar, TypedDict, cast
 from enum import Enum
 from csv import Dialect
 import sys
@@ -17,7 +17,7 @@ from excel_list_transform.str_to_enum import string_to_enum_best_match
 from extract_list.config_enums import InFileType, OutFileType, \
     MissingInputForColumn
 
-CsvSpec: TypeAlias = dict[str, Optional[str]]
+type CsvSpec = dict[str, Optional[str]]
 
 
 MLineDict = TypedDict('MLineDict', {'line': list[str],

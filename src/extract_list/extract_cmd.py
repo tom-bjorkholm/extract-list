@@ -7,7 +7,7 @@
 
 from sys import argv as sys_argv
 from copy import deepcopy
-from typing import Optional, TypeAlias
+from typing import Optional
 import argparse
 import argcomplete
 from extract_list.generate_cfg import generate_example_cfg, \
@@ -79,7 +79,7 @@ SEE_MAIN_HELP = '''
 See also help text for main command without sub-commands.
 '''
 
-SubParseAct: TypeAlias = 'argparse._SubParsersAction[argparse.ArgumentParser]'
+type SubParseAct = 'argparse._SubParsersAction[argparse.ArgumentParser]'
 
 
 def gen_cfg_args(subparsers: SubParseAct) -> None:
