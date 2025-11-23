@@ -175,7 +175,7 @@ Source code and tests are available at [https://bitbucket.org/tom-bjorkholm/extr
 
 ## Test summary
 
-* Test result: 1039 passed in 11s
+* Test result: 1039 passed in 7s
 * No Flake8 warnings.
 * No mypy errors found.
-* 0.2.14 built and tested using python version: Python 3.14.0
+* 0.2.14 built and tested using python version: Python 3.13.7
