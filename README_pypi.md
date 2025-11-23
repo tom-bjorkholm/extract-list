@@ -172,3 +172,10 @@ The default order or lines produced is to order them based on the list of column
 ## Source code
 
 Source code and tests are available at [https://bitbucket.org/tom-bjorkholm/extract-list](https://bitbucket.org/tom-bjorkholm/extract-list).
+
+## Test summary
+
+* Test result: 1039 passed in 11s
+* No Flake8 warnings.
+* No mypy errors found.
+* 0.2.14 built and tested using python version: Python 3.14.0
