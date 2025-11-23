@@ -4,13 +4,13 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, TypeAlias
+from typing import Optional
 from datetime import datetime
 from enum import Enum, auto
 
-Value: TypeAlias = Optional[str | int | bool | float | datetime]
-Row: TypeAlias = dict[str, Value]
-Data: TypeAlias = list[Row]
+type Value = Optional[str | int | bool | float | datetime]
+type Row = dict[str, Value]
+type Data = list[Row]
 
 
 class CfgTypes(Enum):
