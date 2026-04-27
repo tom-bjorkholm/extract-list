@@ -16,6 +16,9 @@ setup(
   install_requires=[
     'argcomplete >= 3.6.3',
     'excel-list-transform >= 0.8.5',
+    'config-as-json >= 0.1',
+    'tableio >= 0.5',
+    'versionreporter >= 0.1',
     'xmltodict >= 1.0.2',
     'types-xmltodict >= 1.0.1.20250920',
     'pip >= 25.3',
