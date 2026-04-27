@@ -8,7 +8,7 @@
 from extract_list.extract_config import ExtractConfig
 
 
-def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig):
+def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig) -> None:
     """Check that two configurations for extract list are equal."""
     assert cf1.infile_type == cf2.infile_type
     assert cf1.infile_encoding == cf2.infile_encoding

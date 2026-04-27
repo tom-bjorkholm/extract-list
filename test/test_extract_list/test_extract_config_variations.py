@@ -7,13 +7,14 @@
 from copy import deepcopy
 # from enum import Enum, auto
 import pytest
-from check_cfgs_equal import check_cfgs_equal
-from check_capsys import check_capsys
 from excel_list_transform.config_enums import ExcelLib
 from excel_list_transform.config import ConfigBadJson
 from extract_list.config_enums import InFileType, OutFileType, \
     MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config import LinkedLineSpec, MainLineSpec
+from .check_cfgs_equal import check_cfgs_equal
+from .check_capsys import check_capsys
 
 
 @pytest.mark.parametrize('inenc', ['utf-8', 'iso8859-1'])
@@ -22,7 +23,9 @@ from extract_list.extract_config import ExtractConfig
 @pytest.mark.parametrize('outfiletype',
                          [OutFileType.JSON, OutFileType.XML, OutFileType.CSV,
                           OutFileType.EXCEL, OutFileType.TXT])
-def test_extract_config_var1(capsys, inenc, infiletype, outenc, outfiletype):
+def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
+                             infiletype: InFileType, outenc: str,
+                             outfiletype: OutFileType) -> None:
     """Test variation 1 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.infile_encoding = deepcopy(inenc)
@@ -49,7 +52,10 @@ def test_extract_config_var1(capsys, inenc, infiletype, outenc, outfiletype):
                                   MissingInputForColumn.ERROR])
 @pytest.mark.parametrize('attr', [['Street'], ['How many'],
                                   ['Street', 'How many']])
-def test_extract_config_var2(capsys, strip, inck, miss, attr):
+def test_extract_config_var2(capsys: pytest.CaptureFixture[str],
+                             strip: bool, inck: bool,
+                             miss: MissingInputForColumn,
+                             attr: list[str]) -> None:
     """Test variation 2 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.in_xml_strip_at = deepcopy(strip)
@@ -73,7 +79,9 @@ def test_extract_config_var2(capsys, strip, inck, miss, attr):
 @pytest.mark.parametrize('deli', [',', ';', ' '])
 @pytest.mark.parametrize('excl', [ExcelLib.OPENPYXL, ExcelLib.PYLIGHTXL,
                                   ExcelLib.XLSXWRITER])
-def test_extract_config_var3(capsys, coname, csname, deli, excl):
+def test_extract_config_var3(capsys: pytest.CaptureFixture[str],
+                             coname: str, csname: str, deli: str,
+                             excl: ExcelLib) -> None:
     """Test variation 3 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.column_name_for_key = deepcopy(coname)
@@ -108,7 +116,9 @@ kord2 = ['What', 'Customer name', 'Street', 'key col']
 
 @pytest.mark.parametrize('main,linked,order',
                          [(ml1, ll1, kord1), (ml2, ll2, kord2)])
-def test_extract_config_var4(capsys, main, linked, order):
+def test_extract_config_var4(capsys: pytest.CaptureFixture[str],
+                             main: MainLineSpec, linked: LinkedLineSpec,
+                             order: list[str]) -> None:
     """Test variation 4 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.main_line = deepcopy(main)
@@ -131,7 +141,8 @@ def test_extract_config_var4(capsys, main, linked, order):
 @pytest.mark.parametrize('ord_row', [['How many', 'What'],
                                      ['Street']])
 @pytest.mark.parametrize('one', [True, False])
-def test_extract_config_var5(capsys, one, ord_row):
+def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
+                             one: bool, ord_row: list[str]) -> None:
     """Test variation 5 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.one_output_line_per_main_line = deepcopy(one)
@@ -197,7 +208,9 @@ def test_extract_config_var5(capsys, one, ord_row):
                           'Type is "str", but expected type "list"'),
                           ('order_rows_by', [7], SystemExit,
                           'Expected a list of strings in order_rows_by')])
-def test_extract_config_err1(capsys, attr, val, exc, msgs):
+def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
+                             val: object, exc: type[BaseException],
+                             msgs: str | list[str]) -> None:
     """Test not OK variations 1 of ExtractConfig."""
     cfg = ExtractConfig()
     setattr(cfg, attr, val)
@@ -207,7 +220,7 @@ def test_extract_config_err1(capsys, attr, val, exc, msgs):
     check_capsys(capsys=capsys, in_err=msgs)
 
 
-def test_extract_config_err2(capsys):
+def test_extract_config_err2(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK variation 2 of ExtractConfig."""
     cfg = ExtractConfig()
     cfg.main_line.columns['Cost'] = ['item info', 'cost']
@@ -218,7 +231,7 @@ def test_extract_config_err2(capsys):
                  in_err='Extracted column "Cost" is missing in column_order')
 
 
-def test_extract_config_err3(capsys):
+def test_extract_config_err3(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK variation 3 of ExtractConfig."""
     cfg = ExtractConfig()
     cfg.linked_lines[0].columns['Zip'] = ['zip']
@@ -229,7 +242,7 @@ def test_extract_config_err3(capsys):
                  in_err='Extracted column "Zip" is missing in column_order')
 
 
-def test_extract_config_err4(capsys):
+def test_extract_config_err4(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK variation 4 of ExtractConfig."""
     cfg = ExtractConfig()
     cfg.column_order.append('Zip')

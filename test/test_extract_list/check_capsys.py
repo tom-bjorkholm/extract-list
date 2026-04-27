@@ -5,6 +5,7 @@
 # MIT License
 
 from typing import Optional
+import pytest
 
 
 def _check_out_stream(out_err: str, in_it: Optional[str | list[str]],
@@ -31,7 +32,8 @@ def _check_out_stream(out_err: str, in_it: Optional[str | list[str]],
             f'Expected {in_it} in {name}, but it is {out_err}'
 
 
-def check_capsys(capsys, in_out: Optional[str | list[str]] = None,
+def check_capsys(capsys: pytest.CaptureFixture[str],
+                 in_out: Optional[str | list[str]] = None,
                  in_err: Optional[str | list[str]] = None) -> None:
     """Check tested code output to on stdour and stderr."""
     out, err = capsys.readouterr()

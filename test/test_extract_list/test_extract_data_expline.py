@@ -6,8 +6,9 @@
 
 from copy import deepcopy
 import pytest
-from check_capsys import check_capsys
+from excel_list_transform.commontypes import JsonType
 from extract_list.extract_data import expand_line, set_at_path
+from .check_capsys import check_capsys
 
 
 @pytest.mark.parametrize('dat,pth,newdat,res',
@@ -19,7 +20,9 @@ from extract_list.extract_data import expand_line, set_at_path
                           ({'a': 'b', 'c': {'d': 'e', 'k': 'm'}}, ['c', 'd'],
                            {'f': 'g'},
                            {'a': 'b', 'c': {'d': {'f': 'g'}, 'k': 'm'}})])
-def test_set_at_path_ok1(capsys, dat, pth, newdat, res):
+def test_set_at_path_ok1(capsys: pytest.CaptureFixture[str],
+                         dat: JsonType, pth: list[str],
+                         newdat: JsonType, res: JsonType) -> None:
     """Test OK cases 1 of set_at_path."""
     localdata = deepcopy(dat)
     set_at_path(data=localdata, path=deepcopy(pth),
@@ -41,7 +44,9 @@ def test_set_at_path_ok1(capsys, dat, pth, newdat, res):
                             {'items': {'item': 'Banana', 'quantity': 6},
                              'customer': 22}]
                            )])
-def test_expand_line_ok1(capsys, skey, dlin, expa, res):
+def test_expand_line_ok1(capsys: pytest.CaptureFixture[str], skey: str,
+                         dlin: JsonType, expa: list[list[str]],
+                         res: list[JsonType]) -> None:
     """Test OK cases 1 of expand_line."""
     ret = []
     for key, value in expand_line(skey=deepcopy(skey), dline=deepcopy(dlin),

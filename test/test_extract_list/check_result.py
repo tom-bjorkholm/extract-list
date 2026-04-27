@@ -4,7 +4,7 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from extract_list.commontypes import Data
+from extract_list.commontypes import Data, Row, Value
 
 ex_res: Data = [
     {'What': 'apple', 'How many': 5, 'Customer name': 'Donald Duck',
@@ -34,8 +34,9 @@ ex2_res: Data = [
 
 
 def _check_value_equal(*,  # pylint: disable=too-many-arguments
-                       res_val, other_val, key, res_row, other_row, res_data,
-                       other_data, turned=False):
+                       res_val: Value, other_val: Value, key: str,
+                       res_row: Row, other_row: Row, res_data: Data,
+                       other_data: Data, turned: bool = False) -> None:
     """Check if values are equal, allowing allowed differnces."""
     if res_val == other_val:
         return

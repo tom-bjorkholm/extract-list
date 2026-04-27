@@ -6,17 +6,20 @@
 
 from copy import deepcopy
 from tempfile import TemporaryDirectory
+from collections.abc import Callable
 import pytest
-from example_data import ExampleData
-from test_handle_output import read_csv, read_excel, read_json
-from check_capsys import check_capsys
 from extract_list.extract_func import extract_func
 from extract_list.extract_config import ExtractConfig
 from extract_list.config_enums import InFileType, OutFileType
+from extract_list.commontypes import Data, Row
+from .example_data import ExampleData
+from .test_handle_output import read_csv, read_excel, \
+    read_json
+from .check_capsys import check_capsys
 
 
 def incr_calls(num_calls: dict[str, dict[int, int]], ind_one: str,
-               ind_two: int):
+               ind_two: int) -> None:
     """Increment or create call record if indexes."""
     if ind_one not in num_calls:
         num_calls[ind_one] = {ind_two: 1}
@@ -25,6 +28,42 @@ def incr_calls(num_calls: dict[str, dict[int, int]], ind_one: str,
         num_calls[ind_one][ind_two] = 1
         return
     num_calls[ind_one][ind_two] += 1
+
+
+def check_example_row(row: Row,
+                      num_calls: dict[str, dict[int, int]]) -> None:
+    """Check row values from extracting the standard example data."""
+    assert len(row) == 6
+    assert 'What' in row
+    what = row['What']
+    how_many = row['How many']
+    customer_name = row['Customer name']
+    street_number = row['Street number']
+    assert isinstance(what, str)
+    assert isinstance(how_many, (int, str))
+    assert isinstance(customer_name, str)
+    assert isinstance(street_number, (int, str))
+    if what == 'carrot':
+        incr_calls(num_calls, 'carrot', 345)
+        assert int(how_many) == 2
+        assert customer_name == 'Donald Duck'
+        assert row['Street'] == 'Some Road'
+        assert int(street_number) == 666
+        assert str(row['key col']) in ['345', 'i_345']
+    if what == 'orange' and 'Donald' in customer_name:
+        incr_calls(num_calls, 'orange', 345)
+        assert int(how_many) == 70
+        assert customer_name == 'Donald Duck'
+        assert row['Street'] == 'Some Road'
+        assert int(street_number) == 666
+        assert str(row['key col']) in ['345', 'i_345']
+    if what == 'orange' and 'Mouse' in customer_name:
+        incr_calls(num_calls, 'orange', 234)
+        assert int(how_many) == 6
+        assert customer_name == 'Mickey Mouse'
+        assert row['Street'] == 'Another Street'
+        assert int(street_number) == 7
+        assert str(row['key col']) in ['234', 'i_234']
 
 
 @pytest.mark.parametrize('inpar',
@@ -39,8 +78,15 @@ def incr_calls(num_calls: dict[str, dict[int, int]], ind_one: str,
                          [(OutFileType.CSV, 'c.csv', read_csv),
                           (OutFileType.EXCEL, 'd.xlsx', read_excel),
                           (OutFileType.JSON, 'x.json', read_json)])
-def test_extract_func_ok1(capsys,  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals # noqa: E501
-                          inpar, inenc, outenc, cfgname, outpar):
+def test_extract_func_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals # noqa: E501
+                          inpar: tuple[
+                              InFileType, str,
+                              Callable[[ExampleData, str, str], None]],
+                          inenc: str, outenc: str, cfgname: str,
+                          outpar: tuple[
+                              OutFileType, str,
+                              Callable[[str, ExtractConfig], Data]]
+                          ) -> None:
     """Test OK use cases 1 of extract_func."""
     with TemporaryDirectory() as dirname:
         cfg = deepcopy(ExtractConfig())
@@ -63,33 +109,11 @@ def test_extract_func_ok1(capsys,  # pylint: disable=too-many-arguments,too-many
                            out_file_name=outfilename)
         assert 0 == ret
         check_capsys(capsys=capsys)
-        data = outpar[2](filename=outfilename, cfg=cfg)
+        data = outpar[2](outfilename, cfg)
         assert len(data) == 5
-        num_calls = {}
+        num_calls: dict[str, dict[int, int]] = {}
         for row in data:
-            assert len(row) == 6
-            assert 'What' in row
-            if row['What'] == 'carrot':
-                incr_calls(num_calls, 'carrot', 345)
-                assert int(row['How many']) == 2
-                assert row['Customer name'] == 'Donald Duck'
-                assert row['Street'] == 'Some Road'
-                assert int(row['Street number']) == 666
-                assert str(row['key col']) in ['345', 'i_345']
-            if row['What'] == 'orange' and 'Donald' in row['Customer name']:
-                incr_calls(num_calls, 'orange', 345)
-                assert int(row['How many']) == 70
-                assert row['Customer name'] == 'Donald Duck'
-                assert row['Street'] == 'Some Road'
-                assert int(row['Street number']) == 666
-                assert str(row['key col']) in ['345', 'i_345']
-            if row['What'] == 'orange' and 'Mouse' in row['Customer name']:
-                incr_calls(num_calls, 'orange', 234)
-                assert int(row['How many']) == 6
-                assert row['Customer name'] == 'Mickey Mouse'
-                assert row['Street'] == 'Another Street'
-                assert int(row['Street number']) == 7
-                assert str(row['key col']) in ['234', 'i_234']
+            check_example_row(row=row, num_calls=num_calls)
         assert num_calls['carrot'][345] == 1
         assert num_calls['orange'][345] == 1
         assert num_calls['orange'][234] == 1

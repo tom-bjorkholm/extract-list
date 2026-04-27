@@ -6,15 +6,17 @@
 
 import json
 from copy import deepcopy
+from typing import cast
 import xmltodict
+from excel_list_transform.commontypes import JsonType
 
 
-class ExampleData():
+class ExampleData:
     """Example data for testing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Construct example data."""
-        self.data = \
+        self.data: dict[str, JsonType] = \
             {
                 'customers': [
                     {'name': 'Donald Duck',
@@ -41,53 +43,53 @@ class ExampleData():
             }
 
     @staticmethod
-    def adjust_for_xml(data):
+    def adjust_for_xml(data: JsonType) -> JsonType:
         """Adjust digit tags to non-digit."""
         localdata = deepcopy(data)
         if isinstance(localdata, list):
-            ndata = []
+            ndata: list[JsonType] = []
             for row in localdata:
                 nrow = ExampleData.adjust_for_xml(row)
                 ndata.append(nrow)
             return ndata
         if isinstance(localdata, dict):
-            ndata = {}
+            newdata: dict[str, JsonType] = {}
             for key, value in localdata.items():
                 if isinstance(key, int):
                     nkey = 'i_' + str(key)
-                    ndata[nkey] = ExampleData.adjust_for_xml(value)
+                    newdata[nkey] = ExampleData.adjust_for_xml(value)
                 elif isinstance(key, str) and key.isdigit():
                     nkey = 'i_' + key
-                    ndata[nkey] = ExampleData.adjust_for_xml(value)
+                    newdata[nkey] = ExampleData.adjust_for_xml(value)
                 else:
-                    ndata[key] = ExampleData.adjust_for_xml(value)
-            return ndata
+                    newdata[key] = ExampleData.adjust_for_xml(value)
+            return newdata
         if isinstance(localdata, int):
             return str(localdata)
         return localdata
 
     @staticmethod
-    def adjust_from_xml(data):
+    def adjust_from_xml(data: JsonType) -> JsonType:
         """Reverse adjust_for_xml."""
         localdata = deepcopy(data)
         if isinstance(localdata, list):
-            ndata = []
+            ndata: list[JsonType] = []
             for row in localdata:
                 nrow = ExampleData.adjust_from_xml(row)
                 ndata.append(nrow)
             return ndata
         if isinstance(localdata, dict):
-            ndata = {}
+            newdata: dict[str, JsonType] = {}
             for key, value in localdata.items():
                 if not isinstance(key, str):
-                    ndata[key] = ExampleData.adjust_from_xml(value)
+                    newdata[key] = ExampleData.adjust_from_xml(value)
                     continue
                 if len(key) < 3 or key[0:2] != 'i_':
-                    ndata[key] = ExampleData.adjust_from_xml(value)
+                    newdata[key] = ExampleData.adjust_from_xml(value)
                     continue
                 nkey = key[2:]
-                ndata[nkey] = ExampleData.adjust_from_xml(value)
-            return ndata
+                newdata[nkey] = ExampleData.adjust_from_xml(value)
+            return newdata
         return localdata
 
     def as_json_text(self) -> str:
@@ -97,11 +99,11 @@ class ExampleData():
 
     def parse_json(self, txt: str) -> None:
         """Set internal data to the data parsed from JSON txt."""
-        self.data = json.loads(txt)
+        self.data = cast(dict[str, JsonType], json.loads(txt))
 
     def as_xml_text(self) -> str:
         """Create XML representation of data."""
-        data = self.adjust_for_xml(self.data)
+        data = cast(dict[str, JsonType], self.adjust_for_xml(self.data))
         if len(self.data) > 1:
             data = {'data': data}
         ret = xmltodict.unparse(input_dict=data, pretty=True)
@@ -110,11 +112,13 @@ class ExampleData():
     def parse_xml(self, txt: str) -> None:
         """Set internal data to the data parsed from XML txt."""
         print('\n\n\n\n From XML: \n')
-        data = xmltodict.parse(xml_input=txt)
+        data = cast(dict[str, JsonType], xmltodict.parse(xml_input=txt))
         if len(data) == 1 and 'data' in data:
-            self.data = self.adjust_from_xml(data['data'])
+            self.data = cast(dict[str, JsonType],
+                             self.adjust_from_xml(data['data']))
         else:
-            self.data = self.adjust_from_xml(data)
+            self.data = cast(dict[str, JsonType],
+                             self.adjust_from_xml(data))
 
     def write_json_to_file(self, filename: str,
                            encoding: str = 'utf-8') -> None:

@@ -18,7 +18,8 @@ from extract_list.commontypes import Data, Row, Value
 class MainDataLine:  # pylint: disable=too-few-public-methods
     """Data of main line."""
 
-    def __init__(self, complete_line: JsonType, key: str | int, row: Row):
+    def __init__(self, complete_line: JsonType, key: str | int,
+                 row: Row) -> None:
         """Construct MainData with data of main line."""
         self.complete_line: JsonType = complete_line
         self.key: str | int = key

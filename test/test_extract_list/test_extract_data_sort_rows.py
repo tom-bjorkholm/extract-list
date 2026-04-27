@@ -6,9 +6,10 @@
 
 from copy import deepcopy
 import pytest
-from check_capsys import check_capsys
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_data import RowCompare, sort_rows
+from extract_list.commontypes import Data, Row
+from .check_capsys import check_capsys
 
 
 @pytest.mark.parametrize('left,right,cols,res',
@@ -26,7 +27,8 @@ from extract_list.extract_data import RowCompare, sort_rows
                            ['a', 'b'], 1),
                           ({'a': None, 'b': 7}, {'a': None, 'b': 6},
                            ['a', 'b'], 1)])
-def test_row_compare(capsys, left, right, cols, res):
+def test_row_compare(capsys: pytest.CaptureFixture[str], left: Row,
+                     right: Row, cols: list[str], res: int) -> None:
     """Test RowCompare."""
     cmp = RowCompare(cols=cols)
     ret = cmp.compare(left_row=left, right_row=right)
@@ -50,7 +52,8 @@ def test_row_compare(capsys, left, right, cols, res):
                             {'a': 6, 'b': 6, 'c': 0},
                             {'a': 6, 'b': 6, 'c': 1},
                             {'a': 5, 'b': 7, 'c': 8}])])
-def test_sort_rows(capsys, ind, cols, outd):
+def test_sort_rows(capsys: pytest.CaptureFixture[str], ind: Data,
+                   cols: list[str], outd: Data) -> None:
     """Test sort_rows."""
     cfg = ExtractConfig()
     cfg.order_rows_by = deepcopy(cols)

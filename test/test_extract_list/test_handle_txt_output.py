@@ -5,16 +5,19 @@
 # MIT License
 
 from tempfile import TemporaryDirectory
+from typing import Optional
 import pytest
-from check_capsys import check_capsys
 from extract_list.handle_txt_output import handle_txt_output, print_col
 from extract_list.extract_config import ExtractConfig
+from extract_list.commontypes import Data
+from .check_capsys import check_capsys
 
 
 @pytest.mark.parametrize('txt, length',
                          [('hi', 10), ('Donald Duck', 20),
                           ('Hello', 5)])
-def test_print_col_ok(capsys, txt, length):
+def test_print_col_ok(capsys: pytest.CaptureFixture[str], txt: str,
+                      length: int) -> None:
     """Test OK test cases for print_col."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.txt'
@@ -27,7 +30,7 @@ def test_print_col_ok(capsys, txt, length):
     check_capsys(capsys=capsys)
 
 
-def column_starts(line: str) -> list[str]:
+def column_starts(line: str) -> list[int]:
     """Get start position of each column."""
     space = True
     ret: list[int] = []
@@ -48,14 +51,15 @@ def column_starts(line: str) -> list[str]:
                            [['b', 'a'],
                             ['world', 'Hello'],
                             ['ö', 'beautiful']]),
-                          ({}, ['Some', 'columns'],
+                          ([], ['Some', 'columns'],
                            [['Some', 'columns']]),
                           ([{'a': 'Hello', 'b': 'world', 'long': 'a'},
                             {'a': 'beautiful', 'b': 'ö', 'long': 'å'}],
                            ['long'],
                            [['long'], ['a'], ['å']])])
-def test_handle_txt_output(capsys,  # pylint: disable=too-many-locals
-                           data, cols, res, enc):
+def test_handle_txt_output(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-locals # noqa: E501
+                           data: Data, cols: list[str],
+                           res: list[list[str]], enc: str) -> None:
     """Test OK test cases for handle_txt_output."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.txt'
@@ -64,8 +68,8 @@ def test_handle_txt_output(capsys,  # pylint: disable=too-many-locals
         cfg.column_order = cols
         handle_txt_output(data=data, filename=fname, cfg=cfg)
         with open(file=fname, mode='r', encoding=enc) as file:
-            prev_col_start = None
-            result = []
+            prev_col_start: Optional[list[int]] = None
+            result: list[list[str]] = []
             lines = file.readlines()
             for row in lines:
                 col_start = column_starts(row)
@@ -82,23 +86,27 @@ def test_handle_txt_output(capsys,  # pylint: disable=too-many-locals
 @pytest.mark.parametrize('cols', [['a', 'b'], ['c', 'd', 'e']])
 @pytest.mark.parametrize('fname', ['a.txt', 'b.dat'])
 @pytest.mark.parametrize('dat', [[{'a': 'h', 'b': 'i'}], []])
-def test_handle_txt_output2(capsys,  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
-                            monkeypatch, enc, cols, fname, dat):
+def test_handle_txt_output2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
+                            monkeypatch: pytest.MonkeyPatch, enc: str,
+                            cols: list[str], fname: str, dat: Data) -> None:
     """Tested mocked test cases for handle_txt_output."""
-    def mocktxtout(data, column_order, filename, encoding):
+    count = 0
+
+    def mocktxtout(data: Data, column_order: list[str], filename: str,
+                   encoding: str) -> None:
         """Mock txt_output."""
-        mocktxtout.count += 1
+        nonlocal count
+        count += 1
         assert data == dat
         assert column_order == cols
         assert filename == fname
         assert encoding == enc
 
-    mocktxtout.count = 0
     monkeypatch.setattr('extract_list.handle_txt_output.txt_output',
                         mocktxtout)
     cfg = ExtractConfig()
     cfg.outfile_encoding = enc
     cfg.column_order = cols
     handle_txt_output(data=dat, filename=fname, cfg=cfg)
-    assert mocktxtout.count == 1
+    assert count == 1
     check_capsys(capsys=capsys)

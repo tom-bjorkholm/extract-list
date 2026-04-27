@@ -8,12 +8,12 @@ from datetime import date
 from importlib.metadata import version as metadata_version
 import pytest
 from excel_list_transform.version_information import VersionInformation
-from check_capsys import check_capsys
 from extract_list.extract_cmd import extract_cmd
+from .check_capsys import check_capsys
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_main(capsys, hflag):
+def test_help_main(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
     """Test help printout of main command."""
     cmd = [hflag]
     with pytest.raises(SystemExit):
@@ -29,7 +29,8 @@ def test_help_main(capsys, hflag):
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_extract(capsys, hflag):
+def test_help_extract(capsys: pytest.CaptureFixture[str],
+                      hflag: str) -> None:
     """Test help printout of extract sub-command."""
     cmd = ['extract', hflag]
     with pytest.raises(SystemExit):
@@ -46,7 +47,8 @@ def test_help_extract(capsys, hflag):
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_example(capsys, hflag):
+def test_help_example(capsys: pytest.CaptureFixture[str],
+                      hflag: str) -> None:
     """Test help printout of cfg-example sub-command."""
     cmd = ['cfg-example', hflag]
     with pytest.raises(SystemExit):
@@ -63,7 +65,8 @@ def test_help_example(capsys, hflag):
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_version(capsys, hflag):
+def test_help_version(capsys: pytest.CaptureFixture[str],
+                      hflag: str) -> None:
     """Test help printout of cfg-example sub-command."""
     cmd = ['version', hflag]
     with pytest.raises(SystemExit):
@@ -81,22 +84,25 @@ def test_help_version(capsys, hflag):
 @pytest.mark.parametrize('ival', ['abc', '2.json'])
 @pytest.mark.parametrize('oflag', ['-o', '--output'])
 @pytest.mark.parametrize('oval', ['gij', 'xy.csv'])
-def test_cmdline_ok1(capsys,  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
-                     monkeypatch, cflag, cfg, iflag, ival, oflag, oval):
+def test_cmdline_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
+                     monkeypatch: pytest.MonkeyPatch, cflag: str, cfg: str,
+                     iflag: str, ival: str, oflag: str, oval: str) -> None:
     """Test parsing of command line for extract."""
+    calls = 0
+
     def patch(in_file_name: str, cfg_file_name: str,
               out_file_name: str) -> int:
         """Monkeypatch of extract_func."""
+        nonlocal calls
         assert cfg_file_name == cfg
         assert in_file_name == ival
         assert out_file_name == oval
-        patch.calls += 1
+        calls += 1
         return 0
-    patch.calls = 0
     monkeypatch.setattr('extract_list.extract_cmd.extract_func', patch)
     cmd = ['extract', oflag, oval, iflag, ival, cflag, cfg]
     _ = extract_cmd(arguments=cmd)
-    assert patch.calls == 1
+    assert calls == 1
     check_capsys(capsys=capsys)
 
 
@@ -107,23 +113,26 @@ def test_cmdline_ok1(capsys,  # pylint: disable=too-many-positional-arguments,to
 @pytest.mark.parametrize('tval', ['excel', 'csv', 'json', 'xml', 'txt'])
 @pytest.mark.parametrize('oflag', ['-o', '--output'])
 @pytest.mark.parametrize('oval', ['gij', 'xy.cfg'])
-def test_cmdline_ok2(capsys,  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
-                     monkeypatch, kflag, kval, tflag, tval, oflag, oval):
+def test_cmdline_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-positional-arguments,too-many-arguments # noqa: E501
+                     monkeypatch: pytest.MonkeyPatch, kflag: str, kval: str,
+                     tflag: str, tval: str, oflag: str, oval: str) -> None:
     """Test parsing of command line for cfg-example."""
+    calls = 0
+
     def patch(filename: str, cfgtype: str,
               out_file_type: str) -> int:
         """Monkeypatch of generate_example_cfg."""
+        nonlocal calls
         assert out_file_type == tval
         assert cfgtype == kval
         assert filename == oval
-        patch.calls += 1
+        calls += 1
         return 0
-    patch.calls = 0
     monkeypatch.setattr('extract_list.extract_cmd.generate_example_cfg',
                         patch)
     cmd = ['cfg-example', oflag, oval, kflag, kval, tflag, tval]
     _ = extract_cmd(arguments=cmd)
-    assert patch.calls == 1
+    assert calls == 1
     check_capsys(capsys=capsys)
 
 
@@ -141,21 +150,25 @@ def test_cmdline_ok2(capsys,  # pylint: disable=too-many-positional-arguments,to
                            '-i abc.xml -o def.xlsx -c ghi.cfg',
                            {'cval': 'ghi.cfg', 'ival': 'abc.xml',
                             'oval': 'def.xlsx'})])
-def test_cmdline_ok3(capsys, monkeypatch, line: str, vals):
+def test_cmdline_ok3(capsys: pytest.CaptureFixture[str],
+                     monkeypatch: pytest.MonkeyPatch, line: str,
+                     vals: dict[str, str]) -> None:
     """Test parsing of command line for extract."""
+    calls = 0
+
     def patch(in_file_name: str, cfg_file_name: str,
               out_file_name: str) -> int:
         """Monkeypatch of extract_func."""
+        nonlocal calls
         assert cfg_file_name == vals['cval']
         assert in_file_name == vals['ival']
         assert out_file_name == vals['oval']
-        patch.calls += 1
+        calls += 1
         return 0
-    patch.calls = 0
     monkeypatch.setattr('extract_list.extract_cmd.extract_func', patch)
     cmd = line.split()
     _ = extract_cmd(arguments=cmd)
-    assert patch.calls == 1
+    assert calls == 1
     check_capsys(capsys=capsys)
 
 
@@ -167,22 +180,26 @@ def test_cmdline_ok3(capsys, monkeypatch, line: str, vals):
                            'cfg-example -o abc.cfg -t csv -k example_xml',
                            {'kval': 'example_xml', 'tval': 'csv',
                             'oval': 'abc.cfg'})])
-def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
+def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
+                     monkeypatch: pytest.MonkeyPatch, line: str,
+                     vals: dict[str, str]) -> None:
     """Test parsing of command line for cfg-example."""
+    calls = 0
+
     def patch(filename: str, cfgtype: str,
               out_file_type: str) -> int:
         """Monkeypatch of generate_example_cfg."""
+        nonlocal calls
         assert out_file_type == vals['tval']
         assert cfgtype == vals['kval']
         assert filename == vals['oval']
-        patch.calls += 1
+        calls += 1
         return 0
-    patch.calls = 0
     monkeypatch.setattr('extract_list.extract_cmd.generate_example_cfg',
                         patch)
     cmd = line.split()
     _ = extract_cmd(arguments=cmd)
-    assert patch.calls == 1
+    assert calls == 1
     check_capsys(capsys=capsys)
 
 
@@ -254,14 +271,15 @@ def test_cmdline_ok4(capsys, monkeypatch, line: str, vals):
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: ' +
                             '-o/--output'])])
-def test_cmdline_nok1(capsys, line, errmsgs):
+def test_cmdline_nok1(capsys: pytest.CaptureFixture[str], line: str,
+                      errmsgs: list[str]) -> None:
     """Test not OK command lines 1."""
     with pytest.raises(SystemExit):
         _ = extract_cmd(arguments=line.split())
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 
-def test_version_cmd1(capsys):
+def test_version_cmd1(capsys: pytest.CaptureFixture[str]) -> None:
     """Test command to print version information."""
     extract_cmd(['version'])
     out, err = capsys.readouterr()
@@ -279,12 +297,15 @@ def test_version_cmd1(capsys):
                            date(year=2024, month=12, day=25), False),
                           ((3, 10, 11, 75, 0),
                            date(year=2027, month=12, day=25), True)])
-def test_version_check_if_u(capsys, monkeypatch, ver, dat, errprint):
+def test_version_check_if_u(capsys: pytest.CaptureFixture[str],
+                            monkeypatch: pytest.MonkeyPatch,
+                            ver: tuple[int, int, int, int, int], dat: date,
+                            errprint: bool) -> None:
     """Test version check if unsupported python widh old Python."""
     mod = 'excel_list_transform.version_information.'
     monkeypatch.setattr(mod + 'sys.version_info', ver)
 
-    def mock_day(_) -> date:
+    def mock_day(_: object) -> date:
         """Mock Version._today."""
         return dat
 
