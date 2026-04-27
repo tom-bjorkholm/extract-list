@@ -4,18 +4,17 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, TypeVar, TypedDict, cast
+from typing import Optional, TypedDict, cast
 from enum import Enum
 from csv import Dialect
 import sys
 from string import whitespace
 from copy import deepcopy
 from collections import Counter
-from excel_list_transform.config import Config, ParseConverter
-from excel_list_transform.config_enums import ExcelLib
-from excel_list_transform.str_to_enum import string_to_enum_best_match
-from extract_list.config_enums import InFileType, OutFileType, \
-    MissingInputForColumn
+from config_as_json import Config, ParseConverter, string_to_enum_best_match
+from extract_list.config_enums import InFileType, \
+    MissingInputForColumn, FormatRequest, list_out_file_formats, \
+    list_out_format_implementations
 
 type CsvSpec = dict[str, Optional[str]]
 
@@ -33,7 +32,7 @@ LLineDict = TypedDict('LLineDict', {'line': list[str],
 class MainLineSpec:  # pylint: disable=too-few-public-methods
     """Some spec."""
 
-    def __init__(self, data: Optional[MLineDict] = None):
+    def __init__(self, data: Optional[MLineDict] = None) -> None:
         """Construct mainline spec."""
         self.line: list[str] = []
         self.columns: dict[str, list[str]] = {}
@@ -51,7 +50,7 @@ class MainLineSpec:  # pylint: disable=too-few-public-methods
 class LinkedLineSpec:  # pylint: disable=too-few-public-methods
     """other spec."""
 
-    def __init__(self, data: Optional[LLineDict] = None):
+    def __init__(self, data: Optional[LLineDict] = None) -> None:
         """Construct linked line spec."""
         self.line: list[str] = []
         self.columns: dict[str, list[str]] = {}
@@ -72,10 +71,6 @@ class LinkedLineSpec:  # pylint: disable=too-few-public-methods
 
 class LinkedLineList(list[LinkedLineSpec]):
     """Type trick for JSON parser."""
-
-
-SomeNamedTuple = TypeVar('SomeNamedTuple', MainLineSpec, LinkedLineSpec)
-SomeCfgTyp = TypeVar('SomeCfgTyp')
 
 
 def _mline_spec_from_dict(data: MLineDict) -> MainLineSpec:
@@ -129,9 +124,11 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.main_line: MainLineSpec = self.example_main_line()
         self.linked_lines: list[LinkedLineSpec] = [self.example_linked_line()]
         self.one_output_line_per_main_line: bool = True
-        self.outfile_type: OutFileType = OutFileType.EXCEL
+        self.outfile_border: FormatRequest = FormatRequest.NO
+        self.outfile_filtered_area: FormatRequest = FormatRequest.NO
+        self.outfile_type: str = 'excel'
         self.outfile_encoding: str = 'utf-8'
-        self.outfile_excel_library: ExcelLib = ExcelLib.PYLIGHTXL
+        self.outfile_excel_library: str = 'OpenPyXL'
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
                                         'Street', 'Street number', 'key col']
         self.order_rows_by: list[str] = []
@@ -152,9 +149,11 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
 
     def _check_self(self) -> None:
         """Check that configuration is OK after reading from file or str."""
-        self._check_filetype(self.infile_type, InFileType)
+        self._check_infiletype(self.infile_type)
         self.check_char_encoding(self.infile_encoding)
-        self._check_filetype(self.outfile_type, OutFileType)
+        # TODO: Use a Validator to check that outfile_type is a valid file type
+        # TODO: Use a Validator to check that outfile_excel_library is a valid library
+        # output file types other that JSON and XML shall use TableIO.
         self.check_char_encoding(self.outfile_encoding)
         self._check_type(self.in_xml_strip_at, bool, 'in_xml_strip_at')
         self._check_type(self.include_key, bool, 'include_key')
@@ -337,8 +336,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             sys.exit(1)
 
     @staticmethod
-    def _check_type(var: SomeCfgTyp, oftype: type[SomeCfgTyp],
-                    varname: str) -> None:
+    def _check_type(var: object, oftype: type[object], varname: str) -> None:
         """Check that config variable is of type."""
         if not isinstance(var, oftype):
             print(f'Configuration parameter "{varname}" has wrong type. ',
@@ -348,19 +346,18 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             sys.exit(1)
 
     @staticmethod
-    def _check_filetype(ftype: InFileType | OutFileType,
-                        enum_type:
-                        type[InFileType] | type[OutFileType]) -> None:
+    def _check_infiletype(ftype: InFileType) -> None:
         """Check that file types are OK."""
-        if not isinstance(ftype, enum_type):
-            print(f'File type {ftype} is not of type {enum_type.__name__}',
+        if not isinstance(ftype, InFileType):
+            print(f'File type {ftype} is not of type InFileType',
                   file=sys.stderr)
             sys.exit(1)
-        if ftype not in enum_type:  # pragma: no cover
+        if ftype not in InFileType:  # pragma: no cover
             allowed = ' ,'.join(list(enum_type))
-            print(f'File type {ftype} is not one of allowed types: {allowed}',
-                  file=sys.stderr)
-            sys.exit(1)
+           print(f'File type {ftype} is not one of allowed types: {allowed}',
+                 file=sys.stderr)
+           sys.exit(1)
+   
 
     @staticmethod
     def get_converter_dict(enum_type: type[Enum]) -> ParseConverter:

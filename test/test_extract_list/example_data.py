@@ -8,7 +8,7 @@ import json
 from copy import deepcopy
 from typing import cast
 import xmltodict
-from excel_list_transform.commontypes import JsonType
+from config_as_json import JsonType
 
 
 class ExampleData:

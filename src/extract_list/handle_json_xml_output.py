@@ -7,8 +7,7 @@
 from copy import deepcopy
 import json
 import xmltodict
-from excel_list_transform.commontypes import JsonType
-from excel_list_transform.commontypes import get_checked_type
+from config_as_json import JsonType
 from extract_list.commontypes import Data, Row, Value
 from extract_list.extract_config import ExtractConfig
 
@@ -34,7 +33,9 @@ def handle_xml_output(data: Data, filename: str, cfg: ExtractConfig) -> None:
             append_to_key(row=row, key=key, prefix='@')
         rowkey = 'row_' + str(i)
         if cfg.include_key and cfg.column_name_for_key in row:
-            rowkey = get_checked_type(row[cfg.column_name_for_key], str)
+            key_value = row[cfg.column_name_for_key]
+            assert isinstance(key_value, str)
+            rowkey = key_value
         outdata[rowkey] = row
     to_output = {'data': outdata}
     with open(file=filename, mode='w', encoding=cfg.outfile_encoding) as file:

@@ -6,7 +6,7 @@
 
 from copy import deepcopy
 import pytest
-from excel_list_transform.commontypes import JsonType
+from config_as_json import JsonType
 from extract_list.extract_data import expand_line, set_at_path
 from .check_capsys import check_capsys
 

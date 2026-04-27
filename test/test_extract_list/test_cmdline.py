@@ -7,7 +7,6 @@
 from datetime import date
 from importlib.metadata import version as metadata_version
 import pytest
-from excel_list_transform.version_information import VersionInformation
 from extract_list.extract_cmd import extract_cmd
 from .check_capsys import check_capsys
 
@@ -57,8 +56,8 @@ def test_help_example(capsys: pytest.CaptureFixture[str],
         'usage: extract_list cfg-example [-h]',
         'Generate example configuration file (example .cfg file).',
         '-k {sw_json_to_rrs,sw_xml_to_rrs',
-        '-t {excel,csv,json,xml,txt}',
-        '--typeofoutput {excel,csv,json,xml,txt}',
+        '-t {CSV,csv,Csv,Excel,',
+        '--typeofoutput {CSV,csv,Csv,Excel,',
         '-o, --output OUTPUT'
     ]
     check_capsys(capsys=capsys, in_out=msgs)
@@ -230,7 +229,7 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
-                            '-t {excel,csv,json,xml,txt} -o OUTPUT',
+                            '-t {CSV,',
                             "invalid choice: 'abc' (choose from " +
                             "sw_json_to_rrs, sw_xml_to_rrs, " +
                             "example_json, example_xml, " +
@@ -240,7 +239,7 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
-                            '-t {excel,csv,json,xml,txt} -o OUTPUT',
+                            '-t {CSV,',
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: -k/--kind']),
                           ('cfg-example -k sw_json_to_rrs -o out.cfg',
@@ -248,7 +247,7 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
-                            '-t {excel,csv,json,xml,txt} -o OUTPUT',
+                            '-t {CSV,',
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: ' +
                             '-t/--typeofoutput']),
@@ -257,17 +256,16 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
-                            '-t {excel,csv,json,xml,txt} -o OUTPUT',
+                            '-t {CSV,',
                             "extract_list cfg-example: error: argument " +
                             "-t/--typeofoutput: invalid choice: 'abc' " +
-                            "(choose from excel, csv, json, xml, " +
-                            "txt)"]),
+                            "(choose from CSV"]),
                           ('cfg-example -k sw_json_to_rrs -t csv',
                            ['usage: extract_list cfg-example [-h]',
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
-                            '-t {excel,csv,json,xml,txt} -o OUTPUT',
+                            '-t {CSV,csv,Csv,Excel,',
                             'extract_list cfg-example: error: the ' +
                             'following arguments are required: ' +
                             '-o/--output'])])
@@ -279,15 +277,18 @@ def test_cmdline_nok1(capsys: pytest.CaptureFixture[str], line: str,
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 
-def test_version_cmd1(capsys: pytest.CaptureFixture[str]) -> None:
+def test_version_cmd1(capsys: pytest.CaptureFixture[str],
+                      monkeypatch: pytest.MonkeyPatch) -> None:
     """Test command to print version information."""
+    monkeypatch.setattr('extract_list.xl_version.XlVersion.' +
+                        '_print_info_on_new_pkgs',
+                        lambda self, versions=None: None)
     extract_cmd(['version'])
     out, err = capsys.readouterr()
     assert '' == err
-    assert f'Python .............. {VersionInformation.python_version()}' \
-        in out
-    assert f'extract_list ........ {metadata_version("extract_list")}'\
-        in out
+    assert 'Python ' in out
+    assert 'extract_list ' in out
+    assert str(metadata_version("extract_list")) in out
 
 
 @pytest.mark.parametrize('ver, dat, errprint',
@@ -302,14 +303,14 @@ def test_version_check_if_u(capsys: pytest.CaptureFixture[str],
                             ver: tuple[int, int, int, int, int], dat: date,
                             errprint: bool) -> None:
     """Test version check if unsupported python widh old Python."""
-    mod = 'excel_list_transform.version_information.'
+    mod = 'versionreporter.versionreporter.'
     monkeypatch.setattr(mod + 'sys.version_info', ver)
 
     def mock_day(_: object) -> date:
         """Mock Version._today."""
         return dat
 
-    monkeypatch.setattr(mod + 'VersionInformation._today', mock_day)
+    monkeypatch.setattr(mod + 'VersionReporter._today', mock_day)
     with pytest.raises(SystemExit):
         extract_cmd(['--help'])
     out, err = capsys.readouterr()

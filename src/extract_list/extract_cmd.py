@@ -11,7 +11,8 @@ from typing import Optional
 import argparse
 import argcomplete
 from extract_list.generate_cfg import generate_example_cfg, \
-    get_types_of_cfg, get_out_file_types
+    get_types_of_cfg
+from extract_list.config_enums import list_out_file_formats
 from extract_list.extract_func import extract_func
 from extract_list.xl_version import XlVersion
 
@@ -82,6 +83,20 @@ See also help text for main command without sub-commands.
 type SubParseAct = 'argparse._SubParsersAction[argparse.ArgumentParser]'
 
 
+def _all_cases(txts: list[str]) -> list[str]:
+    """Return upper, lower and capitalize cases of the texts."""
+    ret = []
+    for txt in txts:
+        ret.append(txt)
+        if txt.upper() not in ret:
+            ret.append(txt.upper())
+        if txt.lower() not in ret:
+            ret.append(txt.lower())
+        if txt.capitalize() not in ret:
+            ret.append(txt.title())
+    return ret
+
+
 def gen_cfg_args(subparsers: SubParseAct) -> None:
     """Add arguments for generate example config sub-command."""
     cfg_help = 'Generate example configuration file (example .cfg file). '
@@ -97,12 +112,12 @@ def gen_cfg_args(subparsers: SubParseAct) -> None:
     kind_help += 'Possible kinds are (' + ', '.join(examplekinds) + ').'
     cfg_parser.add_argument('-k', '--kind', nargs=1, required=True,
                             help=kind_help, choices=examplekinds)
-    outtypes = get_out_file_types()
+    outtypes = list_out_file_formats()
     out_help = 'What output file format should configuration file '
     out_help += 'specify. '
     out_help += 'Possible values are (' + ', '.join(outtypes) + '). '
     cfg_parser.add_argument('-t', '--typeofoutput', nargs=1, required=True,
-                            help=out_help, choices=outtypes)
+                            help=out_help, choices=_all_cases(outtypes))
     cfg_output_help = 'Name of configuration (output) file to create.'
     cfg_parser.add_argument('-o', '--output', nargs=1,
                             help=cfg_output_help, required=True)

@@ -7,9 +7,9 @@
 from typing import OrderedDict, cast, Mapping, Any
 import json
 import xmltodict
-from excel_list_transform.file_extension import fix_file_extension
-from excel_list_transform.file_must_exist import file_must_exist
-from excel_list_transform.commontypes import JsonType
+from config_as_json import JsonType
+from config_as_json.file_extension import fix_file_extension
+from config_as_json.file_must_exist import file_must_exist
 from extract_list.extract_config import ExtractConfig
 from extract_list.config_enums import InFileType
 

@@ -4,8 +4,8 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from excel_list_transform.file_extension import fix_file_extension
-from excel_list_transform.file_must_exist import file_must_exist
+from config_as_json.file_extension import fix_file_extension
+from config_as_json.file_must_exist import file_must_exist
 from extract_list.extract_data import extract_data
 from extract_list.handle_input import handle_input
 from extract_list.handle_output import handle_output

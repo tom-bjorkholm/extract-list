@@ -5,7 +5,6 @@
 # MIT License
 
 from typing import TextIO
-from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_syntax import generate_syntax_txt
 from extract_list.generate_txt_ex_common import \
@@ -84,11 +83,11 @@ as the order record'''
 
 
 def generate_txt_example_json(file: TextIO, cfgtype: CfgTypes,
-                              outtype: OutFileType) -> int:
+                              outtype: str) -> int:
     """Write text describing configuration example_json."""
     assert cfgtype == CfgTypes.EXAMPLE_JSON
     msg = EXAMPLE1_INTRO + \
-        f'The example will create an output file in {outtype.name} format.'
+        f'The example will create an output file in {outtype} format.'
     msg += EXAMPLE_JSON + ORDERS_MAIN_LINE_JSON + EX1_ORDERS
     msg += CUST_LLINE_JSON + EX1_CUST_AND_REST
     print(msg, file=file)
@@ -97,11 +96,11 @@ def generate_txt_example_json(file: TextIO, cfgtype: CfgTypes,
 
 
 def generate_txt_example2_json(file: TextIO, cfgtype: CfgTypes,
-                               outtype: OutFileType) -> int:
+                               outtype: str) -> int:
     """Write text describing configuration example_json."""
     assert cfgtype == CfgTypes.EXAMPLE2_JSON
     msg = EXAMPLE2_INTRO + \
-        f'The example will create an output file in {outtype.name} format.'
+        f'The example will create an output file in {outtype} format.'
     msg += EXAMPLE_JSON + CUST_MAIN_LINE_JSON + EX2_CUST
     msg += ORDERS_LLINE_JSON + EX2_ORDERS_AND_REST
     msg += '\nWe choose "delivery_method" as the second linked line.'

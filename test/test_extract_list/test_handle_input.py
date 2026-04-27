@@ -9,7 +9,7 @@ from copy import deepcopy
 from typing import cast
 import pytest
 import xmltodict
-from excel_list_transform.commontypes import JsonType
+from config_as_json import JsonType
 from extract_list.handle_json_xml_output import \
     json_output
 from extract_list.extract_config import ExtractConfig

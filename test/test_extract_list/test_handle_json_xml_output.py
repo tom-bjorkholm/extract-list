@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 from copy import deepcopy
 from typing import Optional
 import pytest
-from excel_list_transform.commontypes import JsonType
+from config_as_json import JsonType
 from extract_list.handle_json_xml_output import \
     json_output, handle_json_output, append_to_key, handle_xml_output
 from extract_list.extract_config import ExtractConfig

@@ -8,12 +8,10 @@ from tempfile import TemporaryDirectory
 from collections.abc import Callable
 from typing import cast
 import pytest
-from excel_list_transform.commontypes import JsonType
-from excel_list_transform.handle_csv import read_csv_named
-from excel_list_transform.handle_excel import read_excel_named
+from config_as_json import JsonType
+from tableio import FileAccess, OptionalArgsDict, create_tableio
 from extract_list.handle_output import handle_output
 from extract_list.extract_config import ExtractConfig
-from extract_list.config_enums import OutFileType
 from extract_list.commontypes import Data, Value
 from extract_list.handle_input import read_in_json, read_in_xml
 from .check_capsys import check_capsys
@@ -59,27 +57,35 @@ def read_json(filename: str, cfg: ExtractConfig) -> Data:
 
 def read_csv(filename: str, cfg: ExtractConfig) -> Data:
     """Read from CSV."""
-    return read_csv_named(filename=filename, dialect=cfg.get_out_csv_dialect(),
-                          encoding=cfg.outfile_encoding, max_column_read=20)
+    cfg.validate()
+    args = cast(OptionalArgsDict,
+                {'character_encoding': cfg.outfile_encoding})
+    with create_tableio(format_name='CSV', file_name=filename,
+                        file_access=FileAccess.READ,
+                        implementation='csv', args=args) as table:
+        data = table.read_table_dictdata().data
+    return data
 
 
 def read_excel(filename: str, cfg: ExtractConfig) -> Data:
     """Read from Excel."""
-    return read_excel_named(filename=filename, max_column_read=20,
-                            strip_col_names=False, strip_values=False,
-                            excel_lib=cfg.outfile_excel_library)
+    cfg.validate()
+    with create_tableio(format_name='Excel', file_name=filename,
+                        file_access=FileAccess.READ,
+                        implementation='OpenPyXL') as table:
+        data = table.read_table_dictdata().data
+    return data
 
 
 @pytest.mark.parametrize('dat', DATA)
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
 @pytest.mark.parametrize('typ, resfile, reader',
-                         [(OutFileType.CSV, 'a.csv', read_csv),
-                          (OutFileType.EXCEL, 'a.xlsx', read_excel),
-                          (OutFileType.JSON, 'a.json', read_json),
-                          (OutFileType.TXT, 'a.txt', read_txt),
-                          (OutFileType.XML, 'a.xml', read_xml)])
+                         [('CSV', 'a.csv', read_csv),
+                          ('Excel', 'a.xlsx', read_excel),
+                          ('JSON', 'a.json', read_json),
+                          ('XML', 'a.xml', read_xml)])
 def test_handle_output_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
-                           dat: Data, enc: str, typ: OutFileType,
+                           dat: Data, enc: str, typ: str,
                            resfile: str,
                            reader: Callable[[str, ExtractConfig], Data]
                            ) -> None:

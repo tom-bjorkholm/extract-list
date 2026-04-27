@@ -10,7 +10,7 @@ from collections.abc import Callable
 import pytest
 from extract_list.extract_func import extract_func
 from extract_list.extract_config import ExtractConfig
-from extract_list.config_enums import InFileType, OutFileType
+from extract_list.config_enums import InFileType
 from extract_list.commontypes import Data, Row
 from .example_data import ExampleData
 from .test_handle_output import read_csv, read_excel, \
@@ -75,16 +75,16 @@ def check_example_row(row: Row,
 @pytest.mark.parametrize('outenc', ['utf-8', 'iso-8859-1'])
 @pytest.mark.parametrize('cfgname', ['a2.cfg', 'bcd.cfg'])
 @pytest.mark.parametrize('outpar',
-                         [(OutFileType.CSV, 'c.csv', read_csv),
-                          (OutFileType.EXCEL, 'd.xlsx', read_excel),
-                          (OutFileType.JSON, 'x.json', read_json)])
+                         [('CSV', 'c.csv', read_csv),
+                          ('Excel', 'd.xlsx', read_excel),
+                          ('JSON', 'x.json', read_json)])
 def test_extract_func_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals # noqa: E501
                           inpar: tuple[
                               InFileType, str,
                               Callable[[ExampleData, str, str], None]],
                           inenc: str, outenc: str, cfgname: str,
                           outpar: tuple[
-                              OutFileType, str,
+                              str, str,
                               Callable[[str, ExtractConfig], Data]]
                           ) -> None:
     """Test OK use cases 1 of extract_func."""

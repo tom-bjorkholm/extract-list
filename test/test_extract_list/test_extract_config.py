@@ -11,7 +11,7 @@ import pytest
 from extract_list.extract_config import ExtractConfig, \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
     LinkedLineSpec, LLineDict, _linked_line_from_json_array
-from extract_list.config_enums import InFileType, OutFileType
+from extract_list.config_enums import InFileType
 from .check_cfgs_equal import check_cfgs_equal
 from .check_capsys import check_capsys
 
@@ -403,9 +403,10 @@ def test_check_list_str_nok(capsys: pytest.CaptureFixture[str],
                             var: object, name: str,
                             msg: list[str]) -> None:
     """Test not OK cases of _check_list_str."""
+    bad_list = cast(list[str], var)
     with pytest.raises(SystemExit):
-        ExtractConfig._check_list_str(var=var,  # pylint: disable=protected-access  # noqa: E501
-                                      varname=name)
+        ExtractConfig._check_list_str(  # pylint: disable=protected-access
+            var=bad_list, varname=name)
     check_capsys(capsys=capsys, in_err=msg)
 
 
@@ -523,9 +524,10 @@ def test_check_dict_str_lst_nok(capsys: pytest.CaptureFixture[str],
                                 val: object, name: str,
                                 errmsgs: list[str]) -> None:
     """Test not OK cases of _check_dict_str_lst_str."""
+    bad_dict = cast(dict[str, list[str]], val)
     with pytest.raises(SystemExit):
-        ExtractConfig._check_dict_str_lst_str(var=val,  # pylint: disable=protected-access # noqa: E501
-                                              varname=name)
+        # pylint: disable-next=protected-access
+        ExtractConfig._check_dict_str_lst_str(var=bad_dict, varname=name)
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 
@@ -617,9 +619,10 @@ def test_check_linkedline_nok0(capsys: pytest.CaptureFixture[str]) -> None:
     a.columns = {'name': ['ef'], 'address': ['gh']}
     a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
     a.linked_column = ['ab', 'cd', 'ef']
+    bad_linked_lines = cast(list[LinkedLineSpec], a)
     with pytest.raises(SystemExit):
-        ExtractConfig._check_linkedline(a,  # pylint: disable=protected-access # noqa: E501
-                                        'a')
+        ExtractConfig._check_linkedline(  # pylint: disable=protected-access
+            bad_linked_lines, 'a')
     errmsgs = ['Expected a list of LinkedLineSpec in a',
                'of type LinkedLineSpec']
     check_capsys(capsys=capsys, in_err=errmsgs)
@@ -632,9 +635,10 @@ def test_check_linkedline_nok1(capsys: pytest.CaptureFixture[str]) -> None:
     a.columns = {'name': ['ef'], 'address': ['gh']}
     setattr(a, 'linked_main_column', ['xy', 'ab', 'cd', 'ef'])
     setattr(a, 'linked_column', ['ab', 'cd', 'ef'])
+    bad_linked_lines = cast(list[LinkedLineSpec], [a])
     with pytest.raises(SystemExit):
-        ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
-                                        'a')
+        ExtractConfig._check_linkedline(  # pylint: disable=protected-access
+            bad_linked_lines, 'a')
     errmsgs = ['Expected LinkedLineSpec for element in a, but found:',
                'of type MainLineSpec']
     check_capsys(capsys=capsys, in_err=errmsgs)
@@ -693,9 +697,10 @@ def test_check_linkedline_nok5(capsys: pytest.CaptureFixture[str]) -> None:
     a.columns = {'name': ['ef'], 'address': ['gh']}
     a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
     a.linked_column = ['ab', 'cd', 'ef']
+    bad_linked_lines = cast(list[LinkedLineSpec], [a, 2])
     with pytest.raises(SystemExit):
-        ExtractConfig._check_linkedline([a, 2],  # pylint: disable=protected-access # noqa: E501
-                                        'a')
+        ExtractConfig._check_linkedline(  # pylint: disable=protected-access
+            bad_linked_lines, 'a')
     errmsgs = ['Expected LinkedLineSpec for element in a',
                'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
@@ -705,27 +710,18 @@ def test_check_linkedline_nok5(capsys: pytest.CaptureFixture[str]) -> None:
 def test_check_filetype_ok1(capsys: pytest.CaptureFixture[str],
                             fval: InFileType) -> None:
     """Test OK cases 1 of _check_filetype."""
-    ExtractConfig._check_filetype(fval,  # pylint: disable=protected-access # noqa: E501
-                                  InFileType)
-    check_capsys(capsys=capsys)
-
-
-@pytest.mark.parametrize('fval', list(OutFileType))
-def test_check_filetype_ok(capsys: pytest.CaptureFixture[str],
-                           fval: OutFileType) -> None:
-    """Test OK cases  2 of _check_filetype."""
-    ExtractConfig._check_filetype(fval,  # pylint: disable=protected-access # noqa: E501
-                                  OutFileType)
+    ExtractConfig._check_infiletype(fval)  # pylint: disable=protected-access
     check_capsys(capsys=capsys)
 
 
 def test_check_filetype_nok1(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK case 1 of _check_filetype."""
+    bad_filetype = cast(InFileType, 1)
     with pytest.raises(SystemExit):
-        ExtractConfig._check_filetype(1,  # pylint: disable=protected-access # noqa: E501
-                                      OutFileType)
+        ExtractConfig._check_infiletype(  # pylint: disable=protected-access
+            bad_filetype)
     check_capsys(capsys=capsys,
-                 in_err='File type 1 is not of type OutFileType')
+                 in_err='File type 1 is not of type InFileType')
 
 
 @pytest.mark.parametrize('attr',

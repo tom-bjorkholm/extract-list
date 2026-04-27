@@ -7,10 +7,8 @@
 from copy import deepcopy
 # from enum import Enum, auto
 import pytest
-from excel_list_transform.config_enums import ExcelLib
-from excel_list_transform.config import ConfigBadJson
-from extract_list.config_enums import InFileType, OutFileType, \
-    MissingInputForColumn
+from config_as_json import ConfigBadJson, InvalidConfigurationValue
+from extract_list.config_enums import InFileType, MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config import LinkedLineSpec, MainLineSpec
 from .check_cfgs_equal import check_cfgs_equal
@@ -21,17 +19,17 @@ from .check_capsys import check_capsys
 @pytest.mark.parametrize('infiletype', [InFileType.JSON, InFileType.XML])
 @pytest.mark.parametrize('outenc', ['utf-8', 'iso8859-1'])
 @pytest.mark.parametrize('outfiletype',
-                         [OutFileType.JSON, OutFileType.XML, OutFileType.CSV,
-                          OutFileType.EXCEL, OutFileType.TXT])
+                         ['JSON', 'XML', 'CSV', 'Excel', 'txt'])
 def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
                              infiletype: InFileType, outenc: str,
-                             outfiletype: OutFileType) -> None:
+                             outfiletype: str) -> None:
     """Test variation 1 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.infile_encoding = deepcopy(inenc)
     cfg.outfile_encoding = deepcopy(outenc)
     cfg.infile_type = deepcopy(infiletype)
     cfg.outfile_type = deepcopy(outfiletype)
+    cfg.validate()
     txt = cfg.as_json_string()
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
@@ -42,7 +40,7 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     xmlerr = ['Warning: Column name ',
               'is not a valid column name in XML,',
               'contains white space.']
-    errs = None if outfiletype != OutFileType.XML else xmlerr
+    errs = None if outfiletype.lower() != 'xml' else xmlerr
     check_capsys(capsys=capsys, in_err=errs)
 
 
@@ -77,11 +75,10 @@ def test_extract_config_var2(capsys: pytest.CaptureFixture[str],
 @pytest.mark.parametrize('coname', ['abc', 'key column'])
 @pytest.mark.parametrize('csname', ['csv.excel', 'csv.unix_dialect'])
 @pytest.mark.parametrize('deli', [',', ';', ' '])
-@pytest.mark.parametrize('excl', [ExcelLib.OPENPYXL, ExcelLib.PYLIGHTXL,
-                                  ExcelLib.XLSXWRITER])
+@pytest.mark.parametrize('excl', ['OpenPyXL', 'pylightxl', 'XlsxWriter'])
 def test_extract_config_var3(capsys: pytest.CaptureFixture[str],
                              coname: str, csname: str, deli: str,
-                             excl: ExcelLib) -> None:
+                             excl: str) -> None:
     """Test variation 3 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.column_name_for_key = deepcopy(coname)
@@ -170,13 +167,15 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                            ['Type is "int", but expected type "str"']),
                           ('missing_input_for_column', 'no', ConfigBadJson,
                            ['no is not one of: ERROR, EMPTY']),
-                          ('outfile_type', 'line', ConfigBadJson,
-                           ['line is not one of: EXCEL, CSV, JSON, XML, TXT']),
+                          ('outfile_type', 'line', InvalidConfigurationValue,
+                           ['Value line for outfile_type',
+                            'CSV, Excel']),
                           ('outfile_encoding', 'def', SystemExit,
                            ['def is not a recognized encoding']),
-                          ('outfile_excel_library', 'lib', ConfigBadJson,
-                           ['lib is not one of: OPENPYXL, XLSXWRITER,',
-                            'OPENPYXL, XLSXWRITER, PYLIGHTXL']),
+                          ('outfile_excel_library', 'lib',
+                           InvalidConfigurationValue,
+                           ['Value lib for outfile_excel_library',
+                            'OpenPyXL, XlsxWriter, pylightxl']),
                           ('column_order', 'ordered', SystemExit,
                            ['Type is "str", but expected type "list".']),
                           ('column_order', ['What'], SystemExit,
@@ -214,8 +213,8 @@ def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
     """Test not OK variations 1 of ExtractConfig."""
     cfg = ExtractConfig()
     setattr(cfg, attr, val)
-    txt = cfg.as_json_string()
     with pytest.raises(exc):
+        txt = cfg.as_json_string()
         _ = ExtractConfig(from_json_data_text=txt)
     check_capsys(capsys=capsys, in_err=msgs)
 

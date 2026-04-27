@@ -10,11 +10,10 @@ from shutil import copyfile
 from collections.abc import Callable
 from typing import Optional, cast
 import pytest
-from excel_list_transform.file_extension import fix_file_extension
+from config_as_json.file_extension import fix_file_extension
 from extract_list.generate_cfg import generate_cfg_example, \
     generate_cfg_example2, generate_cfg_sw_to_rrs
 from extract_list.extract_config import ExtractConfig
-from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes, Data
 from extract_list.extract_func import extract_func
 from extract_list.extract_cmd import extract_cmd
@@ -26,11 +25,11 @@ from .check_result import check_result, ex_res, ex2_res
 
 
 @pytest.mark.parametrize('outp',
-                         [(OutFileType.EXCEL, read_excel,
+                         [('Excel', read_excel,
                            'b.xlsx'),
-                          (OutFileType.CSV, read_csv,
+                          ('CSV', read_csv,
                            'b.csv'),
-                          (OutFileType.JSON, read_json,
+                          ('JSON', read_json,
                            'b.json')])
 @pytest.mark.parametrize('inp',
                          [(CfgTypes.EXAMPLE_JSON,
@@ -46,13 +45,13 @@ from .check_result import check_result, ex_res, ex2_res
                            ExampleData.write_xml_to_file,
                            'd.xml', ex2_res, generate_cfg_example2)])
 def test_gen_cfg_ex_ok1(capsys: pytest.CaptureFixture[str],
-                        outp: tuple[OutFileType,
+                        outp: tuple[str,
                                     Callable[[str, ExtractConfig], Data],
                                     str],
                         inp: tuple[CfgTypes,
                                    Callable[[ExampleData, str], None],
                                    str, Data,
-                                   Callable[[str, CfgTypes, OutFileType],
+                                   Callable[[str, CfgTypes, str],
                                             int]]) -> None:
     """Test OK cases 1 of generate cfg exmaple."""
     with TemporaryDirectory() as folder:
@@ -71,7 +70,7 @@ def test_gen_cfg_ex_ok1(capsys: pytest.CaptureFixture[str],
         check_result(result_data=data, other_result=inp[3])
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
-            assert '"outfile_type": "' + outp[0].name + '"' in cfgtxt
+            assert '"outfile_type": "' + outp[0] + '"' in cfgtxt
     check_capsys(capsys=capsys)
 
 
@@ -88,11 +87,11 @@ sw_res_data: Data = [
 
 
 @pytest.mark.parametrize('outp',
-                         [(OutFileType.EXCEL, read_excel,
+                         [('Excel', read_excel,
                            'b.xlsx'),
-                          (OutFileType.CSV, read_csv,
+                          ('CSV', read_csv,
                            'b.csv'),
-                          (OutFileType.JSON, read_json,
+                          ('JSON', read_json,
                            'b.json')])
 @pytest.mark.parametrize('inp',
                          [(CfgTypes.SW_JSON_TO_RRS,
@@ -102,7 +101,7 @@ sw_res_data: Data = [
                            'test/test_extract_list/SW.xml',
                            'a.xml')])
 def test_gen_cfg_sw_ok1(capsys: pytest.CaptureFixture[str],
-                        outp: tuple[OutFileType,
+                        outp: tuple[str,
                                     Callable[[str, ExtractConfig], Data],
                                     str],
                         inp: tuple[CfgTypes, str, str]) -> None:
@@ -124,7 +123,7 @@ def test_gen_cfg_sw_ok1(capsys: pytest.CaptureFixture[str],
         check_result(result_data=data, other_result=sw_res_data)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
-            assert '"outfile_type": "' + outp[0].name + '"' in cfgtxt
+            assert '"outfile_type": "' + outp[0] + '"' in cfgtxt
     check_capsys(capsys=capsys)
 
 

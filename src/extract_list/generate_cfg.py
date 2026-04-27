@@ -6,10 +6,10 @@
 
 # from typing import TextIO
 from enum import Enum
-from excel_list_transform.str_to_enum import string_to_enum_best_match
-from excel_list_transform.file_extension import fix_file_extension
-from extract_list.config_enums import OutFileType, InFileType, \
-    MissingInputForColumn
+from config_as_json import string_best_match, string_to_enum_best_match
+from config_as_json.file_extension import fix_file_extension
+from extract_list.config_enums import FormatRequest, InFileType, \
+    MissingInputForColumn, list_out_file_formats
 from extract_list.extract_config import ExtractConfig, \
     MLineDict, MainLineSpec, LLineDict, LinkedLineSpec
 from extract_list.commontypes import CfgTypes
@@ -21,7 +21,7 @@ from extract_list.generate_txt_example_xml import \
 
 
 def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
-                         outtype: OutFileType) -> int:
+                         outtype: str) -> int:
     """Generate cfg file for example."""
     assert cfgtype in (CfgTypes.EXAMPLE_JSON, CfgTypes.EXAMPLE_XML)
     cfg = ExtractConfig()
@@ -37,7 +37,7 @@ def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
 
 
 def generate_cfg_example2(outfilename: str, cfgtype: CfgTypes,
-                          outtype: OutFileType) -> int:
+                          outtype: str) -> int:
     """Generate cfg file for example."""
     assert cfgtype in (CfgTypes.EXAMPLE2_JSON, CfgTypes.EXAMPLE2_XML)
     cfg = ExtractConfig()
@@ -78,7 +78,7 @@ def generate_cfg_example2(outfilename: str, cfgtype: CfgTypes,
 
 
 def generate_cfg_sw_to_rrs(outfilename: str, cfgtype: CfgTypes,
-                           outtype: OutFileType) -> int:
+                           outtype: str) -> int:
     """Generate cfg file for SailWave to RRS."""
     assert cfgtype in (CfgTypes.SW_JSON_TO_RRS, CfgTypes.SW_XML_TO_RRS)
     cfg = ExtractConfig()
@@ -121,11 +121,6 @@ def get_types_of_cfg() -> list[str]:
     return _lower_str_enum(CfgTypes)
 
 
-def get_out_file_types() -> list[str]:
-    """Get a list of possible out file types in config."""
-    return _lower_str_enum(OutFileType)
-
-
 TXTFUNCS = {CfgTypes.EXAMPLE_JSON: generate_txt_example_json,
             CfgTypes.EXAMPLE_XML: generate_txt_example_xml,
             CfgTypes.EXAMPLE2_JSON: generate_txt_example2_json,
@@ -145,8 +140,11 @@ def generate_example_cfg(filename: str, cfgtype: str,
                          out_file_type: str) -> int:
     """Generate example configuration file and accompanying txt file."""
     type_of_cfg = string_to_enum_best_match(inp=cfgtype, num_type=CfgTypes)
-    type_out = string_to_enum_best_match(inp=out_file_type,
-                                         num_type=OutFileType)
+    type_out = string_best_match(
+        out_file_type,
+        list_out_file_formats(border=FormatRequest.NO,
+                              filtered_area=FormatRequest.NO),
+        'outfile_type')
     cfgout = fix_file_extension(filename=filename, ext_to_add='.cfg')
     ret = CFGFUNCS[type_of_cfg](outfilename=cfgout, cfgtype=type_of_cfg,
                                 outtype=type_out)

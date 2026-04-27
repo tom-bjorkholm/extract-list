@@ -5,7 +5,11 @@
 # MIT License
 
 from typing import TextIO
-from extract_list.config_enums import OutFileType, InFileType
+from extract_list.config_enums import (
+    FormatRequest,
+    InFileType,
+    list_out_file_formats
+)
 
 
 def generate_syntax_txt(file: TextIO) -> None:
@@ -48,7 +52,9 @@ def generate_syntax_txt(file: TextIO) -> None:
     The type of output file to produce is determined by "outfile_type".
     "outfile_type" can have the values:
     '''
-    msg += ' ,'.join(['"' + x.name + '"' for x in OutFileType])
+    out_formats = list_out_file_formats(border=FormatRequest.NO,
+                                        filtered_area=FormatRequest.NO)
+    msg += ' ,'.join(['"' + x + '"' for x in out_formats])
     msg += '''
 
     As CSV, TXT, JSON and XML are syntaxes in text files, the text files can
@@ -62,14 +68,17 @@ def generate_syntax_txt(file: TextIO) -> None:
     "out_csv_dialect" changes how CSV files are written. It is always needed
     in the configuration file, but is only used if the output is CSV.
 
-    Excel files can be written using three libraries. "outfile_excel_library"
-    can have values "OPENPYXL", "XLSXWRITER" or "PYLIGHTXL". These are
-    different third party libraries that can read/write excel. My experience
-    is that "PYLIGHTXL" most often is able to read and write excel
-    files correctly. If you have trouble writing your particular excel file,
-    please try another library.
-    "outfile_excel_library" is always needed in the configuration file
-    but is only used if the output is excel.
+    TableIO may provide several implementations for a file format. The
+    "outfile_excel_library" parameter selects the implementation. Old
+    configuration files used this parameter only for Excel output, so the name
+    is kept for compatibility.
+
+    The "outfile_border" parameter can be "NO", "IF_AVAILABLE" or "NEEDED".
+    The "outfile_filtered_area" parameter can be "NO", "IF_AVAILABLE" or
+    "NEEDED". If "NEEDED" is used, the selected output format must support the
+    requested feature. If "IF_AVAILABLE" is used, TableIO will prefer an
+    implementation that supports the feature but may ignore it when no
+    implementation can support it.
 
     Data to extract
     ===============

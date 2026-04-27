@@ -7,7 +7,7 @@
 from copy import deepcopy
 from typing import Optional, cast
 import pytest
-from excel_list_transform.commontypes import JsonType
+from config_as_json import JsonType
 from extract_list.config_enums import MissingInputForColumn
 from extract_list.extract_config import ExtractConfig, LinkedLineSpec, \
     MainLineSpec

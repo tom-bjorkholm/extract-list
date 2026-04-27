@@ -5,7 +5,6 @@
 # MIT License
 
 from typing import TextIO
-from extract_list.config_enums import OutFileType
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_syntax import generate_syntax_txt
 from extract_list.generate_txt_ex_common import \
@@ -102,11 +101,11 @@ as the order record'''
 
 
 def generate_txt_example_xml(file: TextIO, cfgtype: CfgTypes,
-                             outtype: OutFileType) -> int:
+                             outtype: str) -> int:
     """Write text describing configuration example_xml."""
     assert cfgtype == CfgTypes.EXAMPLE_XML
     msg = EXAMPLE1_INTRO + \
-        f'The example will create an output file in {outtype.name} format.'
+        f'The example will create an output file in {outtype} format.'
     msg += EXAMPLE_XML
     msg += ORDERS_MAIN_LINE_XML + EX1_ORDERS
     msg += CUST_LLINE_XML + EX1_CUST_AND_REST
@@ -116,11 +115,11 @@ def generate_txt_example_xml(file: TextIO, cfgtype: CfgTypes,
 
 
 def generate_txt_example2_xml(file: TextIO, cfgtype: CfgTypes,
-                              outtype: OutFileType) -> int:
+                              outtype: str) -> int:
     """Write text describing configuration example_xml."""
     assert cfgtype == CfgTypes.EXAMPLE2_XML
     msg = EXAMPLE2_INTRO + \
-        f'The example will create an output file in {outtype.name} format.'
+        f'The example will create an output file in {outtype} format.'
     msg += EXAMPLE_XML + CUST_MAIN_LINE_XML + EX2_CUST
     msg += ORDERS_LLINE_XML + EX2_ORDERS_AND_REST
     msg += '\nWe choose ["data", "delivery_method"] as the second ' +\
