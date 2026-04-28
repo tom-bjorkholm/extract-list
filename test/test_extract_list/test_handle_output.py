@@ -7,6 +7,7 @@
 from tempfile import TemporaryDirectory
 from collections.abc import Callable
 from typing import cast
+import sys
 import pytest
 from config_as_json import JsonType
 from tableio import FileAccess, OptionalArgsDict, create_tableio
@@ -57,7 +58,7 @@ def read_json(filename: str, cfg: ExtractConfig) -> Data:
 
 def read_csv(filename: str, cfg: ExtractConfig) -> Data:
     """Read from CSV."""
-    cfg.validate()
+    cfg.validate(stderr_file=sys.stderr)
     args = cast(OptionalArgsDict,
                 {'character_encoding': cfg.outfile_encoding})
     with create_tableio(format_name='CSV', file_name=filename,
@@ -69,7 +70,7 @@ def read_csv(filename: str, cfg: ExtractConfig) -> Data:
 
 def read_excel(filename: str, cfg: ExtractConfig) -> Data:
     """Read from Excel."""
-    cfg.validate()
+    cfg.validate(stderr_file=sys.stderr)
     with create_tableio(format_name='Excel', file_name=filename,
                         file_access=FileAccess.READ,
                         implementation='OpenPyXL') as table:

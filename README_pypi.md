@@ -111,13 +111,20 @@ This is specified with **"infile_encoding"**. Unless you know that you need anot
 
 ### Type of output file
 
-The type of output file to produce is determined by **"outfile_type"**. **"outfile_type"** can have the values:
+The type of output file to produce is determined by **"outfile_type"**.
+Table-style output is written with TableIO. The configured value is
+case-insensitive and is normalized when the configuration is read. Typical
+values include:
 
-* *"EXCEL"*
+* *"Excel"*
 * *"CSV"*
+* *"ODS"*
+* *"HTML"*
+* *"LaTeX"*
+* *"md"*
+* *"txt"*
 * *"JSON"*
 * *"XML"*
-* *"TXT"*
 
 As *CSV, TXT, JSON* and *XML* are syntaxes in text files, the text files can have an encoding for the text in the files
 [https://en.wikipedia.org/wiki/Character_encoding](https://en.wikipedia.org/wiki/Character_encoding).
@@ -125,7 +132,13 @@ This is specified with **"outfile_encoding"**. Unless you know that you need ano
 
 Comma separated values files (CSV files) may differ slightly depending on the programs used to read/write them and the locale used. **"out_csv_dialect"** changes how CSV files are written. It is always needed in the configuration file, but is only used if the output is CSV.
 
-Excel files can be written using three libraries. **"outfile_excel_library"** can have values *"OPENPYXL"*, *"XLSXWRITER"* or *"PYLIGHTXL"*. These are different third party libraries that can read/write excel. My experience is that "PYLIGHTXL" most often is able to read and write excel files correctly. If you have trouble writing your particular excel file, please try another library. **"outfile_excel_library"** is always needed in the configuration file but is only used if the output is excel.
+TableIO may provide several implementations for a file format.
+**"outfile_excel_library"** selects the implementation. The name is kept for
+compatibility with older configuration files where it only selected the Excel
+library. **"outfile_border"** and **"outfile_filtered_area"** can be *"NO"*,
+*"IF_AVAILABLE"* or *"NEEDED"*. If a feature is *"NEEDED"*, the selected output
+format must support it. If it is *"IF_AVAILABLE"*, TableIO prefers an
+implementation that supports it and may ignore it when no implementation can.
 
 ### Data to extract
 
@@ -175,7 +188,7 @@ Source code and tests are available at [https://bitbucket.org/tom-bjorkholm/extr
 
 ## Test summary
 
-- Test result: 1179 passed in 9s
+- Test result: 1170 passed in 9s
 - No flake8 warnings.
 - No mypy errors found.
 - Built version(s): 0.2.15

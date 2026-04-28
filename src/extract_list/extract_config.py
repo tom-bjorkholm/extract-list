@@ -4,17 +4,21 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, TypedDict, cast
+from typing import Optional, TextIO, TypedDict, cast
 from enum import Enum
 from csv import Dialect
 import sys
 from string import whitespace
 from copy import deepcopy
 from collections import Counter
-from config_as_json import Config, ParseConverter, string_to_enum_best_match
-from extract_list.config_enums import InFileType, \
-    MissingInputForColumn, FormatRequest, list_out_file_formats, \
-    list_out_format_implementations
+from config_as_json import Config, InvalidConfiguration, JsonType, \
+    MemberValidationStep, ParseConverter, StrValidator, ValidationPlan, \
+    WholeConfigValidationStep, WholeConfigValidator, string_to_enum_best_match
+from tableio import list_implementations_tableio
+from extract_list.config_enums import FormatRequest, InFileType, \
+    MissingInputForColumn, is_internal_out_file_format, \
+    list_out_file_formats, list_out_format_implementations
+
 
 type CsvSpec = dict[str, Optional[str]]
 
@@ -111,8 +115,9 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                            'expand_at': []}
         return LinkedLineSpec(data=data)
 
-    def __init__(self,  from_json_data_text: Optional[str] = None,
-                 from_json_filename: Optional[str] = None) -> None:
+    def __init__(self, from_json_data_text: Optional[str] = None,
+                 from_json_filename: Optional[str] = None,
+                 stderr_file: TextIO = sys.stderr) -> None:
         """Construct extract configuration object."""
         self.infile_type: InFileType = InFileType.JSON
         self.infile_encoding: str = 'utf-8'
@@ -139,22 +144,28 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                                          'lineterminator': None,
                                          'escapechar': None}
         super().__init__(from_json_data_text=from_json_data_text,
-                         from_json_filename=from_json_filename)
-        self._check_self()
+                         from_json_filename=from_json_filename,
+                         stderr_file=stderr_file)
+        self._check_self(stderr_file=stderr_file)
 
-    def get_out_csv_dialect(self) -> type[Dialect]:
-        """Get CSV dialect for outpyt file."""
+    def _get_out_csv_dialect(self, stderr_file: TextIO) -> Dialect:
+        """Get CSV dialect for output file."""
         assert self.out_csv_dialect['name'] is not None
-        return self.get_csv_dialect(**self.out_csv_dialect)
+        return self.get_csv_dialect(**self.out_csv_dialect,
+                                    stderr_file=stderr_file)
 
-    def _check_self(self) -> None:
+    def _check_self(self, stderr_file: TextIO) -> None:
         """Check that configuration is OK after reading from file or str."""
         self._check_infiletype(self.infile_type)
-        self.check_char_encoding(self.infile_encoding)
-        # TODO: Use a Validator to check that outfile_type is a valid file type
-        # TODO: Use a Validator to check that outfile_excel_library is a valid library
-        # output file types other that JSON and XML shall use TableIO.
-        self.check_char_encoding(self.outfile_encoding)
+        self.check_char_encoding(self.infile_encoding, stderr_file=stderr_file)
+        self._check_enum(self.outfile_border, FormatRequest, 'outfile_border')
+        self._check_enum(self.outfile_filtered_area, FormatRequest,
+                         'outfile_filtered_area')
+        self._check_type(self.outfile_type, str, 'outfile_type')
+        self.check_char_encoding(self.outfile_encoding,
+                                 stderr_file=stderr_file)
+        self._check_type(self.outfile_excel_library, str,
+                         'outfile_excel_library')
         self._check_type(self.in_xml_strip_at, bool, 'in_xml_strip_at')
         self._check_type(self.include_key, bool, 'include_key')
         self._check_type(self.column_name_for_key, str, 'column_name_for_key')
@@ -167,16 +178,15 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self._check_linkedline(self.linked_lines, 'linked_lines')
         self._check_type(self.one_output_line_per_main_line, bool,
                          'one_output_line_per_main_line')
-        self._check_enum(self.outfile_excel_library, ExcelLib,
-                         'outfile_excel_library')
         self._check_type(self.column_order, list, 'column_order')
         self._check_list_str(self.column_order, 'column_order')
         self._check_type(self.order_rows_by, list, 'order_rows_by')
         self._check_list_str(self.order_rows_by, 'order_rows_by')
-        self.check_no_duplicates(self.column_order, 'column_order')
+        self.check_no_duplicates(self.column_order, 'column_order',
+                                 stderr_file=stderr_file)
         self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
-        self.check_csv()
+        self._check_csv(stderr_file=stderr_file)
         self.check_extract_unique_colnames()
         self.cross_check_columns()
         self.cross_check_attrs()
@@ -240,7 +250,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
 
     def check_valid_xml_colnames(self) -> None:
         """Check and warn for column names that are not valid XML."""
-        if self.outfile_type != OutFileType.XML:
+        if self.outfile_type.lower() != 'xml':
             return
         for colname in self.column_order:
             if True in [c in colname for c in whitespace]:
@@ -249,10 +259,10 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                     ' space.'
                 print(msg, file=sys.stderr)
 
-    def check_csv(self) -> None:
+    def _check_csv(self, stderr_file: TextIO) -> None:
         """Check if CSV configuration is OK."""
         try:
-            _ = self.get_out_csv_dialect()
+            _ = self._get_out_csv_dialect(stderr_file=stderr_file)
         except Exception as exc:  # pylint: disable=broad-exception-caught
             print('Configured out_csv_dialect is not valid', file=sys.stderr)
             print(str(exc), file=sys.stderr)
@@ -353,11 +363,10 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                   file=sys.stderr)
             sys.exit(1)
         if ftype not in InFileType:  # pragma: no cover
-            allowed = ' ,'.join(list(enum_type))
-           print(f'File type {ftype} is not one of allowed types: {allowed}',
-                 file=sys.stderr)
-           sys.exit(1)
-   
+            allowed = ' ,'.join([filetype.name for filetype in InFileType])
+            print(f'File type {ftype} is not one of allowed types: {allowed}',
+                  file=sys.stderr)
+            sys.exit(1)
 
     @staticmethod
     def get_converter_dict(enum_type: type[Enum]) -> ParseConverter:
@@ -391,17 +400,41 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         'args': {arg_name: arg_value}}}.
         """
         return {'infile_type': self.get_converter_dict(InFileType),
-                'outfile_type': self.get_converter_dict(OutFileType),
-                'outfile_excel_library': self.get_converter_dict(ExcelLib),
+                'outfile_border': self.get_converter_dict(FormatRequest),
+                'outfile_filtered_area':
+                    self.get_converter_dict(FormatRequest),
                 'missing_input_for_column':
                     self.get_converter_dict(MissingInputForColumn),
                 'main_line': self.get_converter_mainline(MainLineSpec),
                 'linked_lines': self.get_converter_linkedline()}
 
-    def as_json_string(self) -> str:
+    def _def_vals_for_optional(self) -> dict[str, JsonType]:
+        """Get optional configuration defaults."""
+        return {'outfile_border': cast(JsonType, FormatRequest.NO),
+                'outfile_filtered_area': cast(JsonType, FormatRequest.NO)}
+
+    def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
+        """Get validation plan for the configuration."""
+        _ = stderr_file
+        outfile_types = list_out_file_formats(
+            border=self.outfile_border,
+            filtered_area=self.outfile_filtered_area)
+        outf_type_val = StrValidator(allowed_values=outfile_types,
+                                     ignore_case=True, best_match=True,
+                                     normalize=True)
+        outf_lib_val = StrValidator(allowed_values=_list_implementations(),
+                                    ignore_case=True, best_match=True,
+                                    normalize=True)
+        return [
+            MemberValidationStep(['outfile_type'], outf_type_val),
+            MemberValidationStep(['outfile_excel_library'], outf_lib_val),
+            WholeConfigValidationStep(OutputImplementationValidator())
+        ]
+
+    def as_json_string(self, stderr_file: TextIO = sys.stderr) -> str:
         """Get JSON string representing this object."""
         if isinstance(self.main_line, dict):
-            return super().as_json_string()
+            return super().as_json_string(stderr_file=stderr_file)
         adjusted = deepcopy(self)
         # intentionally violating typing to get wanted JSON
         adjusted.main_line = cast(MainLineSpec, self.main_line.__dict__)
@@ -409,4 +442,44 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         for i in self.linked_lines:
             # intentionally violating typing to get wanted JSON
             adjusted.linked_lines.append(cast(LinkedLineSpec, i.__dict__))
-        return adjusted.as_json_string()
+        return adjusted.as_json_string(stderr_file=stderr_file)
+
+
+def _list_implementations() -> list[str]:
+    """List output implementations accepted in configuration."""
+    implementations = list_implementations_tableio(empty_is_ok=True)
+    implementations.append('internal')
+    return implementations
+
+
+class OutputImplementationValidator(  # pylint: disable=too-few-public-methods
+        WholeConfigValidator):
+    """Validate the configured output format implementation."""
+
+    def validate(self, config: Config,
+                 stderr_file: TextIO = sys.stderr) -> None:
+        """Validate and normalize the output format implementation."""
+        assert isinstance(config, ExtractConfig)
+        if is_internal_out_file_format(config.outfile_type):
+            config.outfile_excel_library = 'internal'
+            return
+        implementations = list_out_format_implementations(
+            format_name=config.outfile_type, border=config.outfile_border,
+            filtered_area=config.outfile_filtered_area)
+        if not implementations:
+            message = 'Invalid configuration: '
+            message += f'No implementation can write {config.outfile_type}.'
+            print(message, file=stderr_file)
+            raise InvalidConfiguration(message)
+        if config.outfile_excel_library in implementations:
+            return
+        if config.outfile_type.lower() != 'excel':
+            config.outfile_excel_library = implementations[0]
+            return
+        message = 'Invalid configuration: '
+        message += f'{config.outfile_excel_library} cannot write '
+        message += f'{config.outfile_type} with requested output features. '
+        message += 'Allowed implementations: '
+        message += ', '.join(implementations) + '.'
+        print(message, file=stderr_file)
+        raise InvalidConfiguration(message)

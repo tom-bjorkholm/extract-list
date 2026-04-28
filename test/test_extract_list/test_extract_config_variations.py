@@ -6,6 +6,7 @@
 
 from copy import deepcopy
 # from enum import Enum, auto
+import sys
 import pytest
 from config_as_json import ConfigBadJson, InvalidConfigurationValue
 from extract_list.config_enums import InFileType, MissingInputForColumn
@@ -29,7 +30,7 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     cfg.outfile_encoding = deepcopy(outenc)
     cfg.infile_type = deepcopy(infiletype)
     cfg.outfile_type = deepcopy(outfiletype)
-    cfg.validate()
+    cfg.validate(stderr_file=sys.stderr)
     txt = cfg.as_json_string()
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
@@ -212,32 +213,32 @@ def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
                              val: object, exc: type[BaseException],
                              msgs: str | list[str]) -> None:
     """Test not OK variations 1 of ExtractConfig."""
-    cfg = ExtractConfig()
+    cfg = ExtractConfig(stderr_file=sys.stderr)
     setattr(cfg, attr, val)
     with pytest.raises(exc):
-        txt = cfg.as_json_string()
-        _ = ExtractConfig(from_json_data_text=txt)
+        txt = cfg.as_json_string(stderr_file=sys.stderr)
+        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     check_capsys(capsys=capsys, in_err=msgs)
 
 
 def test_extract_config_err2(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK variation 2 of ExtractConfig."""
-    cfg = ExtractConfig()
+    cfg = ExtractConfig(stderr_file=sys.stderr)
     cfg.main_line.columns['Cost'] = ['item info', 'cost']
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     with pytest.raises(SystemExit):
-        _ = ExtractConfig(from_json_data_text=txt)
+        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     check_capsys(capsys=capsys,
                  in_err='Extracted column "Cost" is missing in column_order')
 
 
 def test_extract_config_err3(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK variation 3 of ExtractConfig."""
-    cfg = ExtractConfig()
+    cfg = ExtractConfig(stderr_file=sys.stderr)
     cfg.linked_lines[0].columns['Zip'] = ['zip']
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     with pytest.raises(SystemExit):
-        _ = ExtractConfig(from_json_data_text=txt)
+        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     check_capsys(capsys=capsys,
                  in_err='Extracted column "Zip" is missing in column_order')
 
@@ -246,9 +247,9 @@ def test_extract_config_err4(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK variation 4 of ExtractConfig."""
     cfg = ExtractConfig()
     cfg.column_order.append('Zip')
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     with pytest.raises(SystemExit):
-        _ = ExtractConfig(from_json_data_text=txt)
+        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     msgs = ['column order includes column "Zip"',
             'but that column is not extracted']
     check_capsys(capsys=capsys, in_err=msgs)

@@ -7,6 +7,7 @@
 from copy import deepcopy
 from enum import Enum, auto
 from typing import cast
+import sys
 import pytest
 from extract_list.extract_config import ExtractConfig, \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
@@ -339,7 +340,7 @@ def test_check_csv_ok(capsys: pytest.CaptureFixture[str]) -> None:
                            'quotechar': '"',
                            'lineterminator': None,
                            'escapechar': None}
-    cfg.check_csv()
+    cfg._check_csv(stderr_file=sys.stderr)  # pylint: disable=protected-access # noqa: E501
     check_capsys(capsys=capsys)
 
 
@@ -352,7 +353,7 @@ def test_check_csv_nok1(capsys: pytest.CaptureFixture[str]) -> None:
                            'lineterminator': None,
                            'escapechar': None}
     with pytest.raises(SystemExit):
-        cfg.check_csv()
+        cfg._check_csv(stderr_file=sys.stderr)  # pylint: disable=protected-access # noqa: E501
     errmsg = ['Configured out_csv_dialect is not valid',
               'Unknown csv dialect: csv.unix_dialects']
     check_capsys(capsys=capsys, in_err=errmsg)
@@ -367,7 +368,7 @@ def test_check_csv_nok2(capsys: pytest.CaptureFixture[str]) -> None:
                            'lineterminator': None,
                            'escapechar': None}
     with pytest.raises(SystemExit):
-        cfg.check_csv()
+        cfg._check_csv(stderr_file=sys.stderr)  # pylint: disable=protected-access # noqa: E501
     errmsgs = ['Configured out_csv_dialect is not valid',
                "unexpected keyword argument 'dellimiter'"]
     check_capsys(capsys=capsys, in_err=errmsgs)
