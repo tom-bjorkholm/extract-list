@@ -13,7 +13,8 @@ from copy import deepcopy
 from collections import Counter
 from config_as_json import Config, InvalidConfiguration, JsonType, \
     MemberValidationStep, ParseConverter, StrValidator, ValidationPlan, \
-    WholeConfigValidationStep, WholeConfigValidator, string_to_enum_best_match
+    WholeConfigValidationStep, WholeConfigValidator, \
+    string_to_enum_best_match, migrate_cfg
 from tableio import list_implementations_tableio
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, is_internal_out_file_format, \
@@ -483,3 +484,10 @@ class OutputImplementationValidator(  # pylint: disable=too-few-public-methods
         message += ', '.join(implementations) + '.'
         print(message, file=stderr_file)
         raise InvalidConfiguration(message)
+
+
+def migrate_cfg_func(in_filename: str, out_filename: str,
+                     stderr_file: TextIO) -> int:
+    """Migrate configuration file to new format."""
+    return migrate_cfg(infile=in_filename, outfile=out_filename,
+                       config_class=ExtractConfig, stderr_file=stderr_file)

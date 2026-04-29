@@ -5,7 +5,7 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from sys import argv as sys_argv
+import sys
 from copy import deepcopy
 from typing import Optional
 import argparse
@@ -15,6 +15,7 @@ from extract_list.generate_cfg import generate_example_cfg, \
 from extract_list.config_enums import list_out_file_formats
 from extract_list.extract_func import extract_func
 from extract_list.xl_version import XlVersion
+from extract_list.extract_config import migrate_cfg_func
 
 
 def gen_cfg_cmd(args: argparse.Namespace) -> int:
@@ -42,6 +43,14 @@ def version_cmd(_: argparse.Namespace) -> int:
     vers = XlVersion()
     vers.print()
     return 0
+
+
+def migrate_cfg_cmd(args: argparse.Namespace) -> int:
+    """Migrate configuration file to new format."""
+    in_filename = args.input[0]
+    out_filename = args.output[0]
+    return migrate_cfg_func(in_filename=in_filename,
+                            out_filename=out_filename, stderr_file=sys.stderr)
 
 
 USAGE_ORDER = '''
@@ -95,6 +104,22 @@ def _all_cases(txts: list[str]) -> list[str]:
         if txt.capitalize() not in ret:
             ret.append(txt.title())
     return ret
+
+
+def migrate_cfg_args(subparsers: SubParseAct) -> None:
+    """Add arguments for migrate configuration file sub-command."""
+    migrate_help = 'Migrate configuration file to new format.'
+    migrate_parser = subparsers.add_parser('migrate-cfg', help=migrate_help,
+                                           epilog=USAGE_ORDER,
+                                           description=migrate_help +
+                                           SEE_MAIN_HELP)
+    i_help = 'Name of input configuration file to migrate.'
+    o_help = 'Name of output configuration file to create.'
+    migrate_parser.add_argument('-i', '--input', nargs=1, required=True,
+                                help=i_help)
+    migrate_parser.add_argument('-o', '--output', nargs=1, required=True,
+                                help=o_help)
+    migrate_parser.set_defaults(func=migrate_cfg_cmd)
 
 
 def gen_cfg_args(subparsers: SubParseAct) -> None:
@@ -160,7 +185,7 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     epimain = 'More detailed help is available for each sub-command.'
     XlVersion().check_if_unsupported_python()
     if arguments is None:  # pragma: no cover
-        arguments = sys_argv
+        arguments = sys.argv
     fixed_args = deepcopy(arguments)
     if len(fixed_args) > 2 and 'python' in fixed_args[0]:
         del fixed_args[0]
@@ -176,6 +201,7 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     gen_cfg_args(subparsers)
     extract_args(subparsers)
     version_args(subparsers)
+    migrate_cfg_args(subparsers)
     argcomplete.autocomplete(parser)
     args = parser.parse_args(args=fixed_args)
     ret = args.func(args)

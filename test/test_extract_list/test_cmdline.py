@@ -18,7 +18,7 @@ def test_help_main(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
     with pytest.raises(SystemExit):
         _ = extract_cmd(cmd)
     msgs = [
-        'usage: extract_list [-h] {cfg-example,extract,version}',
+        'usage: extract_list [-h] {cfg-example,extract,version,migrate-cfg}',
         'Extract data from an input file in JSON or XML format',
         'Generate example configuration file',
         'Extract list of columns of data from JSON or XML',
@@ -206,8 +206,9 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                          [('-o out.xlsx -c cfg.cfg -i in.json',
                            ['error: argument subparser_name: invalid choice',
                             'usage: extract_list [-h] {cfg-example,extract,'
-                            'version}',
-                            "(choose from cfg-example, extract, version)"]),
+                            'version,migrate-cfg}',
+                            '(choose from cfg-example, extract, version, '
+                            'migrate-cfg)']),
                           ('extract -i in.jspon -o out.xlsx -c a.cfg -b',
                            ['extract_list: error: unrecognized ' +
                             'arguments: -b']),
