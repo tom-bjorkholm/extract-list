@@ -9,7 +9,8 @@ from enum import Enum, auto
 from typing import cast
 import sys
 import pytest
-from extract_list.extract_config import ExtractConfig, \
+from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config_params import \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
     LinkedLineSpec, LLineDict, _linked_line_from_json_array
 from extract_list.config_enums import InFileType

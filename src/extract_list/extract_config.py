@@ -4,157 +4,37 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, TextIO, TypedDict, cast
+from typing import Optional, TextIO, cast
 from enum import Enum
 from csv import Dialect
 import sys
 from string import whitespace
 from copy import deepcopy
 from collections import Counter
-from config_as_json import Config, InvalidConfiguration, JsonType, \
-    MemberValidationStep, MemberValidator, ParseConverter, StrValidator, \
-    ValidationPlan, WholeConfigValidationStep, WholeConfigValidator, \
+from config_as_json import Config, JsonType, MemberValidationStep, \
+    ParseConverter, StrValidator, ValidationPlan, WholeConfigValidationStep, \
     ListIsOrderedValidator, CharEncodingValidator, \
     string_to_enum_best_match, migrate_cfg, get_csv_dialect
 from extract_list.config_enums import FormatRequest, InFileType, \
-    MissingInputForColumn, is_internal_out_file_format, \
-    list_out_file_formats, list_out_format_implementations
+    MissingInputForColumn, list_out_file_formats
+from extract_list.extract_config_params import ExtractConfigParams, \
+    LinkedLineList, LinkedLineSpec, MainLineSpec, _mline_spec_from_dict, \
+    _linked_line_from_json_array
+from extract_list.validators import OutputImplementationMemberValidator, \
+    OutputImplementationValidator
 
 
-class CsvSpec(TypedDict, total=False):
-    """CSV dialect specification."""
-
-    name: str
-    delimiter: Optional[str]
-    quoting: Optional[str]
-    quotechar: Optional[str]
-    lineterminator: Optional[str]
-    escapechar: Optional[str]
-
-
-MLineDict = TypedDict('MLineDict', {'line': list[str],
-                                    'columns': dict[str, list[str]],
-                                    'expand_at': list[list[str]]})
-LLineDict = TypedDict('LLineDict', {'line': list[str],
-                                    'columns': dict[str, list[str]],
-                                    'linked_main_column': list[str],
-                                    'linked_column': list[str],
-                                    'expand_at': list[list[str]]})
-
-
-class MainLineSpec:  # pylint: disable=too-few-public-methods
-    """Some spec."""
-
-    def __init__(self, data: Optional[MLineDict] = None) -> None:
-        """Construct mainline spec."""
-        self.line: list[str] = []
-        self.columns: dict[str, list[str]] = {}
-        self.expand_at: list[list[str]] = []
-        if data is not None:
-            self.line = data['line']
-            self.columns = data['columns']
-            self.expand_at = data['expand_at']
-
-    def __str__(self) -> str:
-        """Get string representation."""
-        return 'MainLineSpec(' + str(self.__dict__) + ')'
-
-
-class LinkedLineSpec:  # pylint: disable=too-few-public-methods
-    """other spec."""
-
-    def __init__(self, data: Optional[LLineDict] = None) -> None:
-        """Construct linked line spec."""
-        self.line: list[str] = []
-        self.columns: dict[str, list[str]] = {}
-        self.linked_main_column: list[str] = []
-        self.linked_column: list[str] = []
-        self.expand_at: list[list[str]] = []
-        if data is not None:
-            self.line = data['line']
-            self.columns = data['columns']
-            self.linked_main_column = data['linked_main_column']
-            self.linked_column = data['linked_column']
-            self.expand_at = data['expand_at']
-
-    def __str__(self) -> str:
-        """Get string representation."""
-        return 'LinkedLineSpec(' + str(self.__dict__) + ')'
-
-
-class LinkedLineList(list[LinkedLineSpec]):
-    """Type trick for JSON parser."""
-
-
-def _mline_spec_from_dict(data: MLineDict) -> MainLineSpec:
-    """Get named tuple converted from dict."""
-    return MainLineSpec(data=data)
-
-
-def _linked_line_from_json_array(data: list[LLineDict]) -> LinkedLineList:
-    """Get list of LinkedLineSpec from list of dict."""
-    assert isinstance(data, list)
-    ret = []
-    for elem in data:
-        ret.append(LinkedLineSpec(data=elem))
-    return LinkedLineList(ret)
-
-
-class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
+class ExtractConfig(ExtractConfigParams, Config):
     """Configuration of extract a list of columns from JSON or XML."""
-
-    @staticmethod
-    def example_main_line() -> MainLineSpec:
-        """Get example spec for main line."""
-        main_col = {'What': ['items', 'item'],
-                    'How many': ['items', 'quantity']}
-        data: MLineDict = {'line': ['orders'], 'columns': main_col,
-                           'expand_at': [['items']]}
-        return MainLineSpec(data=data)
-
-    @staticmethod
-    def example_linked_line() -> LinkedLineSpec:
-        """Get example spec for linked line."""
-        columns = {'Customer name': ['name'],
-                   'Street': ['address', 'street'],
-                   'Street number': ['address', 'number']}
-        data: LLineDict = {'line': ['customers'], 'columns': columns,
-                           'linked_main_column': ['customer'],
-                           'linked_column': ['customer_number'],
-                           'expand_at': []}
-        return LinkedLineSpec(data=data)
 
     def __init__(self, from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[str] = None,
                  stderr_file: TextIO = sys.stderr) -> None:
         """Construct extract configuration object."""
-        self.infile_type: InFileType = InFileType.JSON
-        self.infile_encoding: str = 'utf-8'
-        self.in_xml_strip_at: bool = False
-        self.include_key: bool = True
-        self.column_name_for_key: str = 'key col'
-        self.missing_input_for_column: MissingInputForColumn = \
-            MissingInputForColumn.EMPTY
-        self.main_line: MainLineSpec = self.example_main_line()
-        self.linked_lines: list[LinkedLineSpec] = [self.example_linked_line()]
-        self.one_output_line_per_main_line: bool = True
-        self.outfile_border: FormatRequest = FormatRequest.NO
-        self.outfile_filtered_area: FormatRequest = FormatRequest.NO
-        self.outfile_type: str = 'excel'
-        self.outfile_encoding: str = 'utf-8'
-        self.outfile_implementation: Optional[str] = None
-        self.column_order: list[str] = ['What', 'How many', 'Customer name',
-                                        'Street', 'Street number', 'key col']
-        self.order_rows_by: list[str] = []
-        self.out_xml_attributes = ['What']
-        self.out_csv_dialect: CsvSpec = {'name': 'csv.excel',
-                                         'delimiter': ',', 'quoting': None,
-                                         'quotechar': '"',
-                                         'lineterminator': None,
-                                         'escapechar': None}
-        super().__init__(from_json_data_text=from_json_data_text,
-                         from_json_filename=from_json_filename,
-                         stderr_file=stderr_file)
+        ExtractConfigParams.__init__(self)
+        Config.__init__(self, from_json_data_text=from_json_data_text,
+                        from_json_filename=from_json_filename,
+                        stderr_file=stderr_file)
         self._check_self(stderr_file=stderr_file)
 
     def _get_out_csv_dialect(self, stderr_file: TextIO) -> Dialect:
@@ -457,62 +337,6 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
             # intentionally violating typing to get wanted JSON
             adjusted.linked_lines.append(cast(LinkedLineSpec, i.__dict__))
         return adjusted.as_json_string(stderr_file=stderr_file)
-
-
-def _list_implementations() -> list[str]:
-    """List output implementations accepted in configuration."""
-    implementations = list_out_format_implementations()
-    implementations.append('internal')
-    return implementations
-
-
-# pylint: disable-next=too-few-public-methods
-class OutputImplementationMemberValidator(MemberValidator):
-    """Validate the optional configured output format implementation."""
-
-    def validate_member(self, config: Config, member_name: str,
-                        member_value: object,
-                        stderr_file: TextIO = sys.stderr) -> Optional[object]:
-        """Validate and normalize an optional implementation name."""
-        assert isinstance(config, ExtractConfig)
-        if member_value is None or is_internal_out_file_format(
-                config.outfile_type):
-            return None
-        implementations = list_out_format_implementations(
-            format_name=config.outfile_type, border=config.outfile_border,
-            filtered_area=config.outfile_filtered_area)
-        if not implementations:
-            message = 'Invalid configuration: '
-            message += f'No implementation can write {config.outfile_type}.'
-            print(message, file=stderr_file)
-            raise InvalidConfiguration(message)
-        validator = StrValidator(allowed_values=implementations,
-                                 ignore_case=True, best_match=True,
-                                 normalize=True)
-        return validator.validate_member(
-            config=config, member_name=member_name,
-            member_value=member_value, stderr_file=stderr_file)
-
-
-# pylint: disable-next=too-few-public-methods
-class OutputImplementationValidator(WholeConfigValidator):
-    """Validate the configured output format implementation."""
-
-    def validate(self, config: Config,
-                 stderr_file: TextIO = sys.stderr) -> None:
-        """Validate and normalize the output format implementation."""
-        assert isinstance(config, ExtractConfig)
-        if is_internal_out_file_format(config.outfile_type):
-            config.outfile_implementation = None
-            return
-        implementations = list_out_format_implementations(
-            format_name=config.outfile_type, border=config.outfile_border,
-            filtered_area=config.outfile_filtered_area)
-        if not implementations:
-            message = 'Invalid configuration: '
-            message += f'No implementation can write {config.outfile_type}.'
-            print(message, file=stderr_file)
-            raise InvalidConfiguration(message)
 
 
 def migrate_cfg_func(in_filename: str, out_filename: str,

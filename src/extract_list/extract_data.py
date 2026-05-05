@@ -10,7 +10,8 @@ from copy import deepcopy
 from datetime import datetime
 from functools import cmp_to_key
 from config_as_json import JsonType
-from extract_list.extract_config import ExtractConfig, LinkedLineSpec
+from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config_params import LinkedLineSpec
 from extract_list.config_enums import MissingInputForColumn
 from extract_list.commontypes import Data, Row, Value
 

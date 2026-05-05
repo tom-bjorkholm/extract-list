@@ -9,8 +9,8 @@ from typing import Optional, cast
 import pytest
 from config_as_json import JsonType
 from extract_list.config_enums import MissingInputForColumn
-from extract_list.extract_config import ExtractConfig, LinkedLineSpec, \
-    MainLineSpec
+from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config_params import LinkedLineSpec, MainLineSpec
 from extract_list.extract_data import get_at_path, \
     get_lines, get_columns, extract_main_line, MainDataLine, \
     extract_data, create_none_columns, add_from_linked_to_main, \

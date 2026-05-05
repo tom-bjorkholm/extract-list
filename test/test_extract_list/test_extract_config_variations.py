@@ -13,7 +13,7 @@ from config_as_json import ConfigBadJson, InvalidConfiguration, \
     InvalidConfigurationValue
 from extract_list.config_enums import InFileType, MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
-from extract_list.extract_config import LinkedLineSpec, MainLineSpec
+from extract_list.extract_config_params import LinkedLineSpec, MainLineSpec
 from .check_cfgs_equal import check_cfgs_equal
 from .check_capsys import check_capsys
 

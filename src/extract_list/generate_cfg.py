@@ -10,7 +10,8 @@ from config_as_json import string_best_match, string_to_enum_best_match
 from config_as_json.file_extension import fix_file_extension
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, list_out_file_formats
-from extract_list.extract_config import ExtractConfig, \
+from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config_params import \
     MLineDict, MainLineSpec, LLineDict, LinkedLineSpec
 from extract_list.commontypes import CfgTypes
 from extract_list.generate_txt_sw_to_rrs import generate_txt_sw_to_rrs
