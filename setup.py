@@ -15,7 +15,7 @@ setup(
   package_data={'extract_list': ['src/py.typed']},
   install_requires=[
     'argcomplete >= 3.6.3',
-    'config-as-json >= 0.2',
+    'config-as-json >= 0.3',
     'tableio >= 0.6',
     'versionreporter >= 0.2',
     'xmltodict >= 1.0.2',

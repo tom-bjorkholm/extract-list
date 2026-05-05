@@ -12,16 +12,24 @@ from string import whitespace
 from copy import deepcopy
 from collections import Counter
 from config_as_json import Config, InvalidConfiguration, JsonType, \
-    MemberValidationStep, ParseConverter, StrValidator, ValidationPlan, \
-    WholeConfigValidationStep, WholeConfigValidator, \
-    string_to_enum_best_match, migrate_cfg
-from tableio import list_implementations_tableio
+    MemberValidationStep, MemberValidator, ParseConverter, StrValidator, \
+    ValidationPlan, WholeConfigValidationStep, WholeConfigValidator, \
+    ListIsOrderedValidator, CharEncodingValidator, \
+    string_to_enum_best_match, migrate_cfg, get_csv_dialect
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, is_internal_out_file_format, \
     list_out_file_formats, list_out_format_implementations
 
 
-type CsvSpec = dict[str, Optional[str]]
+class CsvSpec(TypedDict, total=False):
+    """CSV dialect specification."""
+
+    name: str
+    delimiter: Optional[str]
+    quoting: Optional[str]
+    quotechar: Optional[str]
+    lineterminator: Optional[str]
+    escapechar: Optional[str]
 
 
 MLineDict = TypedDict('MLineDict', {'line': list[str],
@@ -134,7 +142,7 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self.outfile_filtered_area: FormatRequest = FormatRequest.NO
         self.outfile_type: str = 'excel'
         self.outfile_encoding: str = 'utf-8'
-        self.outfile_excel_library: str = 'OpenPyXL'
+        self.outfile_implementation: Optional[str] = None
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
                                         'Street', 'Street number', 'key col']
         self.order_rows_by: list[str] = []
@@ -152,21 +160,16 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
     def _get_out_csv_dialect(self, stderr_file: TextIO) -> Dialect:
         """Get CSV dialect for output file."""
         assert self.out_csv_dialect['name'] is not None
-        return self.get_csv_dialect(**self.out_csv_dialect,
-                                    stderr_file=stderr_file)
+        return get_csv_dialect(**self.out_csv_dialect,
+                               stderr_file=stderr_file)
 
     def _check_self(self, stderr_file: TextIO) -> None:
         """Check that configuration is OK after reading from file or str."""
         self._check_infiletype(self.infile_type)
-        self.check_char_encoding(self.infile_encoding, stderr_file=stderr_file)
         self._check_enum(self.outfile_border, FormatRequest, 'outfile_border')
         self._check_enum(self.outfile_filtered_area, FormatRequest,
                          'outfile_filtered_area')
         self._check_type(self.outfile_type, str, 'outfile_type')
-        self.check_char_encoding(self.outfile_encoding,
-                                 stderr_file=stderr_file)
-        self._check_type(self.outfile_excel_library, str,
-                         'outfile_excel_library')
         self._check_type(self.in_xml_strip_at, bool, 'in_xml_strip_at')
         self._check_type(self.include_key, bool, 'include_key')
         self._check_type(self.column_name_for_key, str, 'column_name_for_key')
@@ -183,8 +186,6 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         self._check_list_str(self.column_order, 'column_order')
         self._check_type(self.order_rows_by, list, 'order_rows_by')
         self._check_list_str(self.order_rows_by, 'order_rows_by')
-        self.check_no_duplicates(self.column_order, 'column_order',
-                                 stderr_file=stderr_file)
         self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
         self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
         self._check_csv(stderr_file=stderr_file)
@@ -409,10 +410,18 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
                 'main_line': self.get_converter_mainline(MainLineSpec),
                 'linked_lines': self.get_converter_linkedline()}
 
-    def _def_vals_for_optional(self) -> dict[str, JsonType]:
-        """Get optional configuration defaults."""
+    def _rocf_values_for_missing_json_keys(self) -> dict[str, JsonType]:
+        """Get get values for ROCF missing configuration parameters."""
         return {'outfile_border': cast(JsonType, FormatRequest.NO),
                 'outfile_filtered_area': cast(JsonType, FormatRequest.NO)}
+
+    def _rocf_get_keys_to_remove(self) -> list[str]:
+        """Get list of keys to remove from ROCF JSON."""
+        return ['outfile_excel_library']
+
+    def _omit_none_from_json(self) -> list[str]:
+        """Get list of keys that shall be omitted from JSON if None."""
+        return ['outfile_implementation']
 
     def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
         """Get validation plan for the configuration."""
@@ -423,12 +432,16 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
         outf_type_val = StrValidator(allowed_values=outfile_types,
                                      ignore_case=True, best_match=True,
                                      normalize=True)
-        outf_lib_val = StrValidator(allowed_values=_list_implementations(),
-                                    ignore_case=True, best_match=True,
-                                    normalize=True)
+        outf_impl_val = OutputImplementationMemberValidator()
+        unique_val = ListIsOrderedValidator(element_type=str,
+                                            is_ordered=False,
+                                            unique_values=True)
         return [
             MemberValidationStep(['outfile_type'], outf_type_val),
-            MemberValidationStep(['outfile_excel_library'], outf_lib_val),
+            MemberValidationStep(['outfile_implementation'], outf_impl_val),
+            MemberValidationStep(['column_order'], unique_val),
+            MemberValidationStep(['infile_encoding', 'outfile_encoding'],
+                                 CharEncodingValidator()),
             WholeConfigValidationStep(OutputImplementationValidator())
         ]
 
@@ -448,13 +461,41 @@ class ExtractConfig(Config):  # pylint: disable=too-many-instance-attributes
 
 def _list_implementations() -> list[str]:
     """List output implementations accepted in configuration."""
-    implementations = list_implementations_tableio(empty_is_ok=True)
+    implementations = list_out_format_implementations()
     implementations.append('internal')
     return implementations
 
 
-class OutputImplementationValidator(  # pylint: disable=too-few-public-methods
-        WholeConfigValidator):
+# pylint: disable-next=too-few-public-methods
+class OutputImplementationMemberValidator(MemberValidator):
+    """Validate the optional configured output format implementation."""
+
+    def validate_member(self, config: Config, member_name: str,
+                        member_value: object,
+                        stderr_file: TextIO = sys.stderr) -> Optional[object]:
+        """Validate and normalize an optional implementation name."""
+        assert isinstance(config, ExtractConfig)
+        if member_value is None or is_internal_out_file_format(
+                config.outfile_type):
+            return None
+        implementations = list_out_format_implementations(
+            format_name=config.outfile_type, border=config.outfile_border,
+            filtered_area=config.outfile_filtered_area)
+        if not implementations:
+            message = 'Invalid configuration: '
+            message += f'No implementation can write {config.outfile_type}.'
+            print(message, file=stderr_file)
+            raise InvalidConfiguration(message)
+        validator = StrValidator(allowed_values=implementations,
+                                 ignore_case=True, best_match=True,
+                                 normalize=True)
+        return validator.validate_member(
+            config=config, member_name=member_name,
+            member_value=member_value, stderr_file=stderr_file)
+
+
+# pylint: disable-next=too-few-public-methods
+class OutputImplementationValidator(WholeConfigValidator):
     """Validate the configured output format implementation."""
 
     def validate(self, config: Config,
@@ -462,7 +503,7 @@ class OutputImplementationValidator(  # pylint: disable=too-few-public-methods
         """Validate and normalize the output format implementation."""
         assert isinstance(config, ExtractConfig)
         if is_internal_out_file_format(config.outfile_type):
-            config.outfile_excel_library = 'internal'
+            config.outfile_implementation = None
             return
         implementations = list_out_format_implementations(
             format_name=config.outfile_type, border=config.outfile_border,
@@ -472,18 +513,6 @@ class OutputImplementationValidator(  # pylint: disable=too-few-public-methods
             message += f'No implementation can write {config.outfile_type}.'
             print(message, file=stderr_file)
             raise InvalidConfiguration(message)
-        if config.outfile_excel_library in implementations:
-            return
-        if config.outfile_type.lower() != 'excel':
-            config.outfile_excel_library = implementations[0]
-            return
-        message = 'Invalid configuration: '
-        message += f'{config.outfile_excel_library} cannot write '
-        message += f'{config.outfile_type} with requested output features. '
-        message += 'Allowed implementations: '
-        message += ', '.join(implementations) + '.'
-        print(message, file=stderr_file)
-        raise InvalidConfiguration(message)
 
 
 def migrate_cfg_func(in_filename: str, out_filename: str,

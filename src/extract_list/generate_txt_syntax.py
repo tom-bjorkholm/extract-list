@@ -69,9 +69,10 @@ def generate_syntax_txt(file: TextIO) -> None:
     in the configuration file, but is only used if the output is CSV.
 
     TableIO may provide several implementations for a file format. The
-    "outfile_excel_library" parameter selects the implementation. Old
-    configuration files used this parameter only for Excel output, so the name
-    is kept for compatibility.
+    "outfile_implementation" parameter can force a specific implementation.
+    If it is omitted, TableIO chooses the best available implementation. Old
+    configuration files may contain "outfile_excel_library"; that value is
+    ignored when the old file is read.
 
     The "outfile_border" parameter can be "NO", "IF_AVAILABLE" or "NEEDED".
     The "outfile_filtered_area" parameter can be "NO", "IF_AVAILABLE" or

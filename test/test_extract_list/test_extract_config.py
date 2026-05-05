@@ -363,7 +363,8 @@ def test_check_csv_nok2(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK case 2 of check_csv."""
     cfg = ExtractConfig()
     cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
-                           'dellimiter': ',', 'quoting': None,
+                           'dellimiter': ',',  # type: ignore
+                           'quoting': None,
                            'quotechar': '"',
                            'lineterminator': None,
                            'escapechar': None}

@@ -5,10 +5,12 @@
 # MIT License
 
 from copy import deepcopy
+from json import dumps as json_dumps, loads as json_loads
 # from enum import Enum, auto
 import sys
 import pytest
-from config_as_json import ConfigBadJson, InvalidConfigurationValue
+from config_as_json import ConfigBadJson, InvalidConfiguration, \
+    InvalidConfigurationValue
 from extract_list.config_enums import InFileType, MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config import LinkedLineSpec, MainLineSpec
@@ -85,7 +87,7 @@ def test_extract_config_var3(capsys: pytest.CaptureFixture[str],
     cfg.column_name_for_key = deepcopy(coname)
     cfg.out_csv_dialect['name'] = deepcopy(csname)
     cfg.out_csv_dialect['delimiter'] = deepcopy(deli)
-    cfg.outfile_excel_library = deepcopy(excl)
+    cfg.outfile_implementation = deepcopy(excl)
     cfg.column_order.remove('key col')
     cfg.column_order.append(deepcopy(coname))
     txt = cfg.as_json_string()
@@ -94,7 +96,7 @@ def test_extract_config_var3(capsys: pytest.CaptureFixture[str],
     assert cf2.column_name_for_key == coname
     assert cf2.out_csv_dialect['name'] == csname
     assert cf2.out_csv_dialect['delimiter'] == deli
-    assert cf2.outfile_excel_library == excl
+    assert cf2.outfile_implementation == excl
     check_capsys(capsys=capsys)
 
 
@@ -159,8 +161,8 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                            ['int not str as expected']),
                           ('infile_type', '15', ConfigBadJson,
                            ['15 is not one of: JSON, XML']),
-                          ('infile_encoding', 'abc', SystemExit,
-                           ['abc is not a recognized encoding']),
+                          ('infile_encoding', 'abc', InvalidConfiguration,
+                           ['abc is not a recognized character encoding']),
                           ('include_key', 15, SystemExit,
                            ['Configuration parameter "include_key" has wrong',
                             'Type is "int", but expected type "bool"']),
@@ -171,15 +173,14 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                           ('outfile_type', 'line', InvalidConfigurationValue,
                            ['Value line for outfile_type',
                             'CSV, Excel']),
-                          ('outfile_encoding', 'def', SystemExit,
-                           ['def is not a recognized encoding']),
-                          ('outfile_excel_library', 'lib',
+                          ('outfile_encoding', 'def', InvalidConfiguration,
+                           ['def is not a recognized character encoding']),
+                          ('outfile_implementation', 'lib',
                            InvalidConfigurationValue,
-                           ['Value lib for outfile_excel_library',
-                            'OpenPyXL, XlsxWriter',
-                            'csv, mformat, odfdo, pylightxl, internal']),
-                          ('column_order', 'ordered', SystemExit,
-                           ['Type is "str", but expected type "list".']),
+                           ['Value lib for outfile_implementation',
+                            'OpenPyXL, XlsxWriter, pylightxl']),
+                          ('column_order', 'ordered', InvalidConfiguration,
+                           ['Value for column_order is not a list.']),
                           ('column_order', ['What'], SystemExit,
                            ['Extracted column "Customer name" is missing']),
                           ('column_order',
@@ -191,9 +192,9 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                           ('column_order',
                            ['What', 'How many', 'What', 'Customer name',
                             'Street', 'Street number', 'key col'],
-                           SystemExit,
-                           ['Duplicates not allowed in column_order',
-                            'Duplicate values: What']),
+                           InvalidConfiguration,
+                           ['Value What for column_order at index 2',
+                            'duplicates the value at index 0.']),
                           ('out_xml_attributes', 'What', SystemExit,
                            ['"out_xml_attributes" has wrong type.',
                             'Type is "str", but expected type "list"']),
@@ -219,6 +220,19 @@ def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
         txt = cfg.as_json_string(stderr_file=sys.stderr)
         _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     check_capsys(capsys=capsys, in_err=msgs)
+
+
+def test_extract_config_old_excel_library_is_ignored(
+        capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that old outfile_excel_library values are ignored."""
+    cfg = ExtractConfig(stderr_file=sys.stderr)
+    data = json_loads(cfg.as_json_string(stderr_file=sys.stderr))
+    data['outfile_excel_library'] = 'lib'
+    cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
+                        stderr_file=sys.stderr)
+    assert cf2.outfile_implementation is None
+    assert not hasattr(cf2, 'outfile_excel_library')
+    check_capsys(capsys=capsys)
 
 
 def test_extract_config_err2(capsys: pytest.CaptureFixture[str]) -> None:

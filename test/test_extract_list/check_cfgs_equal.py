@@ -25,7 +25,7 @@ def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig) -> None:
         cf2.one_output_line_per_main_line
     assert cf1.outfile_type == cf2.outfile_type
     assert cf1.outfile_encoding == cf2.outfile_encoding
-    assert cf1.outfile_excel_library == cf2.outfile_excel_library
+    assert cf1.outfile_implementation == cf2.outfile_implementation
     assert cf1.column_order == cf2.column_order
     assert cf1.out_xml_attributes == cf2.out_xml_attributes
     assert cf1.out_csv_dialect == cf2.out_csv_dialect

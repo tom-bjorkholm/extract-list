@@ -13,7 +13,8 @@ from tableio import CsvDialect, FileAccess, OptionalArgsDict, \
 from extract_list.extract_config import ExtractConfig
 from extract_list.commontypes import Data
 from extract_list.config_enums import FormatRequest, \
-    is_internal_out_file_format
+    get_outfile_capabilities, is_internal_out_file_format, \
+    list_out_format_implementations
 from extract_list.handle_json_xml_output import \
     handle_json_output, handle_xml_output
 
@@ -89,16 +90,32 @@ def _new_internal_filename(filename: str, extension: str) -> str:
     return fixed_fname
 
 
+def _get_out_tableio_impl(cfg: ExtractConfig) -> str:
+    """Get output implementation from configuration."""
+    if cfg.outfile_implementation is not None:
+        return cfg.outfile_implementation
+    # This must be corrected later
+    # For now we do not know highest piority implementation
+    # Waiting for expected TableIO API change.
+    return list_out_format_implementations(
+        format_name=cfg.outfile_type, border=cfg.outfile_border,
+        filtered_area=cfg.outfile_filtered_area)[0]
+
+
 def handle_tableio_output(data: Data, filename: str,
                           cfg: ExtractConfig) -> None:
     """Handle output through TableIO."""
     args = _tableio_optional_args(cfg)
+    out_impl = _get_out_tableio_impl(cfg)
+    capabilities = get_outfile_capabilities(
+        border=cfg.outfile_border, filtered_area=cfg.outfile_filtered_area)
     filtered_args = filter_args_tableio(
         args=args, format_name=cfg.outfile_type,
-        implementation=cfg.outfile_excel_library)
+        implementation=out_impl)
     with create_tableio(format_name=cfg.outfile_type, file_name=filename,
                         file_access=FileAccess.CREATE, args=filtered_args,
-                        implementation=cfg.outfile_excel_library) as table:
+                        implementation=cfg.outfile_implementation,
+                        capabilities=capabilities) as table:
         table.write_table_dictdata(
             data=data, column_order=cfg.column_order,
             filtered_data_range=_filtered_data_range(cfg),
