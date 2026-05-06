@@ -15,14 +15,14 @@ setup(
   package_data={'extract_list': ['src/py.typed']},
   install_requires=[
     'argcomplete >= 3.6.3',
-    'config-as-json >= 0.3',
-    'tableio >= 0.6',
+    'config-as-json >= 0.4',
+    'tableio >= 0.7',
     'versionreporter >= 0.2',
-    'xmltodict >= 1.0.2',
-    'types-xmltodict >= 1.0.1.20250920',
-    'pip >= 25.3',
-    'setuptools >= 80.9.0',
-    'build >= 1.3.0',
-    'wheel>=0.45.1'
+    'xmltodict >= 1.0.4',
+    'types-xmltodict >= 1.0.1.20260408',
+    'pip >= 26.1.1',
+    'setuptools >= 82.0.1',
+    'build >= 1.5.0',
+    'wheel>=0.47.0'
   ]
 )

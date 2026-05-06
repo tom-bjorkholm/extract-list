@@ -7,8 +7,7 @@
 from typing import Optional, TextIO
 import sys
 from config_as_json import WholeConfigValidator, MemberValidator, \
-    StrValidator, Config, InvalidConfiguration
-from extract_list.optional_validator import OptionalMemberValidator
+    StrValidator, Config, InvalidConfiguration, OptionalMemberValidator
 from extract_list.extract_config_params import ExtractConfigParams
 from extract_list.config_enums import is_internal_out_file_format, \
     list_out_format_implementations
