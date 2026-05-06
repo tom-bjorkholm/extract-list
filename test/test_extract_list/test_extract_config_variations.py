@@ -157,19 +157,24 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
 
 
 @pytest.mark.parametrize('attr,val,exc, msgs',
-                         [('infile_type', 15, ConfigBadJson,
-                           ['int not str as expected']),
-                          ('infile_type', '15', ConfigBadJson,
-                           ['15 is not one of: JSON, XML']),
+                         [('infile_type', 15, InvalidConfiguration,
+                           ['Value for infile_type',
+                            'is not of type InFileType']),
+                          ('infile_type', '15', InvalidConfiguration,
+                           ['Value for infile_type',
+                            'is not of type InFileType']),
                           ('infile_encoding', 'abc', InvalidConfiguration,
                            ['abc is not a recognized character encoding']),
-                          ('include_key', 15, SystemExit,
-                           ['Configuration parameter "include_key" has wrong',
-                            'Type is "int", but expected type "bool"']),
-                          ('column_name_for_key', 15, SystemExit,
-                           ['Type is "int", but expected type "str"']),
-                          ('missing_input_for_column', 'no', ConfigBadJson,
-                           ['no is not one of: ERROR, EMPTY']),
+                          ('include_key', 15, InvalidConfiguration,
+                           ['Value for include_key',
+                            'is not of type bool']),
+                          ('column_name_for_key', 15, InvalidConfiguration,
+                           ['Value for column_name_for_key',
+                            'is not of type str']),
+                          ('missing_input_for_column', 'no',
+                           InvalidConfiguration,
+                           ['Value for missing_input_for_column',
+                            'is not of type MissingInputForColumn']),
                           ('outfile_type', 'line', InvalidConfigurationValue,
                            ['Value line for outfile_type',
                             'CSV, Excel']),
@@ -195,9 +200,9 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                            InvalidConfiguration,
                            ['Value What for column_order at index 2',
                             'duplicates the value at index 0.']),
-                          ('out_xml_attributes', 'What', SystemExit,
-                           ['"out_xml_attributes" has wrong type.',
-                            'Type is "str", but expected type "list"']),
+                          ('out_xml_attributes', 'What',
+                           InvalidConfiguration,
+                           'Value for out_xml_attributes is not a list.'),
                           ('out_xml_attributes', ['nothing'], SystemExit,
                            ['Attribute name "nothing" in out_xml_attributes',
                             'but no column with that name extracted']),
@@ -206,10 +211,11 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                           ('order_rows_by', ['Whatt'], SystemExit,
                            ['order rows by includes column "Whatt"',
                             'but that column is not extracted']),
-                          ('order_rows_by', 'What', SystemExit,
-                          'Type is "str", but expected type "list"'),
-                          ('order_rows_by', [7], SystemExit,
-                          'Expected a list of strings in order_rows_by')])
+                          ('order_rows_by', 'What', InvalidConfiguration,
+                           'Value for order_rows_by is not a list.'),
+                          ('order_rows_by', [7], InvalidConfiguration,
+                           ['Value 7 for order_rows_by at index 0',
+                            'is not of type str.'])])
 def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
                              val: object, exc: type[BaseException],
                              msgs: str | list[str]) -> None:
@@ -220,6 +226,18 @@ def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
         txt = cfg.as_json_string(stderr_file=sys.stderr)
         _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     check_capsys(capsys=capsys, in_err=msgs)
+
+
+def test_extract_config_bad_json_enum_name(
+        capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that enum JSON text is checked by Config parsing."""
+    cfg = ExtractConfig(stderr_file=sys.stderr)
+    data = json_loads(cfg.as_json_string(stderr_file=sys.stderr))
+    data['infile_type'] = '15'
+    with pytest.raises(ConfigBadJson):
+        _ = ExtractConfig(from_json_data_text=json_dumps(data),
+                          stderr_file=sys.stderr)
+    check_capsys(capsys=capsys, in_err='15 is not one of: JSON, XML')
 
 
 def test_extract_config_old_excel_library_is_ignored(

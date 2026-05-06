@@ -5,7 +5,6 @@
 # MIT License
 
 from copy import deepcopy
-from enum import Enum, auto
 from typing import cast
 import sys
 import pytest
@@ -13,7 +12,6 @@ from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
     LinkedLineSpec, LLineDict, _linked_line_from_json_array
-from extract_list.config_enums import InFileType
 from .check_cfgs_equal import check_cfgs_equal
 from .check_capsys import check_capsys
 
@@ -413,82 +411,6 @@ def test_check_list_str_nok(capsys: pytest.CaptureFixture[str],
     check_capsys(capsys=capsys, in_err=msg)
 
 
-@pytest.mark.parametrize('val,typ,name',
-                         [(1, int, 'x'), ('ab', str, 'y'),
-                          ([2], list, 'z')])
-def test_check_type_ok(capsys: pytest.CaptureFixture[str], val: object,
-                       typ: type[object], name: str) -> None:
-    """Test OK cases for _check_type."""
-    ExtractConfig._check_type(var=val,  # pylint: disable=protected-access
-                              oftype=typ, varname=name)
-    check_capsys(capsys=capsys)
-
-
-@pytest.mark.parametrize('val,typ,name, msgs',
-                         [(1, str, 'x',
-                           ['Configuration parameter "x" has wrong type',
-                            'Type is "int"',
-                            'but expected type "str"']),
-                          ('ab', int, 'y',
-                           ['Configuration parameter "y" has wrong type',
-                            'Type is "str"',
-                            'but expected type "int"']),
-                          ([2], int, 'z',
-                           ['Configuration parameter "z" has wrong type',
-                            'Type is "list"',
-                            'but expected type "int"']),
-                          ('abc', list, 'p',
-                           ['Configuration parameter "p" has wrong type',
-                            'Type is "str"',
-                            'but expected type "list"'])])
-def test_check_type_nok(capsys: pytest.CaptureFixture[str], val: object,
-                        typ: type[object], name: str,
-                        msgs: list[str]) -> None:
-    """Test not OK cases for _check_type."""
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_type(var=val,  # pylint: disable=protected-access
-                                  oftype=typ, varname=name)
-    check_capsys(capsys=capsys, in_err=msgs)
-
-
-class Abc(Enum):
-    """Enum just for testing."""
-
-    AA1 = auto()
-    BB2 = auto()
-    CC3 = auto()
-
-
-class Ghj(Enum):
-    """Enum just for testing."""
-
-    AA1 = auto()
-    BB2 = auto()
-    CC3 = auto()
-    GG4 = auto()
-
-
-@pytest.mark.parametrize('val', list(Abc))
-@pytest.mark.parametrize('name', ['name1', 'name2'])
-def test_check_enum_ok(capsys: pytest.CaptureFixture[str], val: Abc,
-                       name: str) -> None:
-    """Test OK cases for _check_enum."""
-    ExtractConfig._check_enum(var=val,  # pylint: disable=protected-access
-                              enum_type=Abc, varname=name)
-    check_capsys(capsys=capsys)
-
-
-def test_check_enum_nok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK cases for _check_enum."""
-    val = Ghj.GG4
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_enum(var=val,  # pylint: disable=protected-access
-                                  enum_type=Abc, varname='name1')
-    msgs = ['Configuration parameter "name1" has wrong type',
-            'Type is "Ghj", but expected type "Abc".']
-    check_capsys(capsys=capsys, in_err=msgs)
-
-
 @pytest.mark.parametrize('name', ['abc', 'def'])
 @pytest.mark.parametrize('dval',
                          [{'ab': [], 'de': ['ef', 'gh']},
@@ -707,24 +629,6 @@ def test_check_linkedline_nok5(capsys: pytest.CaptureFixture[str]) -> None:
     errmsgs = ['Expected LinkedLineSpec for element in a',
                'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-@pytest.mark.parametrize('fval', list(InFileType))
-def test_check_filetype_ok1(capsys: pytest.CaptureFixture[str],
-                            fval: InFileType) -> None:
-    """Test OK cases 1 of _check_filetype."""
-    ExtractConfig._check_infiletype(fval)  # pylint: disable=protected-access
-    check_capsys(capsys=capsys)
-
-
-def test_check_filetype_nok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 1 of _check_filetype."""
-    bad_filetype = cast(InFileType, 1)
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_infiletype(  # pylint: disable=protected-access
-            bad_filetype)
-    check_capsys(capsys=capsys,
-                 in_err='File type 1 is not of type InFileType')
 
 
 @pytest.mark.parametrize('attr',

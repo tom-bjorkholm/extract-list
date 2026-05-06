@@ -14,7 +14,8 @@ from collections import Counter
 from config_as_json import Config, JsonType, MemberValidationStep, \
     ParseConverter, StrValidator, ValidationPlan, \
     ListIsOrderedValidator, CharEncodingValidator, OptionalMemberValidator, \
-    string_to_enum_best_match, migrate_cfg, get_csv_dialect
+    ValueTypeValidator, ListValueTypeValidator, string_to_enum_best_match, \
+    migrate_cfg, get_csv_dialect
 from tableio.factory import TableIOFactoryNoSuchError
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, list_out_file_formats, \
@@ -45,29 +46,9 @@ class ExtractConfig(ExtractConfigParams, Config):
 
     def _check_self(self, stderr_file: TextIO) -> None:
         """Check that configuration is OK after reading from file or str."""
-        self._check_infiletype(self.infile_type)
-        self._check_enum(self.outfile_border, FormatRequest, 'outfile_border')
-        self._check_enum(self.outfile_filtered_area, FormatRequest,
-                         'outfile_filtered_area')
-        self._check_type(self.outfile_type, str, 'outfile_type')
-        self._check_type(self.in_xml_strip_at, bool, 'in_xml_strip_at')
-        self._check_type(self.include_key, bool, 'include_key')
-        self._check_type(self.column_name_for_key, str, 'column_name_for_key')
-        self._check_enum(self.missing_input_for_column, MissingInputForColumn,
-                         'missing_input_for_column')
-        self._check_type(self.main_line, MainLineSpec, 'main_line')
         self._check_mainline_part(var=self.main_line, spectype=MainLineSpec,
                                   varname='main_line')
-        self._check_type(self.linked_lines, list, 'linked_lines')
         self._check_linkedline(self.linked_lines, 'linked_lines')
-        self._check_type(self.one_output_line_per_main_line, bool,
-                         'one_output_line_per_main_line')
-        self._check_type(self.column_order, list, 'column_order')
-        self._check_list_str(self.column_order, 'column_order')
-        self._check_type(self.order_rows_by, list, 'order_rows_by')
-        self._check_list_str(self.order_rows_by, 'order_rows_by')
-        self._check_type(self.out_xml_attributes, list, 'out_xml_attributes')
-        self._check_list_str(self.out_xml_attributes, 'out_xml_attributes')
         self._check_csv(stderr_file=stderr_file)
         self.check_extract_unique_colnames()
         self.cross_check_columns()
@@ -218,39 +199,6 @@ class ExtractConfig(ExtractConfigParams, Config):
                 sys.exit(1)
 
     @staticmethod
-    def _check_enum(var: Enum, enum_type: type[Enum], varname: str) -> None:
-        """Check that config variable is correct enum type."""
-        ExtractConfig._check_type(var=var, oftype=enum_type, varname=varname)
-        if var not in enum_type:  # pragma: no cover
-            allowed = ' ,'.join(list(enum_type))
-            print(f'{varname} value {var} is not one of allowed: {allowed}',
-                  file=sys.stderr)
-            sys.exit(1)
-
-    @staticmethod
-    def _check_type(var: object, oftype: type[object], varname: str) -> None:
-        """Check that config variable is of type."""
-        if not isinstance(var, oftype):
-            print(f'Configuration parameter "{varname}" has wrong type. ',
-                  file=sys.stderr)
-            print(f'Type is "{type(var).__name__}", ' +
-                  f'but expected type "{oftype.__name__}".', file=sys.stderr)
-            sys.exit(1)
-
-    @staticmethod
-    def _check_infiletype(ftype: InFileType) -> None:
-        """Check that file types are OK."""
-        if not isinstance(ftype, InFileType):
-            print(f'File type {ftype} is not of type InFileType',
-                  file=sys.stderr)
-            sys.exit(1)
-        if ftype not in InFileType:  # pragma: no cover
-            allowed = ' ,'.join([filetype.name for filetype in InFileType])
-            print(f'File type {ftype} is not one of allowed types: {allowed}',
-                  file=sys.stderr)
-            sys.exit(1)
-
-    @staticmethod
     def get_converter_dict(enum_type: type[Enum]) -> ParseConverter:
         """Get dict for converting to given enum_type."""
         return ParseConverter(result_type=enum_type,
@@ -303,37 +251,57 @@ class ExtractConfig(ExtractConfigParams, Config):
         """Get list of keys that shall be omitted from JSON if None."""
         return ['outfile_implementation']
 
-    def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
-        """Get validation plan for the configuration."""
-        _ = stderr_file
-        outfile_types = list_out_file_formats(
-            border=self.outfile_border,
-            filtered_area=self.outfile_filtered_area)
-        outf_type_val = StrValidator(allowed_values=outfile_types,
-                                     ignore_case=True, best_match=True,
-                                     normalize=True)
-        outfile_impls = list_out_format_implementations(
-            format_name=None, border=self.outfile_border,
-            filtered_area=self.outfile_filtered_area)
+    def _valid_outfile_types(self) -> list[str]:
+        """Get output file types valid for the current feature requests."""
+        return list_out_file_formats(border=self.outfile_border,
+                                     filtered_area=self.outfile_filtered_area)
+
+    def _valid_outfile_implementations(self) -> list[str]:
+        """Get output implementations valid for the current output type."""
         try:
-            outfile_impls = list_out_format_implementations(
+            return list_out_format_implementations(
                 format_name=self.outfile_type,
                 border=self.outfile_border,
                 filtered_area=self.outfile_filtered_area)
         except TableIOFactoryNoSuchError:
-            pass  # outf_type_val will provide error message
-        outf_impl_val = StrValidator(allowed_values=outfile_impls,
+            return list_out_format_implementations(
+                format_name=None,
+                border=self.outfile_border,
+                filtered_area=self.outfile_filtered_area)
+
+    def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
+        """Get validation plan for the configuration."""
+        _ = stderr_file
+        outf_type_val = StrValidator(allowed_values=self._valid_outfile_types,
                                      ignore_case=True, best_match=True,
                                      normalize=True)
+        outf_impl_val = StrValidator(
+            allowed_values=self._valid_outfile_implementations,
+            ignore_case=True, best_match=True, normalize=True)
         opt_outf_impl_val = OptionalMemberValidator(validator=outf_impl_val)
         unique_val = ListIsOrderedValidator(element_type=str,
                                             is_ordered=False,
                                             unique_values=True)
+        list_str_val = ListValueTypeValidator(str)
         return [
+            MemberValidationStep(['infile_type'],
+                                 ValueTypeValidator(InFileType)),
+            MemberValidationStep(['outfile_border',
+                                  'outfile_filtered_area'],
+                                 ValueTypeValidator(FormatRequest)),
+            MemberValidationStep(['missing_input_for_column'],
+                                 ValueTypeValidator(MissingInputForColumn)),
+            MemberValidationStep(['in_xml_strip_at', 'include_key',
+                                  'one_output_line_per_main_line'],
+                                 ValueTypeValidator(bool)),
+            MemberValidationStep(['outfile_type', 'column_name_for_key'],
+                                 ValueTypeValidator(str)),
             MemberValidationStep(['outfile_type'], outf_type_val),
             MemberValidationStep(['outfile_implementation'],
                                  opt_outf_impl_val),
             MemberValidationStep(['column_order'], unique_val),
+            MemberValidationStep(['order_rows_by', 'out_xml_attributes'],
+                                 list_str_val),
             MemberValidationStep(['infile_encoding', 'outfile_encoding'],
                                  CharEncodingValidator())
         ]
