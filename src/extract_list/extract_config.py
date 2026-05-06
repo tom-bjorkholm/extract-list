@@ -12,16 +12,16 @@ from string import whitespace
 from copy import deepcopy
 from collections import Counter
 from config_as_json import Config, JsonType, MemberValidationStep, \
-    ParseConverter, StrValidator, ValidationPlan, WholeConfigValidationStep, \
-    ListIsOrderedValidator, CharEncodingValidator, \
+    ParseConverter, StrValidator, ValidationPlan, \
+    ListIsOrderedValidator, CharEncodingValidator, OptionalMemberValidator, \
     string_to_enum_best_match, migrate_cfg, get_csv_dialect
+from tableio.factory import TableIOFactoryNoSuchError
 from extract_list.config_enums import FormatRequest, InFileType, \
-    MissingInputForColumn, list_out_file_formats
+    MissingInputForColumn, list_out_file_formats, \
+    list_out_format_implementations
 from extract_list.extract_config_params import ExtractConfigParams, \
     LinkedLineList, LinkedLineSpec, MainLineSpec, _mline_spec_from_dict, \
     _linked_line_from_json_array
-from extract_list.validators import OutputImplementationMemberValidator, \
-    OutputImplementationValidator
 
 
 class ExtractConfig(ExtractConfigParams, Config):
@@ -312,17 +312,30 @@ class ExtractConfig(ExtractConfigParams, Config):
         outf_type_val = StrValidator(allowed_values=outfile_types,
                                      ignore_case=True, best_match=True,
                                      normalize=True)
-        outf_impl_val = OutputImplementationMemberValidator()
+        outfile_impls = list_out_format_implementations(
+            format_name=None, border=self.outfile_border,
+            filtered_area=self.outfile_filtered_area)
+        try:
+            outfile_impls = list_out_format_implementations(
+                format_name=self.outfile_type,
+                border=self.outfile_border,
+                filtered_area=self.outfile_filtered_area)
+        except TableIOFactoryNoSuchError:
+            pass  # outf_type_val will provide error message
+        outf_impl_val = StrValidator(allowed_values=outfile_impls,
+                                     ignore_case=True, best_match=True,
+                                     normalize=True)
+        opt_outf_impl_val = OptionalMemberValidator(validator=outf_impl_val)
         unique_val = ListIsOrderedValidator(element_type=str,
                                             is_ordered=False,
                                             unique_values=True)
         return [
             MemberValidationStep(['outfile_type'], outf_type_val),
-            MemberValidationStep(['outfile_implementation'], outf_impl_val),
+            MemberValidationStep(['outfile_implementation'],
+                                 opt_outf_impl_val),
             MemberValidationStep(['column_order'], unique_val),
             MemberValidationStep(['infile_encoding', 'outfile_encoding'],
-                                 CharEncodingValidator()),
-            WholeConfigValidationStep(OutputImplementationValidator())
+                                 CharEncodingValidator())
         ]
 
     def as_json_string(self, stderr_file: TextIO = sys.stderr) -> str:
