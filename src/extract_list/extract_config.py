@@ -6,16 +6,13 @@
 
 from typing import Optional, TextIO, cast
 from enum import Enum
-from csv import Dialect
 import sys
-from string import whitespace
 from copy import deepcopy
-from collections import Counter
 from config_as_json import Config, JsonType, MemberValidationStep, \
-    ParseConverter, StrValidator, ValidationPlan, \
+    ParseConverter, StrValidator, ValidationPlan, WholeConfigValidationStep, \
     ListIsOrderedValidator, CharEncodingValidator, OptionalMemberValidator, \
-    ValueTypeValidator, ListValueTypeValidator, string_to_enum_best_match, \
-    migrate_cfg, get_csv_dialect
+    ValueTypeValidator, ListValueTypeValidator, CsvDialectValidator, \
+    string_to_enum_best_match, migrate_cfg
 from tableio.factory import TableIOFactoryNoSuchError
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, list_out_file_formats, \
@@ -23,6 +20,8 @@ from extract_list.config_enums import FormatRequest, InFileType, \
 from extract_list.extract_config_params import ExtractConfigParams, \
     LinkedLineList, LinkedLineSpec, MainLineSpec, _mline_spec_from_dict, \
     _linked_line_from_json_array
+from extract_list.validators import ExtractedColumnNameValidator, \
+    XmlColumnNameValidator
 
 
 class ExtractConfig(ExtractConfigParams, Config):
@@ -36,24 +35,15 @@ class ExtractConfig(ExtractConfigParams, Config):
         Config.__init__(self, from_json_data_text=from_json_data_text,
                         from_json_filename=from_json_filename,
                         stderr_file=stderr_file)
-        self._check_self(stderr_file=stderr_file)
+        self._check_self()
 
-    def _get_out_csv_dialect(self, stderr_file: TextIO) -> Dialect:
-        """Get CSV dialect for output file."""
-        assert self.out_csv_dialect['name'] is not None
-        return get_csv_dialect(**self.out_csv_dialect,
-                               stderr_file=stderr_file)
-
-    def _check_self(self, stderr_file: TextIO) -> None:
+    def _check_self(self) -> None:
         """Check that configuration is OK after reading from file or str."""
         self._check_mainline_part(var=self.main_line, spectype=MainLineSpec,
                                   varname='main_line')
         self._check_linkedline(self.linked_lines, 'linked_lines')
-        self._check_csv(stderr_file=stderr_file)
-        self.check_extract_unique_colnames()
         self.cross_check_columns()
         self.cross_check_attrs()
-        self.check_valid_xml_colnames()
 
     def _extracted_columns(self) -> list[str]:
         """Get list names of all extracted columns."""
@@ -99,37 +89,6 @@ class ExtractConfig(ExtractConfigParams, Config):
                 print(f'order rows by includes column "{col}"\n' +
                       'but that column is not extracted', file=sys.stderr)
                 sys.exit(1)
-
-    def check_extract_unique_colnames(self) -> None:
-        """Check that not several extracted columns have same name."""
-        col_names = self._extracted_columns()
-        repeated = [k for k, v in Counter(col_names).items() if v > 1]
-        if repeated:
-            print('Column names of extracted data must be unique.',
-                  file=sys.stderr)
-            print('Repeated column name(s): ' + ' ,'.join(repeated),
-                  file=sys.stderr)
-            sys.exit(1)
-
-    def check_valid_xml_colnames(self) -> None:
-        """Check and warn for column names that are not valid XML."""
-        if self.outfile_type.lower() != 'xml':
-            return
-        for colname in self.column_order:
-            if True in [c in colname for c in whitespace]:
-                msg = f'Warning: Column name "{colname}" is not a valid ' +\
-                    f'column name in XML,\nas "{colname}" contains white' +\
-                    ' space.'
-                print(msg, file=sys.stderr)
-
-    def _check_csv(self, stderr_file: TextIO) -> None:
-        """Check if CSV configuration is OK."""
-        try:
-            _ = self._get_out_csv_dialect(stderr_file=stderr_file)
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            print('Configured out_csv_dialect is not valid', file=sys.stderr)
-            print(str(exc), file=sys.stderr)
-            sys.exit(1)
 
     @staticmethod
     def _check_mainline_part(var: MainLineSpec | LinkedLineSpec,
@@ -299,11 +258,14 @@ class ExtractConfig(ExtractConfigParams, Config):
             MemberValidationStep(['outfile_type'], outf_type_val),
             MemberValidationStep(['outfile_implementation'],
                                  opt_outf_impl_val),
+            MemberValidationStep(['column_order', 'order_rows_by',
+                                  'out_xml_attributes'], list_str_val),
             MemberValidationStep(['column_order'], unique_val),
-            MemberValidationStep(['order_rows_by', 'out_xml_attributes'],
-                                 list_str_val),
             MemberValidationStep(['infile_encoding', 'outfile_encoding'],
-                                 CharEncodingValidator())
+                                 CharEncodingValidator()),
+            MemberValidationStep(['out_csv_dialect'], CsvDialectValidator()),
+            MemberValidationStep(['column_order'], XmlColumnNameValidator()),
+            WholeConfigValidationStep(ExtractedColumnNameValidator())
         ]
 
     def as_json_string(self, stderr_file: TextIO = sys.stderr) -> str:

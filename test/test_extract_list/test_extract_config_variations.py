@@ -32,6 +32,13 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     cfg.outfile_encoding = deepcopy(outenc)
     cfg.infile_type = deepcopy(infiletype)
     cfg.outfile_type = deepcopy(outfiletype)
+    if outfiletype.lower() == 'xml':
+        cfg.main_line.columns = {'What': ['items', 'item'],
+                                 'Quantity': ['items', 'quantity']}
+        cfg.linked_lines = []
+        cfg.include_key = False
+        cfg.column_order = ['What', 'Quantity']
+        cfg.out_xml_attributes = ['What']
     cfg.validate(stderr_file=sys.stderr)
     txt = cfg.as_json_string()
     cf2 = ExtractConfig(from_json_data_text=txt)
@@ -40,11 +47,7 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     assert cf2.infile_encoding == inenc
     assert cf2.outfile_type == outfiletype
     assert cf2.outfile_encoding == outenc
-    xmlerr = ['Warning: Column name ',
-              'is not a valid column name in XML,',
-              'contains white space.']
-    errs = None if outfiletype.lower() != 'xml' else xmlerr
-    check_capsys(capsys=capsys, in_err=errs)
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('strip', [True, False])
@@ -186,6 +189,9 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                             'OpenPyXL, XlsxWriter, pylightxl']),
                           ('column_order', 'ordered', InvalidConfiguration,
                            ['Value for column_order is not a list.']),
+                          ('column_order', [7], InvalidConfiguration,
+                           ['Value 7 for column_order at index 0',
+                            'is not of type str.']),
                           ('column_order', ['What'], SystemExit,
                            ['Extracted column "Customer name" is missing']),
                           ('column_order',
@@ -206,8 +212,10 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                           ('out_xml_attributes', ['nothing'], SystemExit,
                            ['Attribute name "nothing" in out_xml_attributes',
                             'but no column with that name extracted']),
-                          ('out_csv_dialect', 'dial', KeyError,
-                           'Not dictionary for out_csv_dialect'),
+                          ('out_csv_dialect', 'dial', InvalidConfiguration,
+                           ['Value for out_csv_dialect is not a valid CSV '
+                            'dialect',
+                            'Expected a dict.']),
                           ('order_rows_by', ['Whatt'], SystemExit,
                            ['order rows by includes column "Whatt"',
                             'but that column is not extracted']),
@@ -284,4 +292,16 @@ def test_extract_config_err4(capsys: pytest.CaptureFixture[str]) -> None:
         _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
     msgs = ['column order includes column "Zip"',
             'but that column is not extracted']
+    check_capsys(capsys=capsys, in_err=msgs)
+
+
+def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test not OK XML column name validation."""
+    cfg = ExtractConfig()
+    cfg.outfile_type = 'XML'
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    msgs = ['XML output column names in column_order',
+            'must not contain whitespace', 'How many', 'Customer name',
+            'Street number', 'key col']
     check_capsys(capsys=capsys, in_err=msgs)

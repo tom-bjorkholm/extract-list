@@ -139,3 +139,4 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
                                          'quotechar': '"',
                                          'lineterminator': None,
                                          'escapechar': None}
+        self._unchecked_dicts: list[str] = ['out_csv_dialect']

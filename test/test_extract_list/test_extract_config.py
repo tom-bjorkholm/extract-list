@@ -8,6 +8,7 @@ from copy import deepcopy
 from typing import cast
 import sys
 import pytest
+from config_as_json import InvalidConfiguration
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
@@ -291,9 +292,8 @@ def test_cross_check_columns_nok(capsys: pytest.CaptureFixture[str],  # pylint: 
     check_capsys(capsys=capsys, in_err=errmsg)
 
 
-def test_check_extr_uniq_col_ok1(
-        capsys: pytest.CaptureFixture[str]) -> None:
-    """Test OK case 1 of check_extract_unique_colnames."""
+def test_check_extr_uniq_col_ok1(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test OK case 1 of extracted column name validation."""
     cfg = ExtractConfig()
     cfg.main_line.columns = {'a': ['a1'], 'b': ['b1']}
     cfg.linked_lines = []
@@ -306,13 +306,12 @@ def test_check_extr_uniq_col_ok1(
         for cnum in range(10, 13):
             lls.columns['c' + str(cnum) + '_' + str(ival)] = ['d', str(cnum)]
         cfg.linked_lines.append(lls)
-    cfg.check_extract_unique_colnames()
+    cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
 
-def test_check_extr_uniq_col_nok1(
-        capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 1 of check_extract_unique_colnames."""
+def test_check_extr_uniq_col_nok1(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test not OK case 1 of extracted column name validation."""
     cfg = ExtractConfig()
     cfg.main_line.columns = {'a': ['a1'], 'b': ['b1']}
     cfg.linked_lines = []
@@ -322,44 +321,42 @@ def test_check_extr_uniq_col_nok1(
                                'columns': {'c': ['c1'], 'b': ['d2']},
                                'expand_at': []})
     cfg.linked_lines.append(lls)
-    with pytest.raises(SystemExit):
-        cfg.check_extract_unique_colnames()
-    errmsg = [
-        'Column names of extracted data must be unique',
-        'Repeated column name(s): b'
-    ]
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    errmsg = ['Extracted column names must be unique',
+              'Repeated column name(s): b']
     check_capsys(capsys=capsys, in_err=errmsg)
 
 
-def test_check_csv_ok(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test OK case of check_csv."""
+def test_csv_dialect_validation_ok(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test OK case of CSV dialect validation."""
     cfg = ExtractConfig()
     cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
                            'delimiter': ',', 'quoting': None,
                            'quotechar': '"',
                            'lineterminator': None,
                            'escapechar': None}
-    cfg._check_csv(stderr_file=sys.stderr)  # pylint: disable=protected-access # noqa: E501
+    cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
 
-def test_check_csv_nok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 1 of check_csv."""
+def test_csv_dialect_nok1(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test not OK case 1 of CSV dialect validation."""
     cfg = ExtractConfig()
     cfg.out_csv_dialect = {'name': 'csv.unix_dialects',
                            'delimiter': ',', 'quoting': None,
                            'quotechar': '"',
                            'lineterminator': None,
                            'escapechar': None}
-    with pytest.raises(SystemExit):
-        cfg._check_csv(stderr_file=sys.stderr)  # pylint: disable=protected-access # noqa: E501
-    errmsg = ['Configured out_csv_dialect is not valid',
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    errmsg = ['Value for out_csv_dialect is not a valid CSV dialect',
               'Unknown csv dialect: csv.unix_dialects']
     check_capsys(capsys=capsys, in_err=errmsg)
 
 
-def test_check_csv_nok2(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 2 of check_csv."""
+def test_csv_dialect_nok2(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test not OK case 2 of CSV dialect validation."""
     cfg = ExtractConfig()
     cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
                            'dellimiter': ',',  # type: ignore
@@ -367,10 +364,10 @@ def test_check_csv_nok2(capsys: pytest.CaptureFixture[str]) -> None:
                            'quotechar': '"',
                            'lineterminator': None,
                            'escapechar': None}
-    with pytest.raises(SystemExit):
-        cfg._check_csv(stderr_file=sys.stderr)  # pylint: disable=protected-access # noqa: E501
-    errmsgs = ['Configured out_csv_dialect is not valid',
-               "unexpected keyword argument 'dellimiter'"]
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    errmsgs = ['Value for out_csv_dialect is not a valid CSV dialect',
+               "Unknown key 'dellimiter'"]
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 
