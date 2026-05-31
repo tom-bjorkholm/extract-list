@@ -6,6 +6,7 @@
 
 import pytest
 from config_as_json import Config
+from tableio_cfg_json import TioJsonConfig
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
@@ -39,14 +40,17 @@ def test_extract_config_params_default_values(
     assert params.one_output_line_per_main_line
     assert params.outfile_border == FormatRequest.NO
     assert params.outfile_filtered_area == FormatRequest.NO
-    assert params.outfile_type == 'excel'
-    assert params.outfile_encoding == 'utf-8'
-    assert params.outfile_implementation is None
+    assert isinstance(params.output, TioJsonConfig)
+    assert params.output.format_name is not None
+    assert params.output.format_name.lower() == 'excel'
+    assert params.output.character_encoding == 'utf-8'
+    assert params.output.implementation is None
+    assert params.internal_output_format is None
+    assert params.internal_output_encoding is None
     assert params.column_order == ['What', 'How many', 'Customer name',
                                    'Street', 'Street number', 'key col']
     assert not params.order_rows_by
     assert params.out_xml_attributes == ['What']
-    assert params.out_csv_dialect['name'] == 'csv.excel'
     check_capsys(capsys=capsys)
 
 
@@ -60,11 +64,13 @@ def test_extract_config_params_mutable_defaults_are_independent(
     first.column_order.append('Extra')
     first.order_rows_by.append('What')
     first.out_xml_attributes.append('How many')
-    first.out_csv_dialect['delimiter'] = ';'
+    assert first.output is not None
+    assert second.output is not None
+    first.output.character_encoding = 'iso8859-1'
     assert 'Extra' not in second.main_line.columns
     assert 'Linked extra' not in second.linked_lines[0].columns
     assert 'Extra' not in second.column_order
     assert not second.order_rows_by
     assert second.out_xml_attributes == ['What']
-    assert second.out_csv_dialect['delimiter'] == ','
+    assert second.output.character_encoding == 'utf-8'
     check_capsys(capsys=capsys)

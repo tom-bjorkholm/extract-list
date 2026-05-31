@@ -29,7 +29,8 @@ DATA: list[Data] = [
 def read_txt(filename: str, cfg: ExtractConfig) -> Data:
     """Read from txt file."""
     data: Data = []
-    with open(file=filename, mode='r', encoding=cfg.outfile_encoding) as file:
+    with open(file=filename, mode='r',
+              encoding=cfg.output_encoding()) as file:
         lines = file.readlines()
         col_names = lines[0].split()
         for row in lines[1:]:
@@ -43,7 +44,7 @@ def read_txt(filename: str, cfg: ExtractConfig) -> Data:
 
 def read_xml(filename: str, cfg: ExtractConfig) -> Data:
     """Read from XML."""
-    indata = read_in_xml(filename=filename, encoding=cfg.outfile_encoding,
+    indata = read_in_xml(filename=filename, encoding=cfg.output_encoding(),
                          strip_at=True)
     root = cast(dict[str, dict[str, JsonType]], indata)
     data = cast(Data, list(root['data'].values()))
@@ -53,14 +54,14 @@ def read_xml(filename: str, cfg: ExtractConfig) -> Data:
 def read_json(filename: str, cfg: ExtractConfig) -> Data:
     """Read from JSON."""
     return cast(Data, read_in_json(filename=filename,
-                                   encoding=cfg.outfile_encoding))
+                                   encoding=cfg.output_encoding()))
 
 
 def read_csv(filename: str, cfg: ExtractConfig) -> Data:
     """Read from CSV."""
     cfg.validate(stderr_file=sys.stderr)
     args = cast(OptionalArgsDict,
-                {'character_encoding': cfg.outfile_encoding})
+                {'character_encoding': cfg.output_encoding()})
     with create_tableio(format_name='CSV', file_name=filename,
                         file_access=FileAccess.READ,
                         implementation='csv', args=args) as table:
@@ -92,8 +93,11 @@ def test_handle_output_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disabl
                            ) -> None:
     """Test OK cases 1 of handle_output."""
     cfg = ExtractConfig()
-    cfg.outfile_encoding = enc
-    cfg.outfile_type = typ
+    cfg.set_output_format(typ)
+    if cfg.output is None:
+        cfg.internal_output_encoding = enc
+    else:
+        cfg.output.character_encoding = enc
     cfg.column_order = list(dat[0].keys())
     cfg.out_xml_attributes = []
     with TemporaryDirectory() as dirname:

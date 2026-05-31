@@ -49,30 +49,38 @@ def generate_syntax_txt(file: TextIO) -> None:
     Type of output file
     ===================
 
-    The type of output file to produce is determined by "outfile_type".
-    "outfile_type" can have the values:
+    Output files are configured in two different ways. Table-like output
+    formats handled by TableIO are configured in the nested "output" object.
+    The TableIO format is determined by "output.format_name".
+    "output.format_name" can have the values:
     '''
     out_formats = list_out_file_formats(border=FormatRequest.NO,
                                         filtered_area=FormatRequest.NO)
-    msg += ' ,'.join(['"' + x + '"' for x in out_formats])
+    tableio_formats = [
+        x for x in out_formats
+        if x.lower() not in ('json', 'xml')]
+    msg += ' ,'.join(['"' + x + '"' for x in tableio_formats])
     msg += '''
 
-    As CSV, TXT, JSON and XML are syntaxes in text files, the text files can
-    have an encoding for the text in the files.
+    JSON and XML output are handled inside extract-list instead of TableIO.
+    For these outputs, "output" shall be omitted and
+    "internal_output_format" shall be "JSON" or "XML".
+
+    As CSV, TXT, JSON and XML are syntaxes in text files, the text files
+    can have an encoding for the text in the files.
     https://en.wikipedia.org/wiki/Character_encoding
-    This is specified with "outfile_encoding". Unless you know that you need
+    TableIO output uses "output.character_encoding". Internal JSON and XML
+    output uses "internal_output_encoding". Unless you know that you need
     another encoding leave this as in the generated example configuration.
 
-    Comma separated values files (CSV files) may differ slightly depending on
-    the programs used to read/write them and the locale used.
-    "out_csv_dialect" changes how CSV files are written. It is always needed
-    in the configuration file, but is only used if the output is CSV.
+    TableIO may provide several implementations for a file format.
+    The optional "output.implementation" parameter can force a specific
+    implementation. If it is omitted, TableIO chooses the best available
+    implementation.
 
-    TableIO may provide several implementations for a file format. The
-    "outfile_implementation" parameter can force a specific implementation.
-    If it is omitted, TableIO chooses the best available implementation. Old
-    configuration files may contain "outfile_excel_library"; that value is
-    ignored when the old file is read.
+    Comma separated values files (CSV files) may differ slightly depending
+    on the programs used to read/write them and the locale used. CSV
+    settings are configured in the optional nested "output.csv" object.
 
     The "outfile_border" parameter can be "NO", "IF_AVAILABLE" or "NEEDED".
     The "outfile_filtered_area" parameter can be "NO", "IF_AVAILABLE" or

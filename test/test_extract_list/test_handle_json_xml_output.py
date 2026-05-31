@@ -51,7 +51,8 @@ def test_json_output_ok2(capsys: pytest.CaptureFixture[str],
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.json'
         cfg = ExtractConfig()
-        cfg.outfile_encoding = enc
+        cfg.set_output_format('JSON')
+        cfg.internal_output_encoding = enc
         handle_json_output(data=data, filename=fname, cfg=cfg)
         res = read_in_json(filename=fname, encoding=enc)
         assert res == data
@@ -71,7 +72,8 @@ def test_json_output_ok3(capsys: pytest.CaptureFixture[str],
                          enc: str, fname: str) -> None:
     """Test 3 of json_output."""
     cfg = ExtractConfig()
-    cfg.outfile_encoding = enc
+    cfg.set_output_format('JSON')
+    cfg.internal_output_encoding = enc
 
     count = 0
 
@@ -133,7 +135,8 @@ def test_xml_output_1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too
         fname = dirname + '/a.xml'
         cfg = ExtractConfig()
         cfg.out_xml_attributes = attr
-        cfg.outfile_encoding = enc
+        cfg.set_output_format('XML')
+        cfg.internal_output_encoding = enc
         cfg.include_key = key is not None
         if key is not None:
             cfg.column_name_for_key = key
@@ -193,7 +196,8 @@ def test_xml_output_2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too
     unparse = 'extract_list.handle_json_xml_output.xmltodict.unparse'
     monkeypatch.setattr(unparse, mock_unparse)
     cfg = ExtractConfig()
-    cfg.outfile_encoding = enc
+    cfg.set_output_format('XML')
+    cfg.internal_output_encoding = enc
     cfg.include_key = key is not None
     if key is not None:
         cfg.column_name_for_key = key

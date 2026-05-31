@@ -24,6 +24,16 @@ from .check_capsys import check_capsys
 from .check_result import check_result, ex_res, ex2_res
 
 
+def assert_config_text_has_output(cfgtxt: str, output_format: str) -> None:
+    """Check that configuration JSON selects the expected output format."""
+    if output_format.lower() in ('json', 'xml'):
+        expected = '"internal_output_format": "' + output_format.upper() + '"'
+        assert expected.lower() in cfgtxt.lower()
+        return
+    expected = '"format_name": "' + output_format + '"'
+    assert expected.lower() in cfgtxt.lower()
+
+
 @pytest.mark.parametrize('outp',
                          [('Excel', read_excel,
                            'b.xlsx'),
@@ -70,7 +80,8 @@ def test_gen_cfg_ex_ok1(capsys: pytest.CaptureFixture[str],
         check_result(result_data=data, other_result=inp[3])
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
-            assert '"outfile_type": "' + outp[0] + '"' in cfgtxt
+            assert_config_text_has_output(cfgtxt=cfgtxt,
+                                          output_format=outp[0])
     check_capsys(capsys=capsys)
 
 
@@ -123,7 +134,8 @@ def test_gen_cfg_sw_ok1(capsys: pytest.CaptureFixture[str],
         check_result(result_data=data, other_result=sw_res_data)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
-            assert '"outfile_type": "' + outp[0] + '"' in cfgtxt
+            assert_config_text_has_output(cfgtxt=cfgtxt,
+                                          output_format=outp[0])
     check_capsys(capsys=capsys)
 
 
@@ -179,7 +191,8 @@ def test_gen_cfg_sw_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
         ret2 = extract_cmd(extr_cmd)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
-            assert '"outfile_type": "' + outp[0].lower() + '"' in cfgtxt
+            assert_config_text_has_output(cfgtxt=cfgtxt,
+                                          output_format=outp[0])
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](out_fname, cfg)
         assert ret == 0
@@ -223,7 +236,8 @@ def test_gen_cfg_sw_warn(capsys: pytest.CaptureFixture[str],  # pylint: disable=
         ]
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
-            assert '"outfile_type": "' + outp[0].lower() + '"' in cfgtxt
+            assert_config_text_has_output(cfgtxt=cfgtxt,
+                                          output_format=outp[0])
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](out_fname, cfg)
         assert ret == 0
@@ -274,7 +288,8 @@ def test_gen_cfg_ex_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
         ret2 = extract_cmd(extr_cmd)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
-            assert '"outfile_type": "' + outp[0].lower() + '"' in cfgtxt
+            assert_config_text_has_output(cfgtxt=cfgtxt,
+                                          output_format=outp[0])
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](out_fname, cfg)
         assert ret == 0

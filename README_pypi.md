@@ -111,10 +111,10 @@ This is specified with **"infile_encoding"**. Unless you know that you need anot
 
 ### Type of output file
 
-The type of output file to produce is determined by **"outfile_type"**.
-Table-style output is written with TableIO. The configured value is
-case-insensitive and is normalized when the configuration is read. Typical
-values include:
+Table-style output is written with TableIO and configured in the nested
+**"output"** object. The TableIO format is selected with
+**"output.format_name"**. The configured value is case-insensitive and is
+normalized when the configuration is read. Typical values include:
 
 * *"Excel"*
 * *"CSV"*
@@ -123,22 +123,31 @@ values include:
 * *"LaTeX"*
 * *"md"*
 * *"txt"*
+
+JSON and XML output are handled inside extract-list instead of TableIO. For
+these output formats, omit **"output"** and set
+**"internal_output_format"** to one of:
+
 * *"JSON"*
 * *"XML"*
 
 As *CSV, TXT, JSON* and *XML* are syntaxes in text files, the text files can have an encoding for the text in the files
 [https://en.wikipedia.org/wiki/Character_encoding](https://en.wikipedia.org/wiki/Character_encoding).
-This is specified with **"outfile_encoding"**. Unless you know that you need another encoding leave this as in the generated example configuration.
+For TableIO output this is specified with **"output.character_encoding"**.
+For internal JSON and XML output this is specified with
+**"internal_output_encoding"**. Unless you know that you need another encoding
+leave this as in the generated example configuration.
 
-Comma separated values files (CSV files) may differ slightly depending on the programs used to read/write them and the locale used. **"out_csv_dialect"** changes how CSV files are written. It is always needed in the configuration file, but is only used if the output is CSV.
+Comma separated values files (CSV files) may differ slightly depending on the
+programs used to read/write them and the locale used. CSV settings are
+configured in the optional nested **"output.csv"** object.
 
 TableIO may provide several implementations for a file format.
-**"outfile_excel_library"** selects the implementation. The name is kept for
-compatibility with older configuration files where it only selected the Excel
-library. **"outfile_border"** and **"outfile_filtered_area"** can be *"NO"*,
-*"IF_AVAILABLE"* or *"NEEDED"*. If a feature is *"NEEDED"*, the selected output
-format must support it. If it is *"IF_AVAILABLE"*, TableIO prefers an
-implementation that supports it and may ignore it when no implementation can.
+**"output.implementation"** can force a specific implementation. If it is
+omitted, TableIO chooses the best available implementation. The
+**"outfile_border"** and **"outfile_filtered_area"** values can be *"NO"*,
+*"IF_AVAILABLE"* or *"NEEDED"*. *"NO"* disables the feature request, while the
+other values request the feature when the output method is called.
 
 ### Data to extract
 
@@ -188,8 +197,9 @@ Source code and tests are available at [https://bitbucket.org/tom-bjorkholm/extr
 
 ## Test summary
 
-- Test result: 1164 passed in 9s
+- Test result: 1206 passed in 34s
 - No flake8 warnings.
 - No mypy errors found.
+- Python layout warnings.
 - Built version(s): 0.2.15
 - Build and test using Python 3.14.4

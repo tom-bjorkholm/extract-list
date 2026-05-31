@@ -5,7 +5,20 @@
 # MIT License
 
 
+from json import loads as json_loads
+from typing import Optional, cast
+import sys
+from tableio_cfg_json import TioJsonConfig
 from extract_list.extract_config import ExtractConfig
+
+
+def _output_json(
+        output: Optional[TioJsonConfig]) -> Optional[dict[str, object]]:
+    """Get JSON-compatible data from an optional output config."""
+    if output is None:
+        return None
+    return cast(dict[str, object],
+                json_loads(output.as_json_string(stderr_file=sys.stderr)))
 
 
 def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig) -> None:
@@ -23,9 +36,8 @@ def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig) -> None:
         assert elem1.line == elem2.line
     assert cf1.one_output_line_per_main_line == \
         cf2.one_output_line_per_main_line
-    assert cf1.outfile_type == cf2.outfile_type
-    assert cf1.outfile_encoding == cf2.outfile_encoding
-    assert cf1.outfile_implementation == cf2.outfile_implementation
+    assert _output_json(cf1.output) == _output_json(cf2.output)
+    assert cf1.internal_output_format == cf2.internal_output_format
+    assert cf1.internal_output_encoding == cf2.internal_output_encoding
     assert cf1.column_order == cf2.column_order
     assert cf1.out_xml_attributes == cf2.out_xml_attributes
-    assert cf1.out_csv_dialect == cf2.out_csv_dialect

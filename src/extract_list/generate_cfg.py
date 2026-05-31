@@ -26,7 +26,7 @@ def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
     """Generate cfg file for example."""
     assert cfgtype in (CfgTypes.EXAMPLE_JSON, CfgTypes.EXAMPLE_XML)
     cfg = ExtractConfig()
-    cfg.outfile_type = outtype
+    cfg.set_output_format(outtype)
     if cfgtype == CfgTypes.EXAMPLE_JSON:
         cfg.infile_type = InFileType.JSON
     else:  # XML
@@ -61,7 +61,7 @@ def generate_cfg_example2(outfilename: str, cfgtype: CfgTypes,
                          'expand_at':  []}
     cfg.linked_lines = [LinkedLineSpec(data=l1line),
                         LinkedLineSpec(data=l2line)]
-    cfg.outfile_type = outtype
+    cfg.set_output_format(outtype)
     cfg.one_output_line_per_main_line = False
     cfg.column_order = ['What', 'How many', 'Customer name',
                         'Street', 'Street number', 'Deliver by']
@@ -84,7 +84,7 @@ def generate_cfg_sw_to_rrs(outfilename: str, cfgtype: CfgTypes,
     assert cfgtype in (CfgTypes.SW_JSON_TO_RRS, CfgTypes.SW_XML_TO_RRS)
     cfg = ExtractConfig()
     cfg.infile_encoding = 'cp1252'
-    cfg.outfile_type = outtype
+    cfg.set_output_format(outtype)
     cfg.linked_lines = []
     cfg.main_line.line = ['competitors']
     cfg.main_line.expand_at = []
@@ -145,7 +145,7 @@ def generate_example_cfg(filename: str, cfgtype: str,
         out_file_type,
         list_out_file_formats(border=FormatRequest.NO,
                               filtered_area=FormatRequest.NO),
-        'outfile_type')
+        'output format')
     cfgout = fix_file_extension(filename=filename, ext_to_add='.cfg')
     ret = CFGFUNCS[type_of_cfg](outfilename=cfgout, cfgtype=type_of_cfg,
                                 outtype=type_out)

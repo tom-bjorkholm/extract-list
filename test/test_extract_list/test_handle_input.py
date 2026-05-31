@@ -130,9 +130,6 @@ def test_read_in_xml(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-
     """Test read_in_xml."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.xml'
-        outcfg = ExtractConfig()
-        outcfg.outfile_encoding = enc
-        outcfg.out_xml_attributes = []
         with open(file=fname, mode='w', encoding=enc) as file:
             input_dict = cast(dict[str, JsonType], deepcopy(ind[index]))
             xmltodict.unparse(input_dict=input_dict,
@@ -156,9 +153,6 @@ def test_handle_xml_input(capsys: pytest.CaptureFixture[str],  # pylint: disable
     """Test handle_xml_input."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.xml'
-        outcfg = ExtractConfig()
-        outcfg.outfile_encoding = enc
-        outcfg.out_xml_attributes = []
         incfg = ExtractConfig()
         incfg.infile_encoding = enc
         incfg.in_xml_strip_at = at
@@ -187,9 +181,6 @@ def test_handle_input_c_xml(capsys: pytest.CaptureFixture[str],  # pylint: disab
     """Test handle_input for xml."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.xml'
-        outcfg = ExtractConfig()
-        outcfg.outfile_encoding = enc
-        outcfg.out_xml_attributes = []
         incfg = ExtractConfig()
         incfg.infile_type = InFileType.XML
         incfg.infile_encoding = enc

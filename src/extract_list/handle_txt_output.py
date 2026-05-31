@@ -37,4 +37,4 @@ def txt_output(data: Data, column_order: list[str],
 def handle_txt_output(data: Data, filename: str, cfg: ExtractConfig) -> None:
     """Handle output to text file."""
     txt_output(data=data, column_order=cfg.column_order, filename=filename,
-               encoding=cfg.outfile_encoding)
+               encoding=cfg.output_encoding())

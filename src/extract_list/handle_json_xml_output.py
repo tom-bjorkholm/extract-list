@@ -38,12 +38,13 @@ def handle_xml_output(data: Data, filename: str, cfg: ExtractConfig) -> None:
             rowkey = key_value
         outdata[rowkey] = row
     to_output = {'data': outdata}
-    with open(file=filename, mode='w', encoding=cfg.outfile_encoding) as file:
+    encoding = cfg.output_encoding()
+    with open(file=filename, mode='w', encoding=encoding) as file:
         xmltodict.unparse(to_output, output=file, pretty=True,
-                          encoding=cfg.outfile_encoding)
+                          encoding=encoding)
 
 
 def handle_json_output(data: Data | JsonType, filename: str,
                        cfg: ExtractConfig) -> None:
     """Handle output to JSON file."""
-    json_output(data=data, filename=filename, encoding=cfg.outfile_encoding)
+    json_output(data=data, filename=filename, encoding=cfg.output_encoding())

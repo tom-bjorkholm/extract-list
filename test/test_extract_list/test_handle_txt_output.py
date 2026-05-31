@@ -64,7 +64,8 @@ def test_handle_txt_output(capsys: pytest.CaptureFixture[str],  # pylint: disabl
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.txt'
         cfg = ExtractConfig()
-        cfg.outfile_encoding = enc
+        assert cfg.output is not None
+        cfg.output.character_encoding = enc
         cfg.column_order = cols
         handle_txt_output(data=data, filename=fname, cfg=cfg)
         with open(file=fname, mode='r', encoding=enc) as file:
@@ -105,7 +106,8 @@ def test_handle_txt_output2(capsys: pytest.CaptureFixture[str],  # pylint: disab
     monkeypatch.setattr('extract_list.handle_txt_output.txt_output',
                         mocktxtout)
     cfg = ExtractConfig()
-    cfg.outfile_encoding = enc
+    assert cfg.output is not None
+    cfg.output.character_encoding = enc
     cfg.column_order = cols
     handle_txt_output(data=dat, filename=fname, cfg=cfg)
     assert count == 1

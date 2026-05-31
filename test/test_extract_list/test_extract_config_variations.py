@@ -11,6 +11,8 @@ import sys
 import pytest
 from config_as_json import ConfigBadJson, InvalidConfiguration, \
     InvalidConfigurationValue
+from tableio import CsvDialect
+from tableio_cfg_json import TioJsonCsvConfig
 from extract_list.config_enums import InFileType, MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import LinkedLineSpec, MainLineSpec
@@ -29,9 +31,12 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     """Test variation 1 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.infile_encoding = deepcopy(inenc)
-    cfg.outfile_encoding = deepcopy(outenc)
     cfg.infile_type = deepcopy(infiletype)
-    cfg.outfile_type = deepcopy(outfiletype)
+    cfg.set_output_format(deepcopy(outfiletype))
+    if cfg.output is None:
+        cfg.internal_output_encoding = deepcopy(outenc)
+    else:
+        cfg.output.character_encoding = deepcopy(outenc)
     if outfiletype.lower() == 'xml':
         cfg.main_line.columns = {'What': ['items', 'item'],
                                  'Quantity': ['items', 'quantity']}
@@ -45,8 +50,8 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     check_cfgs_equal(cfg, cf2)
     assert cf2.infile_type == infiletype
     assert cf2.infile_encoding == inenc
-    assert cf2.outfile_type == outfiletype
-    assert cf2.outfile_encoding == outenc
+    assert cf2.output_format_name().lower() == outfiletype.lower()
+    assert cf2.output_encoding() == outenc
     check_capsys(capsys=capsys)
 
 
@@ -79,27 +84,30 @@ def test_extract_config_var2(capsys: pytest.CaptureFixture[str],
 
 
 @pytest.mark.parametrize('coname', ['abc', 'key column'])
-@pytest.mark.parametrize('csname', ['csv.excel', 'csv.unix_dialect'])
+@pytest.mark.parametrize('csv_dialect', [CsvDialect.EXCEL, CsvDialect.UNIX])
 @pytest.mark.parametrize('deli', [',', ';', ' '])
 @pytest.mark.parametrize('excl', ['OpenPyXL', 'pylightxl', 'XlsxWriter'])
 def test_extract_config_var3(capsys: pytest.CaptureFixture[str],
-                             coname: str, csname: str, deli: str,
+                             coname: str, csv_dialect: CsvDialect, deli: str,
                              excl: str) -> None:
     """Test variation 3 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.column_name_for_key = deepcopy(coname)
-    cfg.out_csv_dialect['name'] = deepcopy(csname)
-    cfg.out_csv_dialect['delimiter'] = deepcopy(deli)
-    cfg.outfile_implementation = deepcopy(excl)
+    assert cfg.output is not None
+    cfg.output.csv = TioJsonCsvConfig(dialect=deepcopy(csv_dialect),
+                                      delimiter=deepcopy(deli))
+    cfg.output.implementation = deepcopy(excl)
     cfg.column_order.remove('key col')
     cfg.column_order.append(deepcopy(coname))
     txt = cfg.as_json_string()
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.column_name_for_key == coname
-    assert cf2.out_csv_dialect['name'] == csname
-    assert cf2.out_csv_dialect['delimiter'] == deli
-    assert cf2.outfile_implementation == excl
+    assert cf2.output is not None
+    assert cf2.output.csv is not None
+    assert cf2.output.csv.dialect == csv_dialect
+    assert cf2.output.csv.delimiter == deli
+    assert cf2.output.implementation == excl
     check_capsys(capsys=capsys)
 
 
@@ -159,6 +167,20 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
     check_capsys(capsys=capsys)
 
 
+def _set_config_value(config: ExtractConfig, member_path: str,
+                      value: object) -> None:
+    """Set a test value on a possibly nested configuration member."""
+    if member_path == 'output.csv':
+        assert config.output is not None
+        setattr(config.output, 'csv', value)
+        return
+    if member_path.startswith('output.'):
+        assert config.output is not None
+        setattr(config.output, member_path.removeprefix('output.'), value)
+        return
+    setattr(config, member_path, value)
+
+
 @pytest.mark.parametrize('attr,val,exc, msgs',
                          [('infile_type', 15, InvalidConfiguration,
                            ['Value for infile_type',
@@ -178,15 +200,18 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                            InvalidConfiguration,
                            ['Value for missing_input_for_column',
                             'is not of type MissingInputForColumn']),
-                          ('outfile_type', 'line', InvalidConfigurationValue,
-                           ['Value line for outfile_type',
-                            'CSV, Excel']),
-                          ('outfile_encoding', 'def', InvalidConfiguration,
-                           ['def is not a recognized character encoding']),
-                          ('outfile_implementation', 'lib',
+                          ('output.format_name', 'line',
                            InvalidConfigurationValue,
-                           ['Value lib for outfile_implementation',
-                            'OpenPyXL, XlsxWriter, pylightxl']),
+                           ['Value line for format_name',
+                            'CSV, Excel']),
+                          ('output.character_encoding', 'def',
+                           InvalidConfiguration,
+                           ['def is not a recognized character encoding']),
+                          ('output.implementation', 'lib',
+                           InvalidConfigurationValue,
+                           ['Value lib for implementation',
+                            'OpenPyXL, XlsxWriter',
+                            'csv, mformat, odfdo, pylightxl']),
                           ('column_order', 'ordered', InvalidConfiguration,
                            ['Value for column_order is not a list.']),
                           ('column_order', [7], InvalidConfiguration,
@@ -212,10 +237,9 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
                           ('out_xml_attributes', ['nothing'], SystemExit,
                            ['Attribute name "nothing" in out_xml_attributes',
                             'but no column with that name extracted']),
-                          ('out_csv_dialect', 'dial', InvalidConfiguration,
-                           ['Value for out_csv_dialect is not a valid CSV '
-                            'dialect',
-                            'Expected a dict.']),
+                          ('output.csv', 'dial', TypeError,
+                           ['Nested Config member csv',
+                            'must be TioJsonCsvConfig']),
                           ('order_rows_by', ['Whatt'], SystemExit,
                            ['order rows by includes column "Whatt"',
                             'but that column is not extracted']),
@@ -229,7 +253,7 @@ def test_extract_config_err1(capsys: pytest.CaptureFixture[str], attr: str,
                              msgs: str | list[str]) -> None:
     """Test not OK variations 1 of ExtractConfig."""
     cfg = ExtractConfig(stderr_file=sys.stderr)
-    setattr(cfg, attr, val)
+    _set_config_value(config=cfg, member_path=attr, value=val)
     with pytest.raises(exc):
         txt = cfg.as_json_string(stderr_file=sys.stderr)
         _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
@@ -256,8 +280,78 @@ def test_extract_config_old_excel_library_is_ignored(
     data['outfile_excel_library'] = 'lib'
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
                         stderr_file=sys.stderr)
-    assert cf2.outfile_implementation is None
+    assert cf2.output is not None
+    assert cf2.output.implementation is None
     assert not hasattr(cf2, 'outfile_excel_library')
+    check_capsys(capsys=capsys)
+
+
+def test_old_tableio_output_keys_are_migrated(
+        capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that old TableIO output keys are read as nested output."""
+    cfg = ExtractConfig(stderr_file=sys.stderr)
+    data = json_loads(cfg.as_json_string(stderr_file=sys.stderr))
+    del data['output']
+    data['outfile_type'] = 'CSV'
+    data['outfile_encoding'] = 'iso8859-1'
+    data['outfile_implementation'] = 'csv'
+    data['out_csv_dialect'] = {
+        'name': 'csv.excel_tab',
+        'delimiter': None,
+        'quoting': 'csv.quote_minimal'}
+    cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
+                        stderr_file=sys.stderr)
+    assert cf2.output is not None
+    assert cf2.output.format_name == 'CSV'
+    assert cf2.output.character_encoding == 'iso8859-1'
+    assert cf2.output.implementation == 'csv'
+    assert cf2.output.csv is not None
+    assert cf2.output.csv.dialect == CsvDialect.EXCEL
+    assert cf2.output.csv.delimiter == '\t'
+    assert cf2.output.csv.quoting == 'minimal'
+    assert cf2.internal_output_format is None
+    check_capsys(capsys=capsys)
+
+
+@pytest.mark.parametrize('old_format', ['JSON', 'XML'])
+def test_old_internal_output_keys_are_migrated(
+        capsys: pytest.CaptureFixture[str], old_format: str) -> None:
+    """Test that old JSON/XML output keys become internal output config."""
+    cfg = ExtractConfig(stderr_file=sys.stderr)
+    if old_format == 'XML':
+        cfg.main_line.columns = {'What': ['items', 'item'],
+                                 'Quantity': ['items', 'quantity']}
+        cfg.linked_lines = []
+        cfg.include_key = False
+        cfg.column_order = ['What', 'Quantity']
+    data = json_loads(cfg.as_json_string(stderr_file=sys.stderr))
+    del data['output']
+    data['outfile_type'] = old_format
+    data['outfile_encoding'] = 'iso8859-1'
+    cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
+                        stderr_file=sys.stderr)
+    assert cf2.output is None
+    assert cf2.internal_output_format == old_format
+    assert cf2.internal_output_encoding == 'iso8859-1'
+    check_capsys(capsys=capsys)
+
+
+def test_current_output_wins_over_old_keys(
+        capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that current output config wins when old output keys exist."""
+    cfg = ExtractConfig(stderr_file=sys.stderr)
+    assert cfg.output is not None
+    cfg.output.format_name = 'CSV'
+    data = json_loads(cfg.as_json_string(stderr_file=sys.stderr))
+    data['outfile_type'] = 'JSON'
+    data['outfile_encoding'] = 'iso8859-1'
+    cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
+                        stderr_file=sys.stderr)
+    assert cf2.output is not None
+    assert cf2.output.format_name == 'CSV'
+    assert cf2.output.character_encoding == 'utf-8'
+    assert cf2.internal_output_format is None
+    assert cf2.internal_output_encoding is None
     check_capsys(capsys=capsys)
 
 
@@ -298,7 +392,7 @@ def test_extract_config_err4(capsys: pytest.CaptureFixture[str]) -> None:
 def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK XML column name validation."""
     cfg = ExtractConfig()
-    cfg.outfile_type = 'XML'
+    cfg.set_output_format('XML')
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
     msgs = ['XML output column names in column_order',

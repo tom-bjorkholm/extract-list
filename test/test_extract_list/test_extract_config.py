@@ -9,6 +9,8 @@ from typing import cast
 import sys
 import pytest
 from config_as_json import InvalidConfiguration
+from tableio import CsvDialect
+from tableio_cfg_json import TioJsonCsvConfig
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import \
     MainLineSpec, MLineDict, _mline_spec_from_dict, \
@@ -331,11 +333,9 @@ def test_check_extr_uniq_col_nok1(capsys: pytest.CaptureFixture[str]) -> None:
 def test_csv_dialect_validation_ok(capsys: pytest.CaptureFixture[str]) -> None:
     """Test OK case of CSV dialect validation."""
     cfg = ExtractConfig()
-    cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
-                           'delimiter': ',', 'quoting': None,
-                           'quotechar': '"',
-                           'lineterminator': None,
-                           'escapechar': None}
+    assert cfg.output is not None
+    cfg.output.csv = TioJsonCsvConfig(dialect=CsvDialect.UNIX,
+                                      delimiter=',')
     cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
@@ -343,31 +343,29 @@ def test_csv_dialect_validation_ok(capsys: pytest.CaptureFixture[str]) -> None:
 def test_csv_dialect_nok1(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK case 1 of CSV dialect validation."""
     cfg = ExtractConfig()
-    cfg.out_csv_dialect = {'name': 'csv.unix_dialects',
-                           'delimiter': ',', 'quoting': None,
-                           'quotechar': '"',
-                           'lineterminator': None,
-                           'escapechar': None}
+    assert cfg.output is not None
+    cfg.output.csv = TioJsonCsvConfig()
+    assert cfg.output.csv is not None
+    setattr(cfg.output.csv, 'dialect', 'csv.unix_dialects')
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
-    errmsg = ['Value for out_csv_dialect is not a valid CSV dialect',
-              'Unknown csv dialect: csv.unix_dialects']
+    errmsg = ['csv.dialect',
+              'must be a CsvDialect value or None']
     check_capsys(capsys=capsys, in_err=errmsg)
 
 
 def test_csv_dialect_nok2(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK case 2 of CSV dialect validation."""
     cfg = ExtractConfig()
-    cfg.out_csv_dialect = {'name': 'csv.unix_dialect',
-                           'dellimiter': ',',  # type: ignore
-                           'quoting': None,
-                           'quotechar': '"',
-                           'lineterminator': None,
-                           'escapechar': None}
+    assert cfg.output is not None
+    cfg.output.csv = TioJsonCsvConfig(dialect=CsvDialect.UNIX)
+    assert cfg.output.csv is not None
+    cfg.output.csv.delimiter = '::'
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
-    errmsgs = ['Value for out_csv_dialect is not a valid CSV dialect',
-               "Unknown key 'dellimiter'"]
+    errmsgs = ['Value for delimiter',
+               'length 2',
+               'greater than maximum 1']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 

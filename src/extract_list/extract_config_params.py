@@ -4,20 +4,13 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
-from typing import Optional, TypedDict
+from typing import Optional, TextIO, TypedDict
+import sys
+from tableio import FileAccess
+from tableio_cfg_json import TioJsonConfig, tio_json_config_default
 from extract_list.config_enums import FormatRequest, InFileType, \
-    MissingInputForColumn
-
-
-class CsvSpec(TypedDict, total=False):
-    """CSV dialect specification."""
-
-    name: str
-    delimiter: Optional[str]
-    quoting: Optional[str]
-    quotechar: Optional[str]
-    lineterminator: Optional[str]
-    escapechar: Optional[str]
+    MissingInputForColumn, get_outfile_capabilities, \
+    is_internal_out_file_format
 
 
 MLineDict = TypedDict('MLineDict', {'line': list[str],
@@ -92,6 +85,17 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
     """Parameters for extracting a list of columns from JSON or XML."""
 
     @staticmethod
+    def default_output_config(
+            stderr_file: TextIO = sys.stderr) -> TioJsonConfig:
+        """Get default configuration for TableIO output."""
+        capabilities = get_outfile_capabilities()
+        config = tio_json_config_default(capabilities=capabilities,
+                                         file_access=FileAccess.CREATE,
+                                         stderr_file=stderr_file)
+        config.character_encoding = 'utf-8'
+        return config
+
+    @staticmethod
     def example_main_line() -> MainLineSpec:
         """Get example spec for main line."""
         main_col = {'What': ['items', 'item'],
@@ -112,7 +116,7 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
                            'expand_at': []}
         return LinkedLineSpec(data=data)
 
-    def __init__(self) -> None:
+    def __init__(self, stderr_file: TextIO = sys.stderr) -> None:
         """Initialize all configuration parameters to default values."""
         self.infile_type: InFileType = InFileType.JSON
         self.infile_encoding: str = 'utf-8'
@@ -126,17 +130,46 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
         self.one_output_line_per_main_line: bool = True
         self.outfile_border: FormatRequest = FormatRequest.NO
         self.outfile_filtered_area: FormatRequest = FormatRequest.NO
-        self.outfile_type: str = 'excel'
-        self.outfile_encoding: str = 'utf-8'
-        self.outfile_implementation: Optional[str] = None
+        self.output: Optional[TioJsonConfig] = self.default_output_config(
+            stderr_file=stderr_file)
+        self.internal_output_format: Optional[str] = None
+        self.internal_output_encoding: Optional[str] = None
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
                                         'Street', 'Street number', 'key col']
         self.order_rows_by: list[str] = []
         self.out_xml_attributes = ['What']
-        self.out_csv_dialect: CsvSpec = {'name': 'csv.excel',
-                                         'delimiter': ',',
-                                         'quoting': None,
-                                         'quotechar': '"',
-                                         'lineterminator': None,
-                                         'escapechar': None}
-        self._unchecked_dicts: list[str] = ['out_csv_dialect']
+
+    def set_output_format(self, output_format: str,
+                          stderr_file: TextIO = sys.stderr) -> None:
+        """Set either a TableIO or internal output format."""
+        if is_internal_out_file_format(output_format):
+            self.output = None
+            self.internal_output_format = output_format
+            if self.internal_output_encoding is None:
+                self.internal_output_encoding = 'utf-8'
+            return
+        if self.output is None:
+            self.output = self.default_output_config(stderr_file=stderr_file)
+        self.output.format_name = output_format
+        self.internal_output_format = None
+        self.internal_output_encoding = None
+
+    def output_format_name(self) -> str:
+        """Get the configured output format name."""
+        if self.internal_output_format is not None:
+            return self.internal_output_format
+        if self.output is None:
+            raise ValueError('No output format is configured.')
+        if self.output.format_name is None:
+            raise ValueError('No TableIO output format is configured.')
+        return self.output.format_name
+
+    def output_encoding(self) -> str:
+        """Get the configured output character encoding."""
+        if self.internal_output_format is not None:
+            if self.internal_output_encoding is None:
+                return 'utf-8'
+            return self.internal_output_encoding
+        if self.output is None or self.output.character_encoding is None:
+            return 'utf-8'
+        return self.output.character_encoding
