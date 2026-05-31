@@ -1,7 +1,7 @@
 #! /usr/local/bin/python3
 """Version reporting for extract-list."""
 
-# Copyright (c) 2024 - 2025 Tom Björkholm
+# Copyright (c) 2024 - 2026 Tom Björkholm
 # MIT License
 
 from datetime import date
@@ -15,7 +15,7 @@ class XlVersion(VersionReporter):
     def package_names(self) -> list[str]:
         """Get list of main package names."""
         return ['extract_list', 'config_as_json', 'tableio',
-                'versionreporter', 'xmltodict']
+                'tableio-cfg-json', 'versionreporter', 'xmltodict']
 
     @classmethod
     def get_main_package_name(cls) -> str:
