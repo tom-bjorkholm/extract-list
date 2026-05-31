@@ -23,8 +23,7 @@ from .check_capsys import check_capsys
 @pytest.mark.parametrize('inenc', ['utf-8', 'iso8859-1'])
 @pytest.mark.parametrize('infiletype', [InFileType.JSON, InFileType.XML])
 @pytest.mark.parametrize('outenc', ['utf-8', 'iso8859-1'])
-@pytest.mark.parametrize('outfiletype',
-                         ['JSON', 'XML', 'CSV', 'Excel', 'txt'])
+@pytest.mark.parametrize('outfiletype', ['JSON', 'XML', 'CSV', 'Excel', 'txt'])
 def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
                              infiletype: InFileType, outenc: str,
                              outfiletype: str) -> None:
@@ -61,9 +60,8 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
                                   MissingInputForColumn.ERROR])
 @pytest.mark.parametrize('attr', [['Street'], ['How many'],
                                   ['Street', 'How many']])
-def test_extract_config_var2(capsys: pytest.CaptureFixture[str],
-                             strip: bool, inck: bool,
-                             miss: MissingInputForColumn,
+def test_extract_config_var2(capsys: pytest.CaptureFixture[str], strip: bool,
+                             inck: bool, miss: MissingInputForColumn,
                              attr: list[str]) -> None:
     """Test variation 2 of configured ExtractConfig."""
     cfg = ExtractConfig()
@@ -87,8 +85,8 @@ def test_extract_config_var2(capsys: pytest.CaptureFixture[str],
 @pytest.mark.parametrize('csv_dialect', [CsvDialect.EXCEL, CsvDialect.UNIX])
 @pytest.mark.parametrize('deli', [',', ';', ' '])
 @pytest.mark.parametrize('excl', ['OpenPyXL', 'pylightxl', 'XlsxWriter'])
-def test_extract_config_var3(capsys: pytest.CaptureFixture[str],
-                             coname: str, csv_dialect: CsvDialect, deli: str,
+def test_extract_config_var3(capsys: pytest.CaptureFixture[str], coname: str,
+                             csv_dialect: CsvDialect, deli: str,
                              excl: str) -> None:
     """Test variation 3 of configured ExtractConfig."""
     cfg = ExtractConfig()
@@ -152,8 +150,8 @@ def test_extract_config_var4(capsys: pytest.CaptureFixture[str],
 @pytest.mark.parametrize('ord_row', [['How many', 'What'],
                                      ['Street']])
 @pytest.mark.parametrize('one', [True, False])
-def test_extract_config_var5(capsys: pytest.CaptureFixture[str],
-                             one: bool, ord_row: list[str]) -> None:
+def test_extract_config_var5(capsys: pytest.CaptureFixture[str], one: bool,
+                             ord_row: list[str]) -> None:
     """Test variation 5 of configured ExtractConfig."""
     cfg = ExtractConfig()
     cfg.one_output_line_per_main_line = deepcopy(one)

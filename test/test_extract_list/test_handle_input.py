@@ -30,8 +30,8 @@ DATA: list[JsonType] = [
 
 @pytest.mark.parametrize('dat', DATA)
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
-def test_read_in_json_ok1(capsys: pytest.CaptureFixture[str],
-                          dat: JsonType, enc: str) -> None:
+def test_read_in_json_ok1(capsys: pytest.CaptureFixture[str], dat: JsonType,
+                          enc: str) -> None:
     """Test read_in_json."""
     expected = deepcopy(dat)
     with TemporaryDirectory() as dirname:
@@ -98,8 +98,7 @@ def test_handle_json_input_ok2(capsys: pytest.CaptureFixture[str],
                           ({'@a': ['fg', {'@b': 'c', '@g': 'h'}]}, '@',
                            {'a': ['fg', {'b': 'c', 'g': 'h'}]})])
 def test_strip_prefix_dict_ok1(capsys: pytest.CaptureFixture[str],
-                               ind: JsonType, pre: str,
-                               res: JsonType) -> None:
+                               ind: JsonType, pre: str, res: JsonType) -> None:
     """Test OK cases for strip_prefix_dict."""
     result = strip_prefix_dict(indata=ind, prefix=pre)
     assert result == res
@@ -132,8 +131,7 @@ def test_read_in_xml(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-
         fname = dirname + '/a.xml'
         with open(file=fname, mode='w', encoding=enc) as file:
             input_dict = cast(dict[str, JsonType], deepcopy(ind[index]))
-            xmltodict.unparse(input_dict=input_dict,
-                              output=file, encoding=enc,
+            xmltodict.unparse(input_dict=input_dict, output=file, encoding=enc,
                               pretty=True)
         result = read_in_xml(filename=fname, encoding=enc, strip_at=at)
     assert result == outd[index]
@@ -158,8 +156,7 @@ def test_handle_xml_input(capsys: pytest.CaptureFixture[str],  # pylint: disable
         incfg.in_xml_strip_at = at
         with open(file=fname, mode='w', encoding=enc) as file:
             input_dict = cast(dict[str, JsonType], deepcopy(ind[index]))
-            xmltodict.unparse(input_dict=input_dict,
-                              output=file, encoding=enc,
+            xmltodict.unparse(input_dict=input_dict, output=file, encoding=enc,
                               pretty=True)
         result = handle_xml_input(filename=fname, cfg=incfg)
     assert result == outd[index]
@@ -188,8 +185,7 @@ def test_handle_input_c_xml(capsys: pytest.CaptureFixture[str],  # pylint: disab
         infname = dirname + '/' + name
         with open(file=fname, mode='w', encoding=enc) as file:
             input_dict = cast(dict[str, JsonType], deepcopy(ind[index]))
-            xmltodict.unparse(input_dict=input_dict,
-                              output=file, encoding=enc,
+            xmltodict.unparse(input_dict=input_dict, output=file, encoding=enc,
                               pretty=True)
         result = handle_input(filename=infname, cfg=incfg)
     assert result == outd[index]
@@ -199,8 +195,8 @@ def test_handle_input_c_xml(capsys: pytest.CaptureFixture[str],  # pylint: disab
 @pytest.mark.parametrize('dat', DATA)
 @pytest.mark.parametrize('enc', ['utf-8', 'iso8859-1'])
 @pytest.mark.parametrize('name', ['a', 'a.json'])
-def test_handle_input_c_json(capsys: pytest.CaptureFixture[str],
-                             dat: JsonType, enc: str, name: str) -> None:
+def test_handle_input_c_json(capsys: pytest.CaptureFixture[str], dat: JsonType,
+                             enc: str, name: str) -> None:
     """Test handle_input for json."""
     cfg = ExtractConfig()
     cfg.infile_encoding = enc

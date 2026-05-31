@@ -27,8 +27,8 @@ from .check_capsys import check_capsys
                            ['a', 'b'], 1),
                           ({'a': None, 'b': 7}, {'a': None, 'b': 6},
                            ['a', 'b'], 1)])
-def test_row_compare(capsys: pytest.CaptureFixture[str], left: Row,
-                     right: Row, cols: list[str], res: int) -> None:
+def test_row_compare(capsys: pytest.CaptureFixture[str], left: Row, right: Row,
+                     cols: list[str], res: int) -> None:
     """Test RowCompare."""
     cmp = RowCompare(cols=cols)
     ret = cmp.compare(left_row=left, right_row=right)

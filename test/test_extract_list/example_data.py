@@ -117,8 +117,7 @@ class ExampleData:
             self.data = cast(dict[str, JsonType],
                              self.adjust_from_xml(data['data']))
         else:
-            self.data = cast(dict[str, JsonType],
-                             self.adjust_from_xml(data))
+            self.data = cast(dict[str, JsonType], self.adjust_from_xml(data))
 
     def write_json_to_file(self, filename: str,
                            encoding: str = 'utf-8') -> None:

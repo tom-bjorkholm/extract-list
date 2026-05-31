@@ -49,9 +49,8 @@ def test_get_at_path_ok1(capsys: pytest.CaptureFixture[str],
                           (db1, ['xe', 'bxx'], None),
                           (db2, ['yq', 'op', 'ff'], None),
                           (dc1, ['qb', 'xq', 'fg'], 9)])
-def test_get_at_path_ok2(capsys: pytest.CaptureFixture[str],
-                         ind: JsonType, pat: list[str],
-                         res: JsonType) -> None:
+def test_get_at_path_ok2(capsys: pytest.CaptureFixture[str], ind: JsonType,
+                         pat: list[str], res: JsonType) -> None:
     """Test OK cases 2 of get_at_path."""
     ret = get_at_path(indata=deepcopy(ind), path=pat,
                       missing=MissingInputForColumn.EMPTY)
@@ -101,9 +100,8 @@ def test_get_at_path_nok1(capsys: pytest.CaptureFixture[str],
                           (dc1, ['qb', 'xq', 'fg1'],
                            ['No such key "fg1" in relevant section in',
                             'in input data.'])])
-def test_get_at_path_nok2(capsys: pytest.CaptureFixture[str],
-                          ind: JsonType, pat: list[str],
-                          msgs: list[str]) -> None:
+def test_get_at_path_nok2(capsys: pytest.CaptureFixture[str], ind: JsonType,
+                          pat: list[str], msgs: list[str]) -> None:
     """Test OK cases 1 of get_at_path."""
     with pytest.raises(SystemExit):
         _ = get_at_path(indata=deepcopy(ind), path=pat,
@@ -159,14 +157,14 @@ def test_get_lines_ok1(capsys: pytest.CaptureFixture[str],
                           (dfm, ['g', 'h', 'x']),
                           (dfm, ['k', 'e47']),
                           (dfm, ['k', 'e1', 'g'])])
-def test_get_lines_ok2(capsys: pytest.CaptureFixture[str],
-                       inp: JsonType, pat: list[str]) -> None:
+def test_get_lines_ok2(capsys: pytest.CaptureFixture[str], inp: JsonType,
+                       pat: list[str]) -> None:
     """Test OK cases 2 for get_lines."""
     counter = 0
     for index, (_, line) in \
         enumerate(get_lines(indata=deepcopy(inp),
-                            missing=MissingInputForColumn.EMPTY,
-                            path=pat, expand_at=[])):
+                            missing=MissingInputForColumn.EMPTY, path=pat,
+                            expand_at=[])):
         assert line is None
         counter += 1
         assert 0 == index
@@ -180,15 +178,15 @@ def test_get_lines_ok2(capsys: pytest.CaptureFixture[str],
                           (dfm, ['g', 'h', 'x']),
                           (dfm, ['k', 'e47']),
                           (dfm, ['k', 'e1', 'g'])])
-def test_get_lines_nok1(capsys: pytest.CaptureFixture[str],
-                        inp: JsonType, pat: list[str]) -> None:
+def test_get_lines_nok1(capsys: pytest.CaptureFixture[str], inp: JsonType,
+                        pat: list[str]) -> None:
     """Test not OK cases 1 for get_lines."""
     counter = 0
     with pytest.raises(SystemExit):
         for index, (_, line) in \
             enumerate(get_lines(indata=deepcopy(inp),
-                                missing=MissingInputForColumn.ERROR,
-                                path=pat, expand_at=[])):
+                                missing=MissingInputForColumn.ERROR, path=pat,
+                                expand_at=[])):
             assert line is None
             counter += 1
             assert 0 == index
@@ -209,8 +207,8 @@ def test_get_lines_nok2(capsys: pytest.CaptureFixture[str], inp: object,
     with pytest.raises(SystemExit):
         for index, (_, line) in \
             enumerate(get_lines(indata=cast(JsonType, deepcopy(inp)),
-                                missing=MissingInputForColumn.EMPTY,
-                                path=pat, expand_at=[])):
+                                missing=MissingInputForColumn.EMPTY, path=pat,
+                                expand_at=[])):
             assert line is None
             counter += 1
             assert 0 == index
@@ -242,9 +240,8 @@ def test_get_columns_ok1(capsys: pytest.CaptureFixture[str],
                            {'x': 'de', 'y': 4, 'z': None}),
                           (ddm, {'c1': ['d1', 'b'], 'c2': ['d2', 'cc']},
                            {'c1': 'de', 'c2': None})])
-def test_get_columns_ok2(capsys: pytest.CaptureFixture[str],
-                         inp: JsonType, spec: dict[str, list[str]],
-                         res: Row) -> None:
+def test_get_columns_ok2(capsys: pytest.CaptureFixture[str], inp: JsonType,
+                         spec: dict[str, list[str]], res: Row) -> None:
     """Test OK cases 2 of get_columns."""
     ret = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
                       missing=MissingInputForColumn.EMPTY)
@@ -257,9 +254,8 @@ def test_get_columns_ok2(capsys: pytest.CaptureFixture[str],
                            'No such key "d"'),
                           (ddm, {'c1': ['d1', 'b'], 'c2': ['d2', 'cc']},
                            'No such key "cc"')])
-def test_get_columns_nok1(capsys: pytest.CaptureFixture[str],
-                          inp: JsonType, spec: dict[str, list[str]],
-                          msg: str) -> None:
+def test_get_columns_nok1(capsys: pytest.CaptureFixture[str], inp: JsonType,
+                          spec: dict[str, list[str]], msg: str) -> None:
     """Test not OK cases 1 of get_columns."""
     with pytest.raises(SystemExit):
         _ = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
@@ -273,9 +269,8 @@ def test_get_columns_nok1(capsys: pytest.CaptureFixture[str],
                            "Expected a single value for x at ['g', 'h']"),
                           (ddm, {'c1': ['d1'], 'c2': ['d3']},
                            "Expected a single value for c1 at ['d1']")])
-def test_get_columns_nok2(capsys: pytest.CaptureFixture[str],
-                          inp: JsonType, spec: dict[str, list[str]],
-                          msg: str) -> None:
+def test_get_columns_nok2(capsys: pytest.CaptureFixture[str], inp: JsonType,
+                          spec: dict[str, list[str]], msg: str) -> None:
     """Test not OK cases 2 of get_columns."""
     with pytest.raises(SystemExit):
         _ = get_columns(inline=deepcopy(inp), colspec=deepcopy(spec),
@@ -374,8 +369,7 @@ ta8 = (dfm, ['g', 'h'],
          'row': {'c1': 'pq', 'c2': 7, 'c3': None, 'xyz': 'd4'}}])
 
 
-@pytest.mark.parametrize('tax',
-                         [ta1, ta2, ta2, ta3, ta4, ta5, ta6, ta7, ta8])
+@pytest.mark.parametrize('tax', [ta1, ta2, ta2, ta3, ta4, ta5, ta6, ta7, ta8])
 def test_extract_main_line_ok1(capsys: pytest.CaptureFixture[str],
                                tax: tuple[object, ...]) -> None:
     """Test OK cases 1 of extract_main_line."""
@@ -390,10 +384,9 @@ def test_extract_main_line_ok1(capsys: pytest.CaptureFixture[str],
     indata = cast(JsonType, tax[0])
     for ret, expected in zip(extract_main_line(indata=indata, cfg=cfg),
                              expected_rows):
-        exp_main = MainDataLine(
-            complete_line=expected['complete_line'],
-            key=cast(str | int, expected['key']),
-            row=cast(Row, expected['row']))
+        exp_main = MainDataLine(complete_line=expected['complete_line'],
+                                key=cast(str | int, expected['key']),
+                                row=cast(Row, expected['row']))
         assert ret.complete_line == exp_main.complete_line
         assert ret.key == exp_main.key
         assert ret.row == exp_main.row
@@ -493,8 +486,7 @@ tc8 = (dfm, ['g', 'h'],
         {'c1': 'pq', 'c2': 7, 'c3': None, 'xyz': 'd4'}])
 
 
-@pytest.mark.parametrize('tcx',
-                         [tc1, tc2, tc2, tc3, tc4, tc5, tc6, tc7, tc8])
+@pytest.mark.parametrize('tcx', [tc1, tc2, tc2, tc3, tc4, tc5, tc6, tc7, tc8])
 def test_extract_data_mainline_ok1(capsys: pytest.CaptureFixture[str],
                                    tcx: tuple[object, ...]) -> None:
     """Test OK cases 1 of extract_data for main_line."""
@@ -537,8 +529,8 @@ def test_create_none_columns(capsys: pytest.CaptureFixture[str],
                            [{'d': 'e'}, {'f': 3}],
                            [{'a': 'b', 'd': 'e'}, {'a': 'b', 'f': 3},
                             {'c': 2, 'd': 'e'}, {'c': 2, 'f': 3}])])
-def test_add_fr_linked_main_ok1(capsys: pytest.CaptureFixture[str],
-                                fma: Data, fli: Data, res: Data) -> None:
+def test_add_linked_main_ok1(capsys: pytest.CaptureFixture[str], fma: Data,
+                             fli: Data, res: Data) -> None:
     """Tesk OK cases 1 of add_from_linked_to_main."""
     ret = add_from_linked_to_main(from_main=deepcopy(fma),
                                   from_linked=deepcopy(fli))
@@ -620,8 +612,8 @@ def test_extr_linked_line_ok1(capsys: pytest.CaptureFixture[str],
     cfg = ExtractConfig()
     cfg.missing_input_for_column = conf[1]
     cfg.linked_lines = [linked_spec]
-    ret = extract_linked_line(indata=ind, main_line=main_line,
-                              cfg=cfg, linked_spec=linked_spec)
+    ret = extract_linked_line(indata=ind, main_line=main_line, cfg=cfg,
+                              linked_spec=linked_spec)
     assert ret == res
     check_capsys(capsys=capsys)
 
@@ -659,8 +651,8 @@ def test_extr_linked_line_nok1(capsys: pytest.CaptureFixture[str],
     cfg.missing_input_for_column = conf[1]
     cfg.linked_lines = [linked_spec]
     with pytest.raises(SystemExit):
-        _ = extract_linked_line(indata=ind, main_line=main_line,
-                                cfg=cfg, linked_spec=linked_spec)
+        _ = extract_linked_line(indata=ind, main_line=main_line, cfg=cfg,
+                                linked_spec=linked_spec)
     check_capsys(capsys=capsys, in_err=msgs)
 
 
@@ -814,8 +806,7 @@ def test_extract_data_ok1(capsys: pytest.CaptureFixture[str], ind: JsonType,
                             True, False),
                            ['Several linked lines match one main line,',
                             'but configuration says one line per main line'])])
-def test_extract_data_nok1(capsys: pytest.CaptureFixture[str],
-                           ind: JsonType,
+def test_extract_data_nok1(capsys: pytest.CaptureFixture[str], ind: JsonType,
                            conf: tuple[MainLineSpec,
                                        MissingInputForColumn,
                                        LinkedLineSpec,

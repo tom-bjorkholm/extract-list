@@ -16,12 +16,14 @@ dist/*
 __pycache__
 .DS_Store
 .cursor
+.cursor.old
 .cursor/*
 .cursorignore
 .claude
 .claude/*
 .claudeignore
 AGENTS.md
+AGENTS.md.old
 non_cursor_AGENTS.md
 *.docx
 *.odt

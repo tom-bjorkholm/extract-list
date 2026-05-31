@@ -48,8 +48,8 @@ def _check_value_equal(*,  # pylint: disable=too-many-arguments
             if str(res_val) == other_val[2:]:
                 return
     if not turned:
-        _check_value_equal(res_val=other_val, other_val=res_val,
-                           key=key, res_row=res_row, other_row=other_row,
+        _check_value_equal(res_val=other_val, other_val=res_val, key=key,
+                           res_row=res_row, other_row=other_row,
                            res_data=res_data, other_data=other_data,
                            turned=True)
         return

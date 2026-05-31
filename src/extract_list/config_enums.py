@@ -45,12 +45,9 @@ def get_outfile_capabilities(border: FormatRequest = FormatRequest.NO,
     """Get capabilities based on border and filtered area."""
     fcap = _single_capability_from_request(filtered_area)
     bcap = _single_capability_from_request(border)
-    return Capabilities(can_write=CAP_NEEDED,
-                        can_read=CAP_NOT_USED,
-                        can_fmt_row=CAP_NOT_USED,
-                        can_fmt_value=CAP_NOT_USED,
-                        filtered_data_range=fcap,
-                        can_write_box=CAP_NOT_USED,
+    return Capabilities(can_write=CAP_NEEDED, can_read=CAP_NOT_USED,
+                        can_fmt_row=CAP_NOT_USED, can_fmt_value=CAP_NOT_USED,
+                        filtered_data_range=fcap, can_write_box=CAP_NOT_USED,
                         can_read_box=CAP_NOT_USED,
                         can_write_highlight=CAP_NOT_USED,
                         multi_sheet=CAP_NOT_USED,
@@ -58,9 +55,8 @@ def get_outfile_capabilities(border: FormatRequest = FormatRequest.NO,
                         can_write_borders=bcap)
 
 
-def _internal_out_file_formats(
-        border: FormatRequest,
-        filtered_area: FormatRequest) -> list[str]:
+def _internal_formats(border: FormatRequest,
+                      filtered_area: FormatRequest) -> list[str]:
     """Get internal output formats compatible with requested features."""
     if FormatRequest.NEEDED in (border, filtered_area):
         return []
@@ -73,7 +69,7 @@ def list_out_file_formats(border: FormatRequest = FormatRequest.NO,
     """List available output file types."""
     cap = get_outfile_capabilities(border, filtered_area)
     formats = list_registered_tableio(capabilities=cap, empty_is_ok=True)
-    formats.extend(_internal_out_file_formats(border, filtered_area))
+    formats.extend(_internal_formats(border, filtered_area))
     return formats
 
 

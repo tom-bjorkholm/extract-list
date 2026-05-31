@@ -20,13 +20,12 @@ from .check_capsys import check_capsys
                           ({'a': 'b', 'c': {'d': 'e', 'k': 'm'}}, ['c', 'd'],
                            {'f': 'g'},
                            {'a': 'b', 'c': {'d': {'f': 'g'}, 'k': 'm'}})])
-def test_set_at_path_ok1(capsys: pytest.CaptureFixture[str],
-                         dat: JsonType, pth: list[str],
-                         newdat: JsonType, res: JsonType) -> None:
+def test_set_at_path_ok1(capsys: pytest.CaptureFixture[str], dat: JsonType,
+                         pth: list[str], newdat: JsonType,
+                         res: JsonType) -> None:
     """Test OK cases 1 of set_at_path."""
     localdata = deepcopy(dat)
-    set_at_path(data=localdata, path=deepcopy(pth),
-                newdata=deepcopy(newdat))
+    set_at_path(data=localdata, path=deepcopy(pth), newdata=deepcopy(newdat))
     check_capsys(capsys=capsys)
     assert localdata == res
 

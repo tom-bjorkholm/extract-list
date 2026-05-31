@@ -43,8 +43,7 @@ def strip_prefix_dict(indata: Mapping[str, Any] | JsonType,
     return cast(JsonType, indata)
 
 
-def read_in_xml(filename: str, encoding: str,
-                strip_at: bool) -> JsonType:
+def read_in_xml(filename: str, encoding: str, strip_at: bool) -> JsonType:
     """Read data from XML file."""
     with open(file=filename, mode='r', encoding=encoding) as file:
         txt = file.read()

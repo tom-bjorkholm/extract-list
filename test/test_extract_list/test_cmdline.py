@@ -28,8 +28,7 @@ def test_help_main(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_extract(capsys: pytest.CaptureFixture[str],
-                      hflag: str) -> None:
+def test_help_extract(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
     """Test help printout of extract sub-command."""
     cmd = ['extract', hflag]
     with pytest.raises(SystemExit):
@@ -46,8 +45,7 @@ def test_help_extract(capsys: pytest.CaptureFixture[str],
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_example(capsys: pytest.CaptureFixture[str],
-                      hflag: str) -> None:
+def test_help_example(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
     """Test help printout of cfg-example sub-command."""
     cmd = ['cfg-example', hflag]
     with pytest.raises(SystemExit):
@@ -64,8 +62,7 @@ def test_help_example(capsys: pytest.CaptureFixture[str],
 
 
 @pytest.mark.parametrize('hflag', ['-h', '--help'])
-def test_help_version(capsys: pytest.CaptureFixture[str],
-                      hflag: str) -> None:
+def test_help_version(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
     """Test help printout of cfg-example sub-command."""
     cmd = ['version', hflag]
     with pytest.raises(SystemExit):
@@ -118,8 +115,7 @@ def test_cmdline_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-
     """Test parsing of command line for cfg-example."""
     calls = 0
 
-    def patch(filename: str, cfgtype: str,
-              out_file_type: str) -> int:
+    def patch(filename: str, cfgtype: str, out_file_type: str) -> int:
         """Monkeypatch of generate_example_cfg."""
         nonlocal calls
         assert out_file_type == tval
@@ -127,8 +123,7 @@ def test_cmdline_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-
         assert filename == oval
         calls += 1
         return 0
-    monkeypatch.setattr('extract_list.extract_cmd.generate_example_cfg',
-                        patch)
+    monkeypatch.setattr('extract_list.extract_cmd.generate_example_cfg', patch)
     cmd = ['cfg-example', oflag, oval, kflag, kval, tflag, tval]
     _ = extract_cmd(arguments=cmd)
     assert calls == 1
@@ -185,8 +180,7 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
     """Test parsing of command line for cfg-example."""
     calls = 0
 
-    def patch(filename: str, cfgtype: str,
-              out_file_type: str) -> int:
+    def patch(filename: str, cfgtype: str, out_file_type: str) -> int:
         """Monkeypatch of generate_example_cfg."""
         nonlocal calls
         assert out_file_type == vals['tval']
@@ -194,8 +188,7 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
         assert filename == vals['oval']
         calls += 1
         return 0
-    monkeypatch.setattr('extract_list.extract_cmd.generate_example_cfg',
-                        patch)
+    monkeypatch.setattr('extract_list.extract_cmd.generate_example_cfg', patch)
     cmd = line.split()
     _ = extract_cmd(arguments=cmd)
     assert calls == 1

@@ -29,8 +29,7 @@ DATA: list[Data] = [
 def read_txt(filename: str, cfg: ExtractConfig) -> Data:
     """Read from txt file."""
     data: Data = []
-    with open(file=filename, mode='r',
-              encoding=cfg.output_encoding()) as file:
+    with open(file=filename, mode='r', encoding=cfg.output_encoding()) as file:
         lines = file.readlines()
         col_names = lines[0].split()
         for row in lines[1:]:
@@ -63,8 +62,8 @@ def read_csv(filename: str, cfg: ExtractConfig) -> Data:
     args = cast(OptionalArgsDict,
                 {'character_encoding': cfg.output_encoding()})
     with create_tableio(format_name='CSV', file_name=filename,
-                        file_access=FileAccess.READ,
-                        implementation='csv', args=args) as table:
+                        file_access=FileAccess.READ, implementation='csv',
+                        args=args) as table:
         data = table.read_table_dictdata().data
     return data
 
@@ -87,8 +86,7 @@ def read_excel(filename: str, cfg: ExtractConfig) -> Data:
                           ('JSON', 'a.json', read_json),
                           ('XML', 'a.xml', read_xml)])
 def test_handle_output_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
-                           dat: Data, enc: str, typ: str,
-                           resfile: str,
+                           dat: Data, enc: str, typ: str, resfile: str,
                            reader: Callable[[str, ExtractConfig], Data]
                            ) -> None:
     """Test OK cases 1 of handle_output."""

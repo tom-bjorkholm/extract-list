@@ -58,8 +58,8 @@ def column_starts(line: str) -> list[int]:
                            ['long'],
                            [['long'], ['a'], ['å']])])
 def test_handle_txt_output(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-locals # noqa: E501
-                           data: Data, cols: list[str],
-                           res: list[list[str]], enc: str) -> None:
+                           data: Data, cols: list[str], res: list[list[str]],
+                           enc: str) -> None:
     """Test OK test cases for handle_txt_output."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.txt'

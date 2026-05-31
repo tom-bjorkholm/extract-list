@@ -37,8 +37,7 @@ def get_at_path(indata: JsonType, path: list[str],
     assert len(path) >= 1
     pkey = path[0]
     if not isinstance(indata, dict):
-        print('Input data does not match configuration.',
-              file=sys.stderr)
+        print('Input data does not match configuration.', file=sys.stderr)
         print(f'Trying to extract data at {path} in data that is ' +
               f'{type(indata).__name__} and not dict.',
               file=sys.stderr)
@@ -167,8 +166,7 @@ def extract_main_line(indata: JsonType,
                                expand_at=cfg.main_line.expand_at):
         if line is None:
             print('No data matching main line in input', file=sys.stderr)
-            print(f'Main line path is {cfg.main_line.line}',
-                  file=sys.stderr)
+            print(f'Main line path is {cfg.main_line.line}', file=sys.stderr)
             sys.exit(1)
         assert line is not None
         if not isinstance(key, (int, str)):  # pragma no cover
@@ -180,8 +178,7 @@ def extract_main_line(indata: JsonType,
                           missing=cfg.missing_input_for_column)
         if cfg.include_key:
             row[cfg.column_name_for_key] = key
-        yield MainDataLine(complete_line=line, key=key,
-                           row=row)
+        yield MainDataLine(complete_line=line, key=key, row=row)
 
 
 def create_none_columns(colspec: dict[str, list[str]]) -> Row:

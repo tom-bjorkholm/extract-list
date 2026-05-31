@@ -16,8 +16,8 @@ def print_col(file: TextIO, item: Value, width: int) -> None:
     file.write(txt)
 
 
-def txt_output(data: Data, column_order: list[str],
-               filename: str, encoding: str) -> None:
+def txt_output(data: Data, column_order: list[str], filename: str,
+               encoding: str) -> None:
     """Print list of dicts as table in text."""
     column_width: dict[str, int] = {k: len(k)+1 for k in column_order}
     for row in data:

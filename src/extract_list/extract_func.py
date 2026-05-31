@@ -15,9 +15,8 @@ from extract_list.extract_config import ExtractConfig
 def extract_func(in_file_name: str, cfg_file_name: str,
                  out_file_name: str) -> int:
     """Extract data from in file, write to out_file."""
-    fixed_cfg = fix_file_extension(filename=cfg_file_name,
-                                   ext_to_add='.cfg', ext_to_remove=None,
-                                   for_reading=True)
+    fixed_cfg = fix_file_extension(filename=cfg_file_name, ext_to_add='.cfg',
+                                   ext_to_remove=None, for_reading=True)
     file_must_exist(filename=fixed_cfg, with_content_txt='configuration')
     cfg = ExtractConfig(from_json_filename=fixed_cfg)
     indata = handle_input(filename=in_file_name, cfg=cfg)

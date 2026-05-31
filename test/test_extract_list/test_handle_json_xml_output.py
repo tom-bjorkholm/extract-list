@@ -27,8 +27,8 @@ from .check_capsys import check_capsys
                                    'hj': None, 'kl': [1, 2, 3]}},
                           [{'ab': 4, 'cd': 'hello'},
                            {'ab': 42, 'cd': 'goodbye'}]])
-def test_json_output_ok1(capsys: pytest.CaptureFixture[str],
-                         data: JsonType, enc: str) -> None:
+def test_json_output_ok1(capsys: pytest.CaptureFixture[str], data: JsonType,
+                         enc: str) -> None:
     """Test 1 of json_output."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.json'
@@ -45,8 +45,8 @@ def test_json_output_ok1(capsys: pytest.CaptureFixture[str],
                                    'hj': None, 'kl': [1, 2, 3]}},
                           [{'ab': 4, 'cd': 'hello'},
                            {'ab': 42, 'cd': 'goodbye'}]])
-def test_json_output_ok2(capsys: pytest.CaptureFixture[str],
-                         data: JsonType, enc: str) -> None:
+def test_json_output_ok2(capsys: pytest.CaptureFixture[str], data: JsonType,
+                         enc: str) -> None:
     """Test 2 of json_output."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.json'
@@ -127,9 +127,10 @@ def test_append_to_key_ok(capsys: pytest.CaptureFixture[str], row: Row,
                            {'data': {'b': {'a': 'b', 'c': '2', '@d': 'e'},
                                      'x': {'a': 'x', 'c': '7', '@d': 'y'}}})
                           ])
-def test_xml_output_1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
-                      enc: str, dat: Data, attr: list[str],
-                      key: Optional[str], res: JsonType) -> None:
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
+def test_xml_output_1(capsys: pytest.CaptureFixture[str], enc: str, dat: Data,
+                      attr: list[str], key: Optional[str], res: JsonType) \
+                          -> None:
     """Test xml output in first way."""
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.xml'
@@ -146,8 +147,7 @@ def test_xml_output_1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too
     check_capsys(capsys=capsys)
 
 
-def dict_add(thedict: dict[str, list[str]], dictkey: str,
-             addtxt: str) -> None:
+def dict_add(thedict: dict[str, list[str]], dictkey: str, addtxt: str) -> None:
     """Add key and text to dict."""
     if dictkey not in thedict:
         thedict[dictkey] = [addtxt]
@@ -168,7 +168,8 @@ def dict_add(thedict: dict[str, list[str]], dictkey: str,
                            {'data': {'b': {'a': 'b', 'c': 2, 'd': 'e'},
                                      'x': {'a': 'x', 'c': 7, 'd': 'y'}}})])
 @pytest.mark.parametrize('attr', [[], ['a'], ['a', 'd']])
-def test_xml_output_2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
+def test_xml_output_2(capsys: pytest.CaptureFixture[str],
                       monkeypatch: pytest.MonkeyPatch, enc: str, dat: Data,
                       attr: list[str], key: Optional[str],
                       res: JsonType) -> None:

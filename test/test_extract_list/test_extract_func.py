@@ -30,8 +30,7 @@ def incr_calls(num_calls: dict[str, dict[int, int]], ind_one: str,
     num_calls[ind_one][ind_two] += 1
 
 
-def check_example_row(row: Row,
-                      num_calls: dict[str, dict[int, int]]) -> None:
+def check_example_row(row: Row, num_calls: dict[str, dict[int, int]]) -> None:
     """Check row values from extracting the standard example data."""
     assert len(row) == 6
     assert 'What' in row
@@ -85,8 +84,7 @@ def test_extract_func_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable
                           inenc: str, outenc: str, cfgname: str,
                           outpar: tuple[
                               str, str,
-                              Callable[[str, ExtractConfig], Data]]
-                          ) -> None:
+                              Callable[[str, ExtractConfig], Data]]) -> None:
     """Test OK use cases 1 of extract_func."""
     with TemporaryDirectory() as dirname:
         cfg = deepcopy(ExtractConfig())
@@ -107,8 +105,7 @@ def test_extract_func_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable
         cfg.write(cfg_fullname)
         exdata = ExampleData()
         inpar[2](exdata, infilename, inenc)
-        ret = extract_func(in_file_name=infilename,
-                           cfg_file_name=cfg_fullname,
+        ret = extract_func(in_file_name=infilename, cfg_file_name=cfg_fullname,
                            out_file_name=outfilename)
         assert 0 == ret
         check_capsys(capsys=capsys)

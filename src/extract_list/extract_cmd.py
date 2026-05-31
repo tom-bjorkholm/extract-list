@@ -23,8 +23,7 @@ def gen_cfg_cmd(args: argparse.Namespace) -> int:
     outfilename: str = args.output[0]
     cfgtype: str = args.kind[0]
     outfiletype: str = args.typeofoutput[0]
-    return generate_example_cfg(filename=outfilename,
-                                cfgtype=cfgtype,
+    return generate_example_cfg(filename=outfilename, cfgtype=cfgtype,
                                 out_file_type=outfiletype)
 
 
@@ -33,8 +32,7 @@ def do_extract_cmd(args: argparse.Namespace) -> int:
     outfilename = args.output[0]
     infilename = args.input[0]
     cfgfilename = args.cfg[0]
-    return extract_func(in_file_name=infilename,
-                        out_file_name=outfilename,
+    return extract_func(in_file_name=infilename, out_file_name=outfilename,
                         cfg_file_name=cfgfilename)
 
 
@@ -49,8 +47,8 @@ def migrate_cfg_cmd(args: argparse.Namespace) -> int:
     """Migrate configuration file to new format."""
     in_filename = args.input[0]
     out_filename = args.output[0]
-    return migrate_cfg_func(in_filename=in_filename,
-                            out_filename=out_filename, stderr_file=sys.stderr)
+    return migrate_cfg_func(in_filename=in_filename, out_filename=out_filename,
+                            stderr_file=sys.stderr)
 
 
 USAGE_ORDER = '''
@@ -144,8 +142,8 @@ def gen_cfg_args(subparsers: SubParseAct) -> None:
     cfg_parser.add_argument('-t', '--typeofoutput', nargs=1, required=True,
                             help=out_help, choices=_all_cases(outtypes))
     cfg_output_help = 'Name of configuration (output) file to create.'
-    cfg_parser.add_argument('-o', '--output', nargs=1,
-                            help=cfg_output_help, required=True)
+    cfg_parser.add_argument('-o', '--output', nargs=1, help=cfg_output_help,
+                            required=True)
 
 
 def extract_args(subparsers: SubParseAct) -> None:

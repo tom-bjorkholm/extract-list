@@ -24,7 +24,7 @@ from .check_capsys import check_capsys
 from .check_result import check_result, ex_res, ex2_res
 
 
-def assert_config_text_has_output(cfgtxt: str, output_format: str) -> None:
+def assert_cfg_text_output(cfgtxt: str, output_format: str) -> None:
     """Check that configuration JSON selects the expected output format."""
     if output_format.lower() in ('json', 'xml'):
         expected = '"internal_output_format": "' + output_format.upper() + '"'
@@ -80,8 +80,7 @@ def test_gen_cfg_ex_ok1(capsys: pytest.CaptureFixture[str],
         check_result(result_data=data, other_result=inp[3])
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
-            assert_config_text_has_output(cfgtxt=cfgtxt,
-                                          output_format=outp[0])
+            assert_cfg_text_output(cfgtxt=cfgtxt, output_format=outp[0])
     check_capsys(capsys=capsys)
 
 
@@ -122,8 +121,7 @@ def test_gen_cfg_sw_ok1(capsys: pytest.CaptureFixture[str],
         in_fname = folder + '/' + inp[2]
         cfg_fname = folder + '/' + 'c.cfg'
         copyfile(src=inp[1], dst=in_fname)
-        ret = generate_cfg_sw_to_rrs(outfilename=cfg_fname,
-                                     cfgtype=inp[0],
+        ret = generate_cfg_sw_to_rrs(outfilename=cfg_fname, cfgtype=inp[0],
                                      outtype=outp[0])
         ret2 = extract_func(in_file_name=in_fname, cfg_file_name=cfg_fname,
                             out_file_name=out_fname)
@@ -134,14 +132,12 @@ def test_gen_cfg_sw_ok1(capsys: pytest.CaptureFixture[str],
         check_result(result_data=data, other_result=sw_res_data)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read()
-            assert_config_text_has_output(cfgtxt=cfgtxt,
-                                          output_format=outp[0])
+            assert_cfg_text_output(cfgtxt=cfgtxt, output_format=outp[0])
     check_capsys(capsys=capsys)
 
 
-def check_txt_file_for_cfg_file(cfg_fname: str,
-                                othermsgs: Optional[list[str]] = None
-                                ) -> None:
+def check_txt_file_for_cfg(cfg_fname: str,
+                           othermsgs: Optional[list[str]] = None) -> None:
     """Check that text file for cfg file has all information."""
     txt_fname = fix_file_extension(filename=cfg_fname, ext_to_add='.txt',
                                    ext_to_remove='.cfg', for_reading=False)
@@ -191,14 +187,13 @@ def test_gen_cfg_sw_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
         ret2 = extract_cmd(extr_cmd)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
-            assert_config_text_has_output(cfgtxt=cfgtxt,
-                                          output_format=outp[0])
+            assert_cfg_text_output(cfgtxt=cfgtxt, output_format=outp[0])
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](out_fname, cfg)
         assert ret == 0
         assert ret2 == 0
         check_result(result_data=data, other_result=sw_res_data)
-        check_txt_file_for_cfg_file(cfg_fname=cfg_fname)
+        check_txt_file_for_cfg(cfg_fname=cfg_fname)
     check_capsys(capsys=capsys)
 
 
@@ -236,14 +231,13 @@ def test_gen_cfg_sw_warn(capsys: pytest.CaptureFixture[str],  # pylint: disable=
         ]
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
-            assert_config_text_has_output(cfgtxt=cfgtxt,
-                                          output_format=outp[0])
+            assert_cfg_text_output(cfgtxt=cfgtxt, output_format=outp[0])
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](out_fname, cfg)
         assert ret == 0
         assert ret2 == 0
         check_result(result_data=data, other_result=sw_res_data)
-        check_txt_file_for_cfg_file(cfg_fname=cfg_fname, othermsgs=notice_msgs)
+        check_txt_file_for_cfg(cfg_fname=cfg_fname, othermsgs=notice_msgs)
     check_capsys(capsys=capsys, in_err=notice_msgs)
 
 
@@ -288,12 +282,11 @@ def test_gen_cfg_ex_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
         ret2 = extract_cmd(extr_cmd)
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
-            assert_config_text_has_output(cfgtxt=cfgtxt,
-                                          output_format=outp[0])
+            assert_cfg_text_output(cfgtxt=cfgtxt, output_format=outp[0])
         cfg = ExtractConfig(from_json_filename=cfg_fname)
         data = outp[1](out_fname, cfg)
         assert ret == 0
         assert ret2 == 0
         check_result(result_data=data, other_result=inp[3])
-        check_txt_file_for_cfg_file(cfg_fname=cfg_fname)
+        check_txt_file_for_cfg(cfg_fname=cfg_fname)
     check_capsys(capsys=capsys)
