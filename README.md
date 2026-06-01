@@ -106,4 +106,4 @@ the built and installed application in the virtual environment `./venv`
 - No mypy errors found.
 - No python layout warnings.
 - Built version(s): 0.2.15
-- Build and test using Python 3.14.4
+- Build and test using Python 3.14.5

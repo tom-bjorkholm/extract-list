@@ -202,4 +202,4 @@ Source code and tests are available at [https://bitbucket.org/tom-bjorkholm/extr
 - No mypy errors found.
 - No python layout warnings.
 - Built version(s): 0.2.15
-- Build and test using Python 3.14.4
+- Build and test using Python 3.14.5

@@ -200,8 +200,7 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                            ['error: argument subparser_name: invalid choice',
                             'usage: extract_list [-h] {cfg-example,extract,'
                             'version,migrate-cfg}',
-                            '(choose from cfg-example, extract, version, '
-                            'migrate-cfg)']),
+                            "invalid choice: 'out.xlsx' (choose from"]),
                           ('extract -i in.jspon -o out.xlsx -c a.cfg -b',
                            ['extract_list: error: unrecognized ' +
                             'arguments: -b']),
@@ -224,10 +223,9 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                             'example_json,example_xml,' +
                             'example2_json,example2_xml}',
                             '-t {CSV,',
-                            "invalid choice: 'abc' (choose from " +
-                            "sw_json_to_rrs, sw_xml_to_rrs, " +
-                            "example_json, example_xml, " +
-                            "example2_json, example2_xml)"]),
+                            'extract_list cfg-example: error: argument ' +
+                            "-k/--kind: invalid choice: 'abc'",
+                            '(choose from']),
                           ('cfg-example -t csv -o out.cfg',
                            ['usage: extract_list cfg-example [-h]',
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
@@ -252,8 +250,8 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
                             'example2_json,example2_xml}',
                             '-t {CSV,',
                             "extract_list cfg-example: error: argument " +
-                            "-t/--typeofoutput: invalid choice: 'abc' " +
-                            "(choose from CSV"]),
+                            "-t/--typeofoutput: invalid choice: 'abc'",
+                            '(choose from']),
                           ('cfg-example -k sw_json_to_rrs -t csv',
                            ['usage: extract_list cfg-example [-h]',
                             '-k {sw_json_to_rrs,sw_xml_to_rrs,' +
