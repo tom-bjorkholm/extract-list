@@ -16,6 +16,7 @@ from tableio_cfg_json import TioJsonCsvConfig
 from extract_list.config_enums import InFileType, MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import LinkedLineSpec, MainLineSpec
+from extract_list.xl_migrate_cfg_warn_hook import XlMigrateCfgWarnHook
 from .check_cfgs_equal import check_cfgs_equal
 from .check_capsys import check_capsys
 
@@ -276,10 +277,11 @@ def test_extract_config_old_excel_library_is_ignored(
     data = json_loads(cfg.as_json_string(stderr_file=sys.stderr))
     data['outfile_excel_library'] = 'lib'
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
-                        stderr_file=sys.stderr)
+                        stderr_file=sys.stderr,
+                        auto_ch_hook=XlMigrateCfgWarnHook())
     assert cf2.output.implementation is None
     assert not hasattr(cf2, 'outfile_excel_library')
-    check_capsys(capsys=capsys)
+    check_capsys(capsys=capsys, in_err='migrate-cfg')
 
 
 def test_old_tableio_output_keys_are_migrated(
@@ -296,7 +298,8 @@ def test_old_tableio_output_keys_are_migrated(
         'delimiter': None,
         'quoting': 'csv.quote_minimal'}
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
-                        stderr_file=sys.stderr)
+                        stderr_file=sys.stderr,
+                        auto_ch_hook=XlMigrateCfgWarnHook())
     assert cf2.output.format_name == 'CSV'
     assert cf2.output.character_encoding == 'iso8859-1'
     assert cf2.output.implementation is None
@@ -304,7 +307,7 @@ def test_old_tableio_output_keys_are_migrated(
     assert cf2.output.csv.dialect == CsvDialect.EXCEL
     assert cf2.output.csv.delimiter == '\t'
     assert cf2.output.csv.quoting == 'minimal'
-    check_capsys(capsys=capsys)
+    check_capsys(capsys=capsys, in_err='migrate-cfg')
 
 
 @pytest.mark.parametrize('old_format, new_format',
@@ -326,10 +329,11 @@ def test_old_0214_formats(capsys: pytest.CaptureFixture[str], old_format: str,
     data['outfile_encoding'] = 'iso8859-1'
     data['outfile_excel_library'] = 'PYLIGHTXL'
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
-                        stderr_file=sys.stderr)
+                        stderr_file=sys.stderr,
+                        auto_ch_hook=XlMigrateCfgWarnHook())
     assert cf2.output.format_name == new_format
     assert cf2.output.character_encoding == 'iso8859-1'
-    check_capsys(capsys=capsys)
+    check_capsys(capsys=capsys, in_err='migrate-cfg')
 
 
 def test_current_output_wins_over_old_keys(
