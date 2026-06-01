@@ -2,29 +2,38 @@
 
 ## Background
 
-This python application was born out of the experience that needed data was available as part of JSON or as part of XML files, but the data was needed as a list of columns in excel or CSV (comma separated values) format.
+This Python application was born out of the experience that needed data was
+available as part of JSON or XML files, but the data was needed as a list of
+columns in Excel or CSV format.
 
 ## What it does
 
-This small python application:
+This small Python application:
 
 - reads data from an XML file or from a JSON file.
 - extracts (a configurable part of the) data from the data read
-- outputs the extracted data as list with a number of columns in the desired format, that can
-  be selected from several formats, including:
+- outputs the extracted data as a list with a number of columns in the
+  desired format. Examples include:
     - Excel
     - CSV (comma separated values)
+    - ODS
+    - HTML
+    - Markdown
     - plain text file
     - JSON
     - XML
+    - LaTeX
 
-How this is done is governed by a configuration file. The application can create a number of example configuration files with accompanying description text files.
+How this is done is governed by a configuration file. The application can
+create example configuration files with accompanying description text files.
 
 ## Using it
 
-If you want to use it install it using pip from [https://pypi.org/project/extract-list](https://pypi.org/project/extract-list). There is no need download anything from Bitbucket to use the application.
+If you want to use it, install it using pip from
+[https://pypi.org/project/extract-list](https://pypi.org/project/extract-list).
+There is no need to download anything from Bitbucket to use the application.
 
-### Installing on mac and Linux
+### Installing on macOS and Linux
 
 ````sh
 pip3 install --upgrade extract-list
@@ -38,7 +47,9 @@ pip install --upgrade extract-list
 
 ### Information for use
 
-Please see [https://pypi.org/project/extract-list](https://pypi.org/project/extract-list) or please see README_pypi.md
+Please see
+[https://pypi.org/project/extract-list](https://pypi.org/project/extract-list)
+or [README_pypi.md](README_pypi.md).
 
 ## Cloning
 
@@ -46,7 +57,7 @@ This repository uses submodules. Clone it with:
 
 ```sh
 git clone --recurse-submodules \
-  git@bitbucket.org:tom-bjorkholm/config_as_json.git
+  git@bitbucket.org:tom-bjorkholm/extract-list.git
 ```
 
 If you already cloned without submodules, initialize them with:
@@ -80,7 +91,7 @@ On macOS and Linux, the normal workflow is:
 The helper scripts are:
 
 - `run_setup_build_environment.py`
-Create or refresh the build environment.
+  Create or refresh the build environment.
 - `run_build.py`
   Build the package and run the configured checks in the project virtual
   environment.
@@ -96,14 +107,14 @@ The standard verification suite includes pytest, pylint, flake8, and mypy.
 After a build, the generated reports can be browsed through
 `reports/index.html`.
 
-After running `run_build.py` or `run_clean_build.py` you can do manual test of
-the built and installed application in the virtual environment `./venv`
+After running `run_build.py` or `run_clean_build.py`, you can manually test
+the built and installed application in the virtual environment `./venv`.
 
 ## Test summary
 
-- Test result: 1247 passed in 37s
+- Test result: 1247 passed in 36s
 - No flake8 warnings.
 - No mypy errors found.
 - No python layout warnings.
-- Built version(s): 0.2.15
+- Built version(s): 0.3
 - Build and test using Python 3.14.5

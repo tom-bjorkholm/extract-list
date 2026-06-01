@@ -2,38 +2,50 @@
 
 ## Background
 
-This python application was born out of the experience that needed data was available as part of JSON or as part of XML files, but the data was needed as a list of columns in excel or CSV (comma separated values) format.
+extract-list is a command line tool for turning selected data from JSON or XML
+files into a list of columns. It is useful when the source data is structured,
+but the result is needed in a spreadsheet, CSV file, text file, or another
+table-like format.
 
 ## What it does
 
-This small python application:
+extract-list:
 
-* reads data from an XML file or from a JSON file.
-* extracts (a configurable part of the) data from the data read
-* outputs the extracted data as list with a number of columns in the desired format that can be:
-    * Excel
-    * CSV (comma separated values)
-    * plain text file
-    * JSON
-    * XML
+* reads data from an XML file or a JSON file
+* extracts the configured parts of that input data
+* writes the extracted data as rows and columns
 
-How this is done is governed by a configuration file. The application can create a number of example configuration files with accompanying description text files.
+Examples of output formats include:
+
+* Excel
+* CSV
+* ODS
+* HTML
+* Markdown
+* plain text
+* JSON
+* XML
+
+The exact output choices available in an installed environment can be listed
+with the `cfg-example --help` command. Some output formats are provided through
+TableIO, and some are handled directly by extract-list.
 
 ## Installing it
 
-If you want to use it, install it using pip. A precondition is that you have Python installed on you computer. Python can be downloaded from [https://www.python.org/downloads/](https://www.python.org/downloads/).
+extract-list requires Python 3.13 or newer. Python can be downloaded from
+[https://www.python.org/downloads/](https://www.python.org/downloads/).
 
-### Installing on mac and Linux
+### Installing on macOS and Linux
 
-````sh
+```sh
 pip3 install --upgrade extract-list
-````
+```
 
 ### Installing on Microsoft Windows
 
-````sh
+```sh
 pip install --upgrade extract-list
-````
+```
 
 ## Version history
 
@@ -49,157 +61,232 @@ pip install --upgrade extract-list
 | 0.2.11  | 23 Jul 2025 | 3.13 or newer   | updated dependencies                |
 | 0.2.13  | 23 Nov 2025 | 3.12.x          | updated dependencies                |
 | 0.2.14  | 23 Nov 2025 | 3.13 or newer   | updated dependencies                |
+| 0.3     | 01 Jun 2026 | 3.13 or newer   | New output config; more formats     |
 
 ## Running the application
 
-### Running the application on mac and Linux
+### Running on macOS and Linux
 
-````sh
+```sh
 python3 -m extract_list --help
 python3 -m extract_list cfg-example --help
 python3 -m extract_list extract --help
-python3 -m extract_list cfg-example -k sw_json_to_rrs -t excel -o sw-example.cfg
-python3 -m extract_list extract -c sw-example.cfg -i input.json -o output.xlsx
-````
+python3 -m extract_list cfg-example -k example_json -t Excel -o example.cfg
+python3 -m extract_list extract -c example.cfg -i input.json -o output.xlsx
+```
 
-### Running the application on Microsoft Windows
+### Running on Microsoft Windows
 
-````sh
+```sh
 python -m extract_list --help
 python -m extract_list cfg-example --help
 python -m extract_list extract --help
-python -m extract_list cfg-example -k sw_json_to_rrs -t excel -o sw-example.cfg
-python -m extract_list extract -c sw-example.cfg -i input.json -o output.xlsx
-````
+python -m extract_list cfg-example -k example_json -t Excel -o example.cfg
+python -m extract_list extract -c example.cfg -i input.json -o output.xlsx
+```
 
 ## Suggested way to get started
 
- 1. Use the "cfg-example" sub-command to generate a few example configuration (.cfg) files with description (.txt) files.
- 2. Read the example configuration (.cfg) files and the accompanying description (.txt) files.
- 3. Find an example that is close to what you want to achieve.
- 4. Modify that configuration file to achieve what you want to achieve.
- 5. Use the "extract" sub-command to read your data and output extracted data according to your modified configuration file.
- 6. Read the produced output. If necessary go back to step 4 and adjust how the data is transformed.
+1. Use the `cfg-example` sub-command to generate a few example configuration
+   files.
+2. Read each generated `.cfg` file together with its generated `.txt`
+   description file.
+3. Find the example that is closest to what you want to extract.
+4. Modify that configuration file to match your input data and desired output.
+5. Use the `extract` sub-command to read your data and write the output file.
+6. Check the produced output. If needed, adjust the configuration and run the
+   extraction again.
 
 ### Example configuration files
 
-When using the "cfg-example" sub-command to generate an example configuration file (say example.cfg) a text file describing the configuration and the syntax of the configuration file is also generated. If the example configuration file is named example.cfg, then the text file descriging the configuration is named example.txt.
+When `cfg-example` creates a configuration file, it also creates a text file
+that describes the example and the configuration syntax. If the configuration
+file is named `example.cfg`, the description file is named `example.txt`.
 
-You can generate several example configuration files each with an accompanying text file descriping it.
+The generated `.txt` file is the best place to look for detailed configuration
+reference text, because it is generated by the same installed version of
+extract-list that will read the configuration.
 
-Read the text file describing the configuration file while looking at the configuration file to understand the syntax and the possible options.
+## Migrating old configuration files
 
-## Description of how to write/change the configuration file
+Version 0.3 uses the nested `output` configuration object. Older 0.2-style
+configuration files that use settings such as `outfile_type`,
+`outfile_encoding`, `out_csv_dialect`, or `outfile_excel_library` can be
+migrated with the `migrate-cfg` sub-command.
 
-The configuration file is in JSON syntax [https://en.wikipedia.org/wiki/JSON](https://en.wikipedia.org/wiki/JSON).
-The keywords and the nesting is important. The order of keywords have no significance (the examples use alphabetical order). Indentation and line breaks have no significance.
+### Migrating on macOS and Linux
 
-The encoding for the configuration file must be UTF-8. (US-ACII is a subset of UTF-8.)
+```sh
+python3 -m extract_list migrate-cfg -i old.cfg -o new.cfg
+```
 
-It is recommended that you let the command generate a configuration file and then edit that file to match your needs. It is NOT recommended that the user writes the configuration file from scratch.
+### Migrating on Microsoft Windows
+
+```sh
+python -m extract_list migrate-cfg -i old.cfg -o new.cfg
+```
+
+extract-list can still read the old configuration format with backward
+compatibility handling, but migration is recommended before editing the
+configuration further.
+
+## Configuration file overview
+
+The configuration file is written in JSON syntax:
+[https://en.wikipedia.org/wiki/JSON](https://en.wikipedia.org/wiki/JSON).
+The keywords and nesting are important. The order of keywords is not
+significant. Indentation and line breaks are not significant.
+
+The encoding for the configuration file must be UTF-8. US-ASCII is a subset of
+UTF-8.
+
+It is recommended to generate a configuration file with `cfg-example` and then
+edit that file. Writing a configuration file from scratch is possible, but the
+generated examples are a much safer starting point.
 
 ### Type of input file
 
-The type of input file to read is determined by **"infile_type"**. **"infile_type"** can have the values:
+The type of input file to read is determined by `infile_type`. `infile_type`
+can have these values:
 
-* *"JSON"*
-* *"XML"*
+* `"JSON"`
+* `"XML"`
 
-As both JSON and XML are syntax in text files, the text files can have an encoding for the text in the files
-[https://en.wikipedia.org/wiki/Character_encoding](https://en.wikipedia.org/wiki/Character_encoding).
-This is specified with **"infile_encoding"**. Unless you know that you need another encoding leave this as in the generated example configuration.
+Both JSON and XML are text file formats, so the input file has a character
+encoding. This is specified with `infile_encoding`. Unless you know that you
+need another encoding, leave this as it is in the generated example
+configuration.
 
 ### Type of output file
 
-Table-style output is written with TableIO and configured in the nested
-**"output"** object. The TableIO format is selected with
-**"output.format_name"**. The configured value is case-insensitive and is
-normalized when the configuration is read. Typical values include:
+Output files are configured in the nested `output` object. The output format is
+selected with `output.format_name`. The value is case-insensitive and is
+normalized when the configuration is read.
 
-* *"Excel"*
-* *"CSV"*
-* *"ODS"*
-* *"HTML"*
-* *"LaTeX"*
-* *"md"*
-* *"txt"*
+Examples of commonly useful `output.format_name` values include:
 
-JSON and XML output are handled inside extract-list instead of TableIO. For
-these output formats, omit **"output"** and set
-**"internal_output_format"** to one of:
+* `"Excel"`
+* `"CSV"`
+* `"ODS"`
+* `"HTML"`
+* `"md"`
+* `"txt"`
+* `"JSON"`
+* `"XML"`
+* `"Plaintxt"`
 
-* *"JSON"*
-* *"XML"*
+Run `python3 -m extract_list cfg-example --help` on macOS or Linux, or
+`python -m extract_list cfg-example --help` on Windows, to see the full list of
+output formats available in your installed environment.
 
-As *CSV, TXT, JSON* and *XML* are syntaxes in text files, the text files can have an encoding for the text in the files
-[https://en.wikipedia.org/wiki/Character_encoding](https://en.wikipedia.org/wiki/Character_encoding).
-For TableIO output this is specified with **"output.character_encoding"**.
-For internal JSON and XML output this is specified with
-**"internal_output_encoding"**. Unless you know that you need another encoding
-leave this as in the generated example configuration.
+`JSON`, `XML`, and `Plaintxt` output are handled inside extract-list. Other
+table-style output is handled through TableIO. The same `output.format_name`
+configuration member is used for both groups.
 
-Comma separated values files (CSV files) may differ slightly depending on the
-programs used to read/write them and the locale used. CSV settings are
-configured in the optional nested **"output.csv"** object.
+Text-based output formats can have a character encoding. This is configured
+with `output.character_encoding`. Unless you know that you need another
+encoding, leave this as it is in the generated example configuration.
+
+Comma separated values files may differ slightly depending on the programs
+used to read and write them and the locale used. CSV settings are configured in
+the optional nested `output.csv` object.
 
 TableIO may provide several implementations for a file format.
-**"output.implementation"** can force a specific implementation. If it is
-omitted, TableIO chooses the best available implementation. The
-**"outfile_border"** and **"outfile_filtered_area"** values can be *"NO"*,
-*"IF_AVAILABLE"* or *"NEEDED"*. *"NO"* disables the feature request, while the
-other values request the feature when the output method is called.
+`output.implementation` can force a specific implementation. If it is omitted,
+TableIO chooses the best available implementation.
+
+The `outfile_border` and `outfile_filtered_area` values can be `"NO"`,
+`"IF_AVAILABLE"`, or `"NEEDED"`. `"NO"` disables the feature request.
+`"IF_AVAILABLE"` requests the feature when the selected output implementation
+can provide it. `"NEEDED"` requires support for the feature.
 
 ### Data to extract
 
-The input files (JSON or XML) is likely to include a lot more data than what is interesting to extract. The data to extract is specified using **"main_line"** and **"linked_lines"** parameters in the configuration file.
+The input file is likely to contain more data than should appear in the
+output. The data to extract is specified with `main_line` and `linked_lines`.
 
-The **"main_line"** specifies what part of the input file should be the main part of the output line(s). The linked lines have some data linking them to the main line: A linked line is linked to the main line if some item in the linked line has the same value as some other item in the main line.
+The `main_line` setting describes the main input records that become output
+rows. Linked lines describe additional records that are tied to the main line.
+A linked line is tied to a main line when a configured value in the linked line
+has the same value as a configured value in the main line.
 
-The **"line"** sub-parameter of the the **"main_line"** and **"linked_lines"** configuration parameters includes a list of strings. This list of strings is the path of keywords to the records. Directly below this path is either a list or a dictionary of the records.
+The `line` member of `main_line` and `linked_lines` is a list of strings. This
+list is the path of keys to the input records. Directly below that path there
+is either a list or a dictionary of records.
 
-The dictionary of the records of the **"main_line"** are indexed in the input (either by an integer index in the case of a list, or by the key in case of a dictionary). If you want this index (also known as key) to be included in the output, set configuration  parameter **"include_key"** to true. To exclude this index (key) from the output set **"include_key"** to false. The output column name for this key (index) is set using the configuration parameter **"column_name_for_key"**.
+The records of the `main_line` are indexed in the input, either by integer
+position in a list or by key in a dictionary. If you want this index or key in
+the output, set `include_key` to `true`. If not, set it to `false`. The output
+column name for this key is configured with `column_name_for_key`.
 
-The **"columns"** sub-parameter of the **"main_line"** and **"linked_lines"** configuration parameters includes a dictionary from a string to a list of strings. The keys in this dictionary is the column names to use in the output. The list of strings is the relative path in the record of the item that has the value for this column.
+The `columns` member of `main_line` and `linked_lines` maps output column names
+to paths inside each input record. Each path is written as a list of strings.
 
-Sometimes a single record in the input, defined as the item in the list or dictionary referenced by the **"line"** sub-parameter, can contain several sub-records. For instance if the record is a purchase order, then the order may include several purchased items. As the output format of a list of columns does not support such nesting, the single input redord needs to be split into several output lines. The common items in the input record is then duplicated on all such lines split from the same input record. The configuration sub-parameter **"expand_at"** holds a list of relative paths where the input record should be expanded (or split). Each such relative path is configured using a list of strings in the **"expand_at"** sub-parameter. As the **"expand_at"** holds a list of relative paths (list of list of strings), this expansion can be configured to be done on zero, one or several places in the input record.
+Sometimes one input record contains several nested records. For example, a
+purchase order may contain several purchased items. Because the output is a
+list of columns, such an input record must be expanded into several output
+rows. The shared values from the input record are duplicated on those output
+rows. The `expand_at` member contains the relative paths where this expansion
+should happen.
 
-There can be only one main line, denoted by the **"main_line"** configuration parameter. In contrast there may be any number of linked lines. The linked lines are described be an array for the the **"linked_lines"** configuration parameter. The sub-parameters described for the **"main_line"** shall also be configured for each item in the **"linked_lines"** array.
+There can be only one `main_line`. There may be any number of linked lines.
+The linked lines are configured as an array in `linked_lines`.
 
-How linked lines are tied to main line is defined by the **"linked_column"** and **"linked_main_column"** sub-parameter for each linked line item. Both **"linked_column"** and **"linked_main_column"** are relative paths in the input records using the familiar list of strings syntax. The **"linked_column"** sub-parameter denotes an item in the linked line record that shall have the same value as the item in the main line record denoted by the the **"linked_main_column"** sub-parameter.
+For each linked line, `linked_column` and `linked_main_column` define how it is
+tied to the main line. Both values are relative paths in the input records.
+The value at `linked_column` in the linked-line record must equal the value at
+`linked_main_column` in the main-line record.
 
-The data items used to link a linked line to a main line may be extracted to the output using the **"column"** sub-parameter, but this is totally optional. There is no requirement that the data items used to tie linked lines to main lines are part of the output.
+The values used to link records may also be extracted as output columns, but
+they do not have to be.
 
-Several linked lines could be tied to the same main line. The configuration parameter **"one_output_line_per_main_line"** determines how this case is handled. If it is set to false, the result will be that the main line part is duplicated so that the output has one line for each tied combination of main line and linked lines. Sometimes this duplication of main line is not intended. By setting the configuration parameter **"one_output_line_per_main_line"** to true, several linked lines tied to one main line will be flagged as an error.
+Several linked lines can be tied to the same main line.
+`one_output_line_per_main_line` controls how this is handled. If it is `false`,
+the main-line data is duplicated so the output has one row for each tied
+combination of main-line and linked-line records. If it is `true`, multiple
+linked lines for one main line are reported as an error.
 
-As items in records are optional in the input formats (JSON and XML) it is possible the that there is no data at the paths specified for columns or specified for records. The configuration parameter **"missing_input_for_column"** determines how missing data in input is handled. The possible values are *"EMPTY"* and *"ERROR"*. If configured as *"EMPTY"* the columns resulting from the missing input data will simply be empty.
+Input records may be missing optional values. `missing_input_for_column`
+controls how missing input data is handled. Its values are `"EMPTY"` and
+`"ERROR"`. If it is `"EMPTY"`, the output column resulting from missing input
+data is left empty.
 
 ### XML attributes
 
-The XML syntax allows member values of an object to either be written as nested objects or as attributes. If the input has XML attributes the key for the attributes will have an "@" prepended. To handle this the configuration parameter **"in_xml_strip_at"** can be set to *true* or *false*. If **"in_xml_strip_at"** is set to *true* an "@" character in the beginning of any key will be stripped off.
+XML member values may be written either as nested objects or as attributes. If
+the input has XML attributes, the attribute key has an `@` prefix. To handle
+this, `in_xml_strip_at` can be set to `true` or `false`. If it is `true`, a
+leading `@` character is stripped from each key.
 
-The configuration parameter **"out_xml_attributes"** specifies a list of column names. These columns will be written as XML attributes in XML output, not as nested objects.
+The `out_xml_attributes` setting specifies column names that should be written
+as XML attributes in XML output instead of as nested objects.
 
 ### Output column order
 
-The order of the columns in the output is specified with the configuration parameter **"column_order"**. The value of this parameter is a list of strings.
+The order of the columns in the output is specified with `column_order`. The
+value is a list of strings.
 
-Specifying a column in the output column order that has not been extracted is an error. It is also an error to extract a column and not specify it in the output column order.
+Specifying a column in `column_order` that has not been extracted is an error.
+Extracting a column without specifying it in `column_order` is also an error.
 
-Output line order
+### Output line order
 
-The configuration parameter **"order_rows_by"** specifies that lines produced shall be sorted based on these columns. The most significant column shall be first in the list of column names.
+The `order_rows_by` setting specifies which columns should be used for sorting
+the output rows. The most significant column should be first in the list.
 
-The default order or lines produced is to order them based on the list of columns in the **"column_order"** configuration parameter. Leave **"order_rows_by"** as empty list unless you have a reason to request another specific order than the default.
+The default row order is based on the list of columns in `column_order`. Leave
+`order_rows_by` as an empty list unless you need another specific order.
 
 ## Source code
 
-Source code and tests are available at [https://bitbucket.org/tom-bjorkholm/extract-list](https://bitbucket.org/tom-bjorkholm/extract-list).
+Source code and tests are available at
+[https://bitbucket.org/tom-bjorkholm/extract-list](https://bitbucket.org/tom-bjorkholm/extract-list).
 
 ## Test summary
 
-- Test result: 1247 passed in 37s
+- Test result: 1247 passed in 36s
 - No flake8 warnings.
 - No mypy errors found.
 - No python layout warnings.
-- Built version(s): 0.2.15
+- Built version(s): 0.3
 - Build and test using Python 3.14.5
