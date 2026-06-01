@@ -58,5 +58,5 @@ def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
     In this case there will be no linked lines.
     '''
     print(msg, file=file)
-    generate_syntax_txt(file=file)
+    generate_syntax_txt(file=file, outtype=outtype)
     return 0

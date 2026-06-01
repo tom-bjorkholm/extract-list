@@ -91,7 +91,7 @@ def generate_txt_example_json(file: TextIO, cfgtype: CfgTypes,
     msg += EXAMPLE_JSON + ORDERS_MAIN_LINE_JSON + EX1_ORDERS
     msg += CUST_LLINE_JSON + EX1_CUST_AND_REST
     print(msg, file=file)
-    generate_syntax_txt(file=file)
+    generate_syntax_txt(file=file, outtype=outtype)
     return 0
 
 
@@ -106,5 +106,5 @@ def generate_txt_example2_json(file: TextIO, cfgtype: CfgTypes,
     msg += '\nWe choose "delivery_method" as the second linked line.'
     msg += DELIVERY_COL
     print(msg, file=file)
-    generate_syntax_txt(file=file)
+    generate_syntax_txt(file=file, outtype=outtype)
     return 0

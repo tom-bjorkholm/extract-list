@@ -5,9 +5,11 @@
 # MIT License
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import sys
 import pytest
 from extract_list.config_enums import InFileType, MissingInputForColumn
+from extract_list.extract_cmd import extract_cmd
 from extract_list.extract_config import ExtractConfig
 from extract_list.xl_migrate_cfg_warn_hook import XlMigrateCfgWarnHook
 from .check_capsys import check_capsys
@@ -147,3 +149,31 @@ def test_read_0214_cfgs(capsys: pytest.CaptureFixture[str],
     warning_parts = ['Backward compatibility', 'migrate-cfg',
                      'configuration file to the new format']
     check_capsys(capsys=capsys, in_err=warning_parts)
+
+
+def test_extract_0214_warns(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that the application warns when extracting with old config."""
+    cfg_path = CFG_DIR / 'sw_json_to_rrs_X_json.cfg'
+    in_path = Path(__file__).parent / 'SW.json'
+    with TemporaryDirectory() as folder:
+        out_path = Path(folder) / 'out.json'
+        args = ['extract', '-i', str(in_path), '-o', str(out_path),
+                '-c', str(cfg_path)]
+        ret = extract_cmd(args)
+        assert ret == 0
+        assert out_path.is_file()
+    warning_parts = ['Backward compatibility', 'migrate-cfg',
+                     'configuration file to the new format']
+    check_capsys(capsys=capsys, in_err=warning_parts)
+
+
+def test_migrate_0214_quiet(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that migrating old config does not print migration warning."""
+    cfg_path = CFG_DIR / 'sw_json_to_rrs_X_json.cfg'
+    with TemporaryDirectory() as folder:
+        out_path = Path(folder) / 'out.cfg'
+        args = ['migrate-cfg', '-i', str(cfg_path), '-o', str(out_path)]
+        ret = extract_cmd(args)
+        assert ret == 0
+        assert out_path.is_file()
+    check_capsys(capsys=capsys)

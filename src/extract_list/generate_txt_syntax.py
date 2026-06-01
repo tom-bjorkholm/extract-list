@@ -4,15 +4,80 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
+from textwrap import wrap
 from typing import TextIO
+from tableio import Capabilities, FileAccess
+from tableio_cfg_json import describe_config_members, \
+    describe_config_reference, get_config_member_names
 from extract_list.config_enums import (
     FormatRequest,
     InFileType,
+    get_outfile_capabilities,
+    is_internal_out_file_format,
     list_out_file_formats
 )
 
+_WIDTH = 79
 
-def generate_syntax_txt(file: TextIO) -> None:
+
+def _paragraph(text: str) -> str:
+    """Return text wrapped as one plain text paragraph."""
+    return '\n'.join(wrap(text, width=_WIDTH))
+
+
+def _tableio_capabilities() -> Capabilities:
+    """Return output capabilities used when documenting TableIO output."""
+    return get_outfile_capabilities(border=FormatRequest.NO,
+                                    filtered_area=FormatRequest.NO)
+
+
+def _tableio_members() -> tuple[str, ...]:
+    """Return all TableIO output member names relevant to extract-list."""
+    return get_config_member_names(capabilities=_tableio_capabilities(),
+                                   file_access=FileAccess.CREATE)
+
+
+def _selected_tableio_txt(outtype: str) -> str:
+    """Return text describing the selected output format."""
+    intro = _paragraph(
+        f'The generated configuration selects {outtype} as '
+        f'"output.format_name".')
+    if is_internal_out_file_format(outtype):
+        internal = _paragraph(
+            f'{outtype} output is handled by extract-list itself. The '
+            'TableIO-specific parameters below are used when '
+            '"output.format_name" is one of the TableIO formats.')
+        return intro + '\n\n' + internal
+    members = describe_config_members(capabilities=_tableio_capabilities(),
+                                      file_access=FileAccess.CREATE,
+                                      format_name=outtype)
+    return intro + '\n\nSelected TableIO format members:\n\n' + members
+
+
+def _all_tableio_txt() -> str:
+    """Return text describing all TableIO output parameters."""
+    caps = _tableio_capabilities()
+    members = describe_config_members(capabilities=caps,
+                                      file_access=FileAccess.CREATE)
+    names = _tableio_members()
+    return (
+        'All TableIO output formats and members:\n\n'
+        + members
+        + '\n\nTableIO output member reference:\n\n'
+        + describe_config_reference(member_names=names))
+
+
+def _tableio_output_txt(outtype: str) -> str:
+    """Return the TableIO output guide for the selected example."""
+    return (
+        'TableIO output configuration\n'
+        '============================\n\n'
+        + _selected_tableio_txt(outtype=outtype)
+        + '\n\n'
+        + _all_tableio_txt())
+
+
+def generate_syntax_txt(file: TextIO, outtype: str) -> None:
     """Generate the text describing the generic cfg file syntax."""
     msg = '''
     Description of how to write/change the configuration file.
@@ -205,3 +270,4 @@ def generate_syntax_txt(file: TextIO) -> None:
     another specific order than the default.
     '''
     print(msg, file=file)
+    print(_tableio_output_txt(outtype=outtype), file=file)

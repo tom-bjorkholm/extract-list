@@ -30,6 +30,18 @@ def assert_cfg_text_output(cfgtxt: str, output_format: str) -> None:
     assert expected.lower() in cfgtxt.lower()
 
 
+def assert_tableio_txt_output(txt: str, output_format: str) -> None:
+    """Check that text file describes TableIO output parameters."""
+    expected = 'The generated configuration selects ' + output_format
+    expected += ' as "output.format_name".'
+    expected_texts = [expected, 'All TableIO output formats and members',
+                      'TableIO output member reference',
+                      'format_name choices:', 'csv.delimiter',
+                      'html.css_file', 'latex.document_class']
+    for expected_text in expected_texts:
+        assert expected_text in txt
+
+
 @pytest.mark.parametrize('outp',
                          [('Excel', read_excel,
                            'b.xlsx'),
@@ -146,6 +158,9 @@ def check_txt_file_for_cfg(cfg_fname: str,
             match_txt = '"' + key + '"'
             assert match_txt in txt
             num_keys_checked += 1
+        format_name = cfg.output.format_name
+        assert isinstance(format_name, str)
+        assert_tableio_txt_output(txt=txt, output_format=format_name)
         if othermsgs is not None:
             for msg in othermsgs:
                 assert msg in txt

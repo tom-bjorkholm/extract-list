@@ -4,12 +4,14 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
+import sys
 from config_as_json.file_extension import fix_file_extension
 from config_as_json.file_must_exist import file_must_exist
 from extract_list.extract_data import extract_data
 from extract_list.handle_input import handle_input
 from extract_list.handle_output import handle_output
 from extract_list.extract_config import ExtractConfig
+from extract_list.xl_migrate_cfg_warn_hook import XlMigrateCfgWarnHook
 
 
 def extract_func(in_file_name: str, cfg_file_name: str,
@@ -18,7 +20,9 @@ def extract_func(in_file_name: str, cfg_file_name: str,
     fixed_cfg = fix_file_extension(filename=cfg_file_name, ext_to_add='.cfg',
                                    ext_to_remove=None, for_reading=True)
     file_must_exist(filename=fixed_cfg, with_content_txt='configuration')
-    cfg = ExtractConfig(from_json_filename=fixed_cfg)
+    cfg = ExtractConfig(from_json_filename=fixed_cfg,
+                        auto_ch_hook=XlMigrateCfgWarnHook(),
+                        stderr_file=sys.stderr)
     indata = handle_input(filename=in_file_name, cfg=cfg)
     outdata = extract_data(indata=indata, cfg=cfg)
     handle_output(data=outdata, filename=out_file_name, cfg=cfg)
