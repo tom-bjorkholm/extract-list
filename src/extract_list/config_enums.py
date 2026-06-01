@@ -11,7 +11,7 @@ from tableio import CAP_IGNORABLE, CAP_NEEDED, CAP_NOT_USED, Capabilities, \
 from tableio.capability import SingleCapability
 
 
-INTERNAL_OUTFILE_FORMATS = ['JSON', 'XML']
+INTERNAL_OUTFILE_FORMATS = ['JSON', 'XML', 'Plaintxt']
 
 
 class InFileType(Enum):

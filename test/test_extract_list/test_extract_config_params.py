@@ -6,12 +6,12 @@
 
 import pytest
 from config_as_json import Config
-from tableio_cfg_json import TioJsonConfig
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import ExtractConfigParams, \
     LinkedLineSpec, MainLineSpec
+from extract_list.output_config import ExtractOutputConfig
 from .check_capsys import check_capsys
 
 
@@ -40,13 +40,11 @@ def test_extract_config_params_default_values(
     assert params.one_output_line_per_main_line
     assert params.outfile_border == FormatRequest.NO
     assert params.outfile_filtered_area == FormatRequest.NO
-    assert isinstance(params.output, TioJsonConfig)
+    assert isinstance(params.output, ExtractOutputConfig)
     assert params.output.format_name is not None
     assert params.output.format_name.lower() == 'excel'
     assert params.output.character_encoding == 'utf-8'
     assert params.output.implementation is None
-    assert params.internal_output_format is None
-    assert params.internal_output_encoding is None
     assert params.column_order == ['What', 'How many', 'Customer name',
                                    'Street', 'Street number', 'key col']
     assert not params.order_rows_by
@@ -64,8 +62,6 @@ def test_extract_config_params_mutable_defaults_are_independent(
     first.column_order.append('Extra')
     first.order_rows_by.append('What')
     first.out_xml_attributes.append('How many')
-    assert first.output is not None
-    assert second.output is not None
     first.output.character_encoding = 'iso8859-1'
     assert 'Extra' not in second.main_line.columns
     assert 'Linked extra' not in second.linked_lines[0].columns

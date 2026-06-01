@@ -23,7 +23,9 @@ from .check_capsys import check_capsys
 @pytest.mark.parametrize('inenc', ['utf-8', 'iso8859-1'])
 @pytest.mark.parametrize('infiletype', [InFileType.JSON, InFileType.XML])
 @pytest.mark.parametrize('outenc', ['utf-8', 'iso8859-1'])
-@pytest.mark.parametrize('outfiletype', ['JSON', 'XML', 'CSV', 'Excel', 'txt'])
+@pytest.mark.parametrize('outfiletype',
+                         ['JSON', 'XML', 'CSV', 'Excel', 'txt',
+                          'Plaintxt'])
 def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
                              infiletype: InFileType, outenc: str,
                              outfiletype: str) -> None:
@@ -31,11 +33,8 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     cfg = ExtractConfig()
     cfg.infile_encoding = deepcopy(inenc)
     cfg.infile_type = deepcopy(infiletype)
-    cfg.set_output_format(deepcopy(outfiletype))
-    if cfg.output is None:
-        cfg.internal_output_encoding = deepcopy(outenc)
-    else:
-        cfg.output.character_encoding = deepcopy(outenc)
+    cfg.output.format_name = deepcopy(outfiletype)
+    cfg.output.character_encoding = deepcopy(outenc)
     if outfiletype.lower() == 'xml':
         cfg.main_line.columns = {'What': ['items', 'item'],
                                  'Quantity': ['items', 'quantity']}
@@ -49,7 +48,7 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
     check_cfgs_equal(cfg, cf2)
     assert cf2.infile_type == infiletype
     assert cf2.infile_encoding == inenc
-    assert cf2.output_format_name().lower() == outfiletype.lower()
+    assert cf2.output.format_name.lower() == outfiletype.lower()
     assert cf2.output_encoding() == outenc
     check_capsys(capsys=capsys)
 
@@ -278,7 +277,6 @@ def test_extract_config_old_excel_library_is_ignored(
     data['outfile_excel_library'] = 'lib'
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
                         stderr_file=sys.stderr)
-    assert cf2.output is not None
     assert cf2.output.implementation is None
     assert not hasattr(cf2, 'outfile_excel_library')
     check_capsys(capsys=capsys)
@@ -292,29 +290,29 @@ def test_old_tableio_output_keys_are_migrated(
     del data['output']
     data['outfile_type'] = 'CSV'
     data['outfile_encoding'] = 'iso8859-1'
-    data['outfile_implementation'] = 'csv'
+    data['outfile_excel_library'] = 'PYLIGHTXL'
     data['out_csv_dialect'] = {
         'name': 'csv.excel_tab',
         'delimiter': None,
         'quoting': 'csv.quote_minimal'}
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
                         stderr_file=sys.stderr)
-    assert cf2.output is not None
     assert cf2.output.format_name == 'CSV'
     assert cf2.output.character_encoding == 'iso8859-1'
-    assert cf2.output.implementation == 'csv'
+    assert cf2.output.implementation is None
     assert cf2.output.csv is not None
     assert cf2.output.csv.dialect == CsvDialect.EXCEL
     assert cf2.output.csv.delimiter == '\t'
     assert cf2.output.csv.quoting == 'minimal'
-    assert cf2.internal_output_format is None
     check_capsys(capsys=capsys)
 
 
-@pytest.mark.parametrize('old_format', ['JSON', 'XML'])
-def test_old_internal_output_keys_are_migrated(
-        capsys: pytest.CaptureFixture[str], old_format: str) -> None:
-    """Test that old JSON/XML output keys become internal output config."""
+@pytest.mark.parametrize('old_format, new_format',
+                         [('JSON', 'JSON'), ('XML', 'XML'),
+                          ('TXT', 'Plaintxt')])
+def test_old_0214_formats(capsys: pytest.CaptureFixture[str], old_format: str,
+                          new_format: str) -> None:
+    """Test that old 0.2.14 internal formats become current output."""
     cfg = ExtractConfig(stderr_file=sys.stderr)
     if old_format == 'XML':
         cfg.main_line.columns = {'What': ['items', 'item'],
@@ -326,11 +324,11 @@ def test_old_internal_output_keys_are_migrated(
     del data['output']
     data['outfile_type'] = old_format
     data['outfile_encoding'] = 'iso8859-1'
+    data['outfile_excel_library'] = 'PYLIGHTXL'
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
                         stderr_file=sys.stderr)
-    assert cf2.output is None
-    assert cf2.internal_output_format == old_format
-    assert cf2.internal_output_encoding == 'iso8859-1'
+    assert cf2.output.format_name == new_format
+    assert cf2.output.character_encoding == 'iso8859-1'
     check_capsys(capsys=capsys)
 
 
@@ -345,12 +343,13 @@ def test_current_output_wins_over_old_keys(
     data['outfile_encoding'] = 'iso8859-1'
     cf2 = ExtractConfig(from_json_data_text=json_dumps(data),
                         stderr_file=sys.stderr)
-    assert cf2.output is not None
     assert cf2.output.format_name == 'CSV'
     assert cf2.output.character_encoding == 'utf-8'
-    assert cf2.internal_output_format is None
-    assert cf2.internal_output_encoding is None
-    check_capsys(capsys=capsys)
+    msgs = ['Both new config parameter output[format_name]',
+            'Ignoring old parameter outfile_type',
+            'Both new config parameter output[character_encoding]',
+            'Ignoring old parameter outfile_encoding']
+    check_capsys(capsys=capsys, in_err=msgs)
 
 
 def test_extract_config_err2(capsys: pytest.CaptureFixture[str]) -> None:
@@ -390,7 +389,7 @@ def test_extract_config_err4(capsys: pytest.CaptureFixture[str]) -> None:
 def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:
     """Test not OK XML column name validation."""
     cfg = ExtractConfig()
-    cfg.set_output_format('XML')
+    cfg.output.format_name = 'XML'
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
     msgs = ['XML output column names in column_order',

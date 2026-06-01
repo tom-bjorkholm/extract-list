@@ -6,17 +6,14 @@
 
 
 from json import loads as json_loads
-from typing import Optional, cast
+from typing import cast
 import sys
-from tableio_cfg_json import TioJsonConfig
 from extract_list.extract_config import ExtractConfig
+from extract_list.output_config import ExtractOutputConfig
 
 
-def _output_json(
-        output: Optional[TioJsonConfig]) -> Optional[dict[str, object]]:
-    """Get JSON-compatible data from an optional output config."""
-    if output is None:
-        return None
+def _output_json(output: ExtractOutputConfig) -> dict[str, object]:
+    """Get JSON-compatible data from an output config."""
     return cast(dict[str, object],
                 json_loads(output.as_json_string(stderr_file=sys.stderr)))
 
@@ -37,7 +34,5 @@ def check_cfgs_equal(cf1: ExtractConfig, cf2: ExtractConfig) -> None:
     assert cf1.one_output_line_per_main_line == \
         cf2.one_output_line_per_main_line
     assert _output_json(cf1.output) == _output_json(cf2.output)
-    assert cf1.internal_output_format == cf2.internal_output_format
-    assert cf1.internal_output_encoding == cf2.internal_output_encoding
     assert cf1.column_order == cf2.column_order
     assert cf1.out_xml_attributes == cf2.out_xml_attributes

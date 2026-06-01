@@ -10,35 +10,34 @@ import sys
 from copy import deepcopy
 from config_as_json import CharEncodingValidator, Config, \
     ConfigAutoChangeHook, ConfigNesting, ConfigNestingKind, \
-    MemberValidationStep, NestedConfigs, ParseConverter, PathOrStr, \
-    ReadOldConfiguration, StrValidator, ValidationPlan, \
+    ConfigPath, MemberValidationStep, NestedConfigs, ParseConverter, \
+    PathOrStr, ReadOldConfiguration, RocfKeyMove, ValidationPlan, \
     WholeConfigValidationStep, ListIsOrderedValidator, \
-    OptionalMemberValidator, ValueTypeValidator, ListValueTypeValidator, \
+    ValueTypeValidator, ListValueTypeValidator, \
     string_to_enum_best_match, migrate_cfg
 from tableio import FileAccess
-from tableio_cfg_json import TioJsonConfig
 from extract_list.config_enums import FormatRequest, InFileType, \
-    INTERNAL_OUTFILE_FORMATS, MissingInputForColumn, \
-    get_outfile_capabilities, is_internal_out_file_format
+    MissingInputForColumn, get_outfile_capabilities, list_out_file_formats
 from extract_list.extract_config_params import ExtractConfigParams, \
     LinkedLineList, LinkedLineSpec, MainLineSpec, _mline_spec_from_dict, \
     _linked_line_from_json_array
+from extract_list.output_config import ExtractOutputConfig
 from extract_list.validators import ExtractedColumnNameValidator, \
-    OutputSelectionValidator, XmlColumnNameValidator
+    XmlColumnNameValidator
 
 
-_MISSING = object()
-_OLD_OUTPUT_KEYS = [
-    'outfile_type', 'outfile_encoding', 'outfile_implementation',
-    'out_csv_dialect', 'outfile_excel_library']
-
-
-def _internal_format_name(format_name: str) -> str:
-    """Return the normal spelling of an internal output format."""
-    for internal_format in INTERNAL_OUTFILE_FORMATS:
-        if internal_format.lower() == format_name.lower():
-            return internal_format
-    return format_name
+def _old_0214_format_name(value: object) -> object:
+    """Return the current output format for one 0.2.14 output type."""
+    if not isinstance(value, str):
+        return value
+    format_names = {
+        'excel': 'Excel',
+        'csv': 'CSV',
+        'json': 'JSON',
+        'xml': 'XML',
+        'txt': 'Plaintxt'
+    }
+    return format_names.get(value.lower(), value)
 
 
 def _old_csv_dialect_name(value: object) -> object:
@@ -85,88 +84,35 @@ def _old_csv_config(value: object) -> object:
     return csv_config
 
 
-def _pop_old_key(json_data: dict[str, object],
-                 auto_ch_hook: ConfigAutoChangeHook, old_key: str) -> object:
-    """Remove one old key and report that it was handled."""
-    if old_key not in json_data:
-        return _MISSING
-    auto_ch_hook.old_key_handled(old_key)
-    return json_data.pop(old_key)
-
-
-def _remove_old_output_keys(json_data: dict[str, object],
-                            auto_ch_hook: ConfigAutoChangeHook) -> None:
-    """Remove old output keys when current output configuration wins."""
-    for old_key in _OLD_OUTPUT_KEYS:
-        _pop_old_key(json_data=json_data, auto_ch_hook=auto_ch_hook,
-                     old_key=old_key)
+def _missing_json_vals(
+        old_reader: ReadOldConfiguration) -> dict[ConfigPath, object]:
+    """Return current values for keys missing from old files."""
+    _ = old_reader
+    return {('outfile_border',): FormatRequest.NO,
+            ('outfile_filtered_area',): FormatRequest.IF_AVAILABLE}
 
 
 class ExtractConfigOldReader(ReadOldConfiguration):
-    """Normalize old extract-list output configuration keys."""
+    """Normalize released 0.2.14 output configuration keys."""
 
-    def pre_process_json(self, json_data: dict[str, object],
-                         auto_ch_hook: ConfigAutoChangeHook,
-                         stderr_file: TextIO) -> dict[str, object]:
-        """Move old output keys into the current output shape."""
-        _ = stderr_file
-        if 'output' in json_data or 'internal_output_format' in json_data:
-            _remove_old_output_keys(json_data=json_data,
-                                    auto_ch_hook=auto_ch_hook)
-            return json_data
-        old_format = _pop_old_key(json_data=json_data,
-                                  auto_ch_hook=auto_ch_hook,
-                                  old_key='outfile_type')
-        if old_format is _MISSING:
-            _remove_old_output_keys(json_data=json_data,
-                                    auto_ch_hook=auto_ch_hook)
-            return json_data
-        old_encoding = _pop_old_key(json_data=json_data,
-                                    auto_ch_hook=auto_ch_hook,
-                                    old_key='outfile_encoding')
-        old_implementation = _pop_old_key(json_data=json_data,
-                                          auto_ch_hook=auto_ch_hook,
-                                          old_key='outfile_implementation')
-        old_csv = _pop_old_key(json_data=json_data, auto_ch_hook=auto_ch_hook,
-                               old_key='out_csv_dialect')
-        _pop_old_key(json_data=json_data, auto_ch_hook=auto_ch_hook,
-                     old_key='outfile_excel_library')
-        if isinstance(old_format, str) and \
-                is_internal_out_file_format(old_format):
-            json_data['output'] = None
-            json_data['internal_output_format'] = \
-                _internal_format_name(old_format)
-            if old_encoding is _MISSING:
-                json_data['internal_output_encoding'] = 'utf-8'
-            else:
-                json_data['internal_output_encoding'] = old_encoding
-            return json_data
-        output: dict[str, object] = {'format_name': old_format}
-        if old_encoding is not _MISSING:
-            output['character_encoding'] = old_encoding
-        if old_implementation is not _MISSING and \
-                old_implementation is not None:
-            output['implementation'] = old_implementation
-        if old_csv is not _MISSING:
-            output['csv'] = _old_csv_config(old_csv)
-        json_data['output'] = output
-        return json_data
+    get_values_for_missing_json_keys = _missing_json_vals
 
-    def post_process_json(self, json_data: dict[str, object],
-                          auto_ch_hook: ConfigAutoChangeHook,
-                          stderr_file: TextIO) -> dict[str, object]:
-        """Fill omitted optional output sentinels before validation."""
-        _ = auto_ch_hook, stderr_file
-        if 'outfile_border' not in json_data:
-            json_data['outfile_border'] = FormatRequest.NO
-        if 'outfile_filtered_area' not in json_data:
-            json_data['outfile_filtered_area'] = FormatRequest.IF_AVAILABLE
-        if 'output' not in json_data:
-            json_data['output'] = None
-        if 'internal_output_format' in json_data and \
-                'internal_output_encoding' not in json_data:
-            json_data['internal_output_encoding'] = 'utf-8'
-        return json_data
+    def get_json_key_moves(self) -> list[RocfKeyMove]:
+        """Return old paths that should be moved to current output paths."""
+        return [
+            RocfKeyMove(old_path=('outfile_type',),
+                        new_path=('output', 'format_name'),
+                        transform_value=_old_0214_format_name),
+            RocfKeyMove(old_path=('outfile_encoding',),
+                        new_path=('output', 'character_encoding')),
+            RocfKeyMove(old_path=('out_csv_dialect',),
+                        new_path=('output', 'csv'),
+                        transform_value=_old_csv_config)
+        ]
+
+    def get_keys_to_remove(self) -> list[ConfigPath]:
+        """Return old output paths that no longer exist."""
+        return [('outfile_excel_library',)]
 
 
 class ExtractConfig(ExtractConfigParams, Config):
@@ -185,22 +131,25 @@ class ExtractConfig(ExtractConfigParams, Config):
 
     def _output_factory(self, from_json_data_text: Optional[str] = None,
                         from_json_filename: Optional[PathOrStr] = None,
-                        stderr_file: TextIO = sys.stderr) -> TioJsonConfig:
-        """Create nested TableIO output configuration from JSON."""
+                        stderr_file: TextIO = sys.stderr) \
+            -> ExtractOutputConfig:
+        """Create nested output configuration from JSON."""
         capabilities = get_outfile_capabilities(
             border=self.outfile_border,
             filtered_area=self.outfile_filtered_area)
-        return TioJsonConfig(capabilities=capabilities,
-                             file_access=FileAccess.CREATE,
-                             from_json_data_text=from_json_data_text,
-                             from_json_filename=from_json_filename,
-                             stderr_file=stderr_file)
+        return ExtractOutputConfig(
+            capabilities=capabilities, file_access=FileAccess.CREATE,
+            allowed_formats=list_out_file_formats(
+                border=self.outfile_border,
+                filtered_area=self.outfile_filtered_area),
+            from_json_data_text=from_json_data_text,
+            from_json_filename=from_json_filename, stderr_file=stderr_file)
 
     def nested_configs(self) -> NestedConfigs:
         """Get nested configuration declarations."""
         return {
-            'output': ConfigNesting(kind=ConfigNestingKind.OPTIONAL_MEMBER,
-                                    config_type=TioJsonConfig,
+            'output': ConfigNesting(kind=ConfigNestingKind.MEMBER,
+                                    config_type=ExtractOutputConfig,
                                     factory_function=self._output_factory)
         }
 
@@ -368,20 +317,11 @@ class ExtractConfig(ExtractConfigParams, Config):
 
     def _omit_none_from_json(self) -> list[str]:
         """Get list of keys that shall be omitted from JSON if None."""
-        return ['output', 'internal_output_format',
-                'internal_output_encoding']
+        return []
 
     def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
         """Get validation plan for the configuration."""
         _ = stderr_file
-        internal_format_val = OptionalMemberValidator(
-            validator=StrValidator(allowed_values=INTERNAL_OUTFILE_FORMATS,
-                                   ignore_case=True, best_match=True,
-                                   normalize=True))
-        opt_encoding_val = OptionalMemberValidator(
-            validator=CharEncodingValidator())
-        opt_output_val = OptionalMemberValidator(
-            validator=ValueTypeValidator(TioJsonConfig))
         unique_val = ListIsOrderedValidator(element_type=str, is_ordered=False,
                                             unique_values=True)
         list_str_val = ListValueTypeValidator(str)
@@ -398,18 +338,14 @@ class ExtractConfig(ExtractConfigParams, Config):
                                  ValueTypeValidator(bool)),
             MemberValidationStep(['column_name_for_key'],
                                  ValueTypeValidator(str)),
-            MemberValidationStep(['output'], opt_output_val),
-            MemberValidationStep(['internal_output_format'],
-                                 internal_format_val),
-            MemberValidationStep(['internal_output_encoding'],
-                                 opt_encoding_val),
+            MemberValidationStep(['output'],
+                                 ValueTypeValidator(ExtractOutputConfig)),
             MemberValidationStep(['column_order', 'order_rows_by',
                                   'out_xml_attributes'], list_str_val),
             MemberValidationStep(['column_order'], unique_val),
             MemberValidationStep(['infile_encoding'], CharEncodingValidator()),
             MemberValidationStep(['column_order'], XmlColumnNameValidator()),
-            WholeConfigValidationStep(ExtractedColumnNameValidator()),
-            WholeConfigValidationStep(OutputSelectionValidator())
+            WholeConfigValidationStep(ExtractedColumnNameValidator())
         ]
 
     def as_json_string(self, stderr_file: TextIO = sys.stderr) -> str:

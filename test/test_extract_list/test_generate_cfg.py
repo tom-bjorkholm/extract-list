@@ -26,10 +26,6 @@ from .check_result import check_result, ex_res, ex2_res
 
 def assert_cfg_text_output(cfgtxt: str, output_format: str) -> None:
     """Check that configuration JSON selects the expected output format."""
-    if output_format.lower() in ('json', 'xml'):
-        expected = '"internal_output_format": "' + output_format.upper() + '"'
-        assert expected.lower() in cfgtxt.lower()
-        return
     expected = '"format_name": "' + output_format + '"'
     assert expected.lower() in cfgtxt.lower()
 

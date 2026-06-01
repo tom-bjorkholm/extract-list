@@ -84,6 +84,7 @@ def read_excel(filename: str, cfg: ExtractConfig) -> Data:
                          [('CSV', 'a.csv', read_csv),
                           ('Excel', 'a.xlsx', read_excel),
                           ('JSON', 'a.json', read_json),
+                          ('Plaintxt', 'a.txt', read_txt),
                           ('XML', 'a.xml', read_xml)])
 def test_handle_output_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
                            dat: Data, enc: str, typ: str, resfile: str,
@@ -91,11 +92,8 @@ def test_handle_output_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disabl
                            ) -> None:
     """Test OK cases 1 of handle_output."""
     cfg = ExtractConfig()
-    cfg.set_output_format(typ)
-    if cfg.output is None:
-        cfg.internal_output_encoding = enc
-    else:
-        cfg.output.character_encoding = enc
+    cfg.output.format_name = typ
+    cfg.output.character_encoding = enc
     cfg.column_order = list(dat[0].keys())
     cfg.out_xml_attributes = []
     with TemporaryDirectory() as dirname:

@@ -11,9 +11,10 @@ from tableio import FileAccess, TableBorderStyle, tio_config_create
 from extract_list.extract_config import ExtractConfig
 from extract_list.commontypes import Data
 from extract_list.config_enums import FormatRequest, \
-    get_outfile_capabilities
+    get_outfile_capabilities, is_internal_out_file_format
 from extract_list.handle_json_xml_output import \
     handle_json_output, handle_xml_output
+from extract_list.handle_txt_output import handle_txt_output
 
 
 def _border_style(cfg: ExtractConfig) -> TableBorderStyle:
@@ -40,8 +41,6 @@ def _new_internal_filename(filename: str, extension: str) -> str:
 def handle_tableio_output(data: Data, filename: str,
                           cfg: ExtractConfig) -> None:
     """Handle output through TableIO."""
-    if cfg.output is None:
-        raise ValueError('No TableIO output is configured.')
     capabilities = get_outfile_capabilities(
         border=cfg.outfile_border, filtered_area=cfg.outfile_filtered_area)
     with tio_config_create(config=cfg.output, file_name=filename,
@@ -55,13 +54,17 @@ def handle_tableio_output(data: Data, filename: str,
 
 def _handle_internal_output(data: Data, filename: str,
                             cfg: ExtractConfig) -> None:
-    """Handle internal JSON and XML output formats."""
-    if cfg.internal_output_format is None:
-        raise ValueError('No internal output format is configured.')
-    if cfg.internal_output_format.lower() == 'json':
+    """Handle internal output formats."""
+    output_format = cfg.output.format_name.lower()
+    if output_format == 'json':
         fixed_fname = _new_internal_filename(filename=filename,
                                              extension='.json')
         handle_json_output(data=data, filename=fixed_fname, cfg=cfg)
+        return
+    if output_format == 'plaintxt':
+        fixed_fname = _new_internal_filename(filename=filename,
+                                             extension='.txt')
+        handle_txt_output(data=data, filename=fixed_fname, cfg=cfg)
         return
     fixed_fname = _new_internal_filename(filename=filename, extension='.xml')
     handle_xml_output(data=data, filename=fixed_fname, cfg=cfg)
@@ -70,7 +73,7 @@ def _handle_internal_output(data: Data, filename: str,
 def handle_output(data: Data, filename: str, cfg: ExtractConfig) -> None:
     """Write out data to file in correct format."""
     cfg.validate(stderr_file=sys.stderr)
-    if cfg.internal_output_format is not None:
+    if is_internal_out_file_format(cfg.output.format_name):
         _handle_internal_output(data=data, filename=filename, cfg=cfg)
         return
     handle_tableio_output(data=data, filename=filename, cfg=cfg)

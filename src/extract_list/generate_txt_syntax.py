@@ -49,29 +49,25 @@ def generate_syntax_txt(file: TextIO) -> None:
     Type of output file
     ===================
 
-    Output files are configured in two different ways. Table-like output
-    formats handled by TableIO are configured in the nested "output" object.
-    The TableIO format is determined by "output.format_name".
+    Output files are configured in the nested "output" object.
+    The output format is determined by "output.format_name".
     "output.format_name" can have the values:
     '''
     out_formats = list_out_file_formats(border=FormatRequest.NO,
                                         filtered_area=FormatRequest.NO)
-    tableio_formats = [
-        x for x in out_formats
-        if x.lower() not in ('json', 'xml')]
-    msg += ' ,'.join(['"' + x + '"' for x in tableio_formats])
+    msg += ' ,'.join(['"' + x + '"' for x in out_formats])
     msg += '''
 
-    JSON and XML output are handled inside extract-list instead of TableIO.
-    For these outputs, "output" shall be omitted and
-    "internal_output_format" shall be "JSON" or "XML".
+    JSON, XML and Plaintxt output are handled inside extract-list instead of
+    TableIO. They still use the same "output.format_name" configuration
+    member.
 
-    As CSV, TXT, JSON and XML are syntaxes in text files, the text files
-    can have an encoding for the text in the files.
+    As CSV, TXT, Plaintxt, JSON and XML are syntaxes in text files, the text
+    files can have an encoding for the text in the files.
     https://en.wikipedia.org/wiki/Character_encoding
-    TableIO output uses "output.character_encoding". Internal JSON and XML
-    output uses "internal_output_encoding". Unless you know that you need
-    another encoding leave this as in the generated example configuration.
+    Text output uses "output.character_encoding". Unless you know that you
+    need another encoding leave this as in the generated example
+    configuration.
 
     TableIO may provide several implementations for a file format.
     The optional "output.implementation" parameter can force a specific

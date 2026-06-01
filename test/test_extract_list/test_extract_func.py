@@ -91,11 +91,8 @@ def test_extract_func_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable
         cfg.infile_type = inpar[0]
         cfg.in_xml_strip_at = True
         cfg.infile_encoding = inenc
-        cfg.set_output_format(outpar[0])
-        if cfg.output is None:
-            cfg.internal_output_encoding = outenc
-        else:
-            cfg.output.character_encoding = outenc
+        cfg.output.format_name = outpar[0]
+        cfg.output.character_encoding = outenc
         cfg_fullname = dirname + '/' + cfgname
         infilename = dirname + '/' + inpar[1]
         outfilename = dirname + '/' + outpar[1]

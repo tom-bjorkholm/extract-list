@@ -106,32 +106,6 @@ class ExtractedColumnNameValidator(WholeConfigValidator):
 
 
 # pylint: disable-next=too-few-public-methods
-class OutputSelectionValidator(WholeConfigValidator):
-    """Validate that exactly one output kind is configured."""
-
-    def validate(self, config: Config,
-                 stderr_file: TextIO = sys.stderr) -> None:
-        """Validate output selection in an extract-list config."""
-        extract_config = _extract_config_params(config, stderr_file)
-        has_tableio_output = extract_config.output is not None
-        has_internal_output = extract_config.internal_output_format is not None
-        if has_tableio_output == has_internal_output:
-            msg = 'Invalid configuration: Configure exactly one of output '
-            msg += 'and internal_output_format.'
-            _raise_invalid_configuration(msg, stderr_file)
-        if has_internal_output and \
-                extract_config.internal_output_encoding is None:
-            msg = 'Invalid configuration: internal_output_encoding is '
-            msg += 'needed when internal_output_format is used.'
-            _raise_invalid_configuration(msg, stderr_file)
-        if has_tableio_output and \
-                extract_config.internal_output_encoding is not None:
-            msg = 'Invalid configuration: internal_output_encoding is only '
-            msg += 'valid when internal_output_format is used.'
-            _raise_invalid_configuration(msg, stderr_file)
-
-
-# pylint: disable-next=too-few-public-methods
 class XmlColumnNameValidator(MemberValidator):
     """Validate XML output column names."""
 
@@ -140,9 +114,7 @@ class XmlColumnNameValidator(MemberValidator):
                         stderr_file: TextIO = sys.stderr) -> object:
         """Validate XML column names in one config member."""
         extract_config = _extract_config_params(config, stderr_file)
-        if extract_config.internal_output_format is None:
-            return member_value
-        if extract_config.internal_output_format.lower() != 'xml':
+        if extract_config.output.format_name.lower() != 'xml':
             return member_value
         assert isinstance(member_value, list)
         column_order = cast(list[str], member_value)
