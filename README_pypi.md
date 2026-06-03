@@ -284,9 +284,9 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1247 passed in 36s
+- Test result: 1247 passed in 74s (0:01:14)
 - No flake8 warnings.
 - No mypy errors found.
 - No python layout warnings.
 - Built version(s): 0.4
-- Build and test using Python 3.14.5
+- Build and test using Python 3.13.7
