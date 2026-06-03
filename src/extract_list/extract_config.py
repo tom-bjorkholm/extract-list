@@ -84,18 +84,13 @@ def _old_csv_config(value: object) -> object:
     return csv_config
 
 
-def _missing_json_vals(
-        old_reader: ReadOldConfiguration) -> dict[ConfigPath, object]:
-    """Return current values for keys missing from old files."""
-    _ = old_reader
-    return {('outfile_border',): FormatRequest.NO,
-            ('outfile_filtered_area',): FormatRequest.IF_AVAILABLE}
-
-
 class ExtractConfigOldReader(ReadOldConfiguration):
     """Normalize released 0.2.14 output configuration keys."""
 
-    get_values_for_missing_json_keys = _missing_json_vals
+    def get_missing_path_values(self) -> dict[ConfigPath, object]:
+        """Return current values for paths missing from old files."""
+        return {('outfile_border',): FormatRequest.NO,
+                ('outfile_filtered_area',): FormatRequest.IF_AVAILABLE}
 
     def get_json_key_moves(self) -> list[RocfKeyMove]:
         """Return old paths that should be moved to current output paths."""
