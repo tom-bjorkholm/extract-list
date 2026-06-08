@@ -5,6 +5,7 @@
 # MIT License
 
 from copy import deepcopy
+from datetime import datetime
 import pytest
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_data import RowCompare, sort_rows
@@ -30,6 +31,23 @@ from .check_capsys import check_capsys
 def test_row_compare(capsys: pytest.CaptureFixture[str], left: Row, right: Row,
                      cols: list[str], res: int) -> None:
     """Test RowCompare."""
+    cmp = RowCompare(cols=cols)
+    ret = cmp.compare(left_row=left, right_row=right)
+    assert ret == res
+    check_capsys(capsys=capsys)
+
+
+@pytest.mark.parametrize('left,right,cols,res',
+                         [({'a': None, 'b': None},
+                           {'a': None, 'b': None}, ['a', 'b'], 0),
+                          ({'a': 4, 'b': 5},
+                           {'a': 4, 'b': 5}, ['a', 'b'], 0),
+                          ({'a': '3'}, {'a': '4'}, ['a'], -1),
+                          ({'a': datetime(2026, 1, 1)},
+                           {'a': datetime(2026, 1, 2)}, ['a'], -1)])
+def test_row_compare_ties(capsys: pytest.CaptureFixture[str], left: Row,
+                          right: Row, cols: list[str], res: int) -> None:
+    """Test row comparison ties and string-like comparisons."""
     cmp = RowCompare(cols=cols)
     ret = cmp.compare(left_row=left, right_row=right)
     assert ret == res

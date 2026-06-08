@@ -14,7 +14,8 @@ from config_as_json import ConfigBadJson, InvalidConfiguration, \
 from tableio import CsvDialect
 from tableio_cfg_json import TioJsonCsvConfig
 from extract_list.config_enums import InFileType, MissingInputForColumn
-from extract_list.extract_config import ExtractConfig
+from extract_list.extract_config import ExtractConfig, _old_0214_format_name, \
+    _old_csv_config
 from extract_list.extract_config_params import LinkedLineSpec, MainLineSpec
 from extract_list.xl_migrate_cfg_warn_hook import XlMigrateCfgWarnHook
 from .check_cfgs_equal import check_cfgs_equal
@@ -310,6 +311,30 @@ def test_old_tableio_output_keys_are_migrated(
     check_capsys(capsys=capsys, in_err='migrate-cfg')
 
 
+@pytest.mark.parametrize('old_value', [None, 7, {'format': 'csv'}])
+def test_old_format_obj(capsys: pytest.CaptureFixture[str],
+                        old_value: object) -> None:
+    """Test that non-string old format values are left unchanged."""
+    assert _old_0214_format_name(old_value) == old_value
+    check_capsys(capsys=capsys)
+
+
+@pytest.mark.parametrize('old_value, expected',
+                         [(7, 7),
+                          ({'name': 'csv.unix_dialect'}, {'dialect': 'UNIX'}),
+                          ({'name': 'custom', 'quoting': 'csv.quote_none',
+                            'delimiter': ';'},
+                           {'dialect': 'custom', 'quoting': 'none',
+                            'delimiter': ';'}),
+                          ({'name': 3, 'quoting': 5},
+                           {'dialect': 3, 'quoting': 5})])
+def test_old_csv_matrix(capsys: pytest.CaptureFixture[str], old_value: object,
+                        expected: object) -> None:
+    """Test old CSV configuration conversion edge cases."""
+    assert _old_csv_config(old_value) == expected
+    check_capsys(capsys=capsys)
+
+
 @pytest.mark.parametrize('old_format, new_format',
                          [('JSON', 'JSON'), ('XML', 'XML'),
                           ('TXT', 'Plaintxt')])
@@ -400,3 +425,17 @@ def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:
             'must not contain whitespace', 'How many', 'Customer name',
             'Street number', 'key col']
     check_capsys(capsys=capsys, in_err=msgs)
+
+
+@pytest.mark.parametrize('platform, python_cmd',
+                         [('darwin', 'python3'),
+                          ('win32', 'python'),
+                          ('nt', 'python')])
+def test_migrate_cmd_name(capsys: pytest.CaptureFixture[str],
+                          monkeypatch: pytest.MonkeyPatch, platform: str,
+                          python_cmd: str) -> None:
+    """Test migrate instruction command name on platform variants."""
+    monkeypatch.setattr(sys, 'platform', platform)
+    text = XlMigrateCfgWarnHook.migrate_instructions()
+    assert f'Use "{python_cmd} -m extract_list migrate-cfg"' in text
+    check_capsys(capsys=capsys)

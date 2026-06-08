@@ -83,12 +83,16 @@ def list_out_format_implementations(format_name: Optional[str] = None,
                                     filtered_area: FormatRequest
                                     = FormatRequest.NO) -> list[str]:
     """List available output format implementations."""
+    internal_formats = _internal_formats(border, filtered_area)
     if format_name is not None and is_internal_out_file_format(format_name):
-        return ['internal']
+        lower_formats = [item.lower() for item in internal_formats]
+        if format_name.lower() in lower_formats:
+            return ['internal']
+        return []
     cap = get_outfile_capabilities(border, filtered_area)
     ret = list_implementations_tableio(format_name=format_name,
                                        capabilities=cap, empty_is_ok=True)
-    if format_name is None:
+    if format_name is None and internal_formats:
         ret.append('internal')
     return ret
 

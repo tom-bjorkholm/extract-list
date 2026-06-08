@@ -70,3 +70,11 @@ def test_extract_config_params_mutable_defaults_are_independent(
     assert second.out_xml_attributes == ['What']
     assert second.output.character_encoding == 'utf-8'
     check_capsys(capsys=capsys)
+
+
+def test_encoding_fallback(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test output encoding fallback when no encoding is configured."""
+    params = ExtractConfigParams()
+    params.output.character_encoding = None
+    assert params.output_encoding() == 'utf-8'
+    check_capsys(capsys=capsys)

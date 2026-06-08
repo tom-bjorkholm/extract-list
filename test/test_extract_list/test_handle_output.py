@@ -6,12 +6,15 @@
 
 from tempfile import TemporaryDirectory
 from collections.abc import Callable
+from pathlib import Path
 from typing import cast
 import sys
 import pytest
 from config_as_json import JsonType
-from tableio import FileAccess, OptionalArgsDict, create_tableio
-from extract_list.handle_output import handle_output
+from tableio import FileAccess, OptionalArgsDict, TableBorderStyle, \
+    create_tableio
+from extract_list.config_enums import FormatRequest
+from extract_list.handle_output import handle_output, _border_style
 from extract_list.extract_config import ExtractConfig
 from extract_list.commontypes import Data, Value
 from extract_list.handle_input import read_in_json, read_in_xml
@@ -24,6 +27,22 @@ DATA: list[Data] = [
     [{'gold': 'Au', 'silver': 'Ag'},
      {'gold': 'Winner', 'silver': 'second'}]
 ]
+
+
+@pytest.mark.parametrize('fmt_request, expected',
+                         [(FormatRequest.NO, TableBorderStyle.NONE),
+                          (FormatRequest.IF_AVAILABLE,
+                           TableBorderStyle.OUTER_FIRST_ROW_THICK_INNER_THIN),
+                          (FormatRequest.NEEDED,
+                           TableBorderStyle.OUTER_FIRST_ROW_THICK_INNER_THIN)])
+def test_border_style_matrix(capsys: pytest.CaptureFixture[str],
+                             fmt_request: FormatRequest,
+                             expected: TableBorderStyle) -> None:
+    """Test conversion from config border request to TableIO border style."""
+    cfg = ExtractConfig()
+    cfg.outfile_border = fmt_request
+    assert _border_style(cfg) == expected
+    check_capsys(capsys=capsys)
 
 
 def read_txt(filename: str, cfg: ExtractConfig) -> Data:
@@ -76,6 +95,20 @@ def read_excel(filename: str, cfg: ExtractConfig) -> Data:
                         implementation='OpenPyXL') as table:
         data = table.read_table_dictdata().data
     return data
+
+
+def test_internal_exists(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that internal output refuses to overwrite existing files."""
+    cfg = ExtractConfig()
+    cfg.output.format_name = 'JSON'
+    with TemporaryDirectory() as dirname:
+        output_path = Path(dirname) / 'a'
+        existing_path = Path(dirname) / 'a.json'
+        existing_path.write_text('{}', encoding='utf-8')
+        with pytest.raises(FileExistsError) as excinfo:
+            handle_output(data=[], filename=str(output_path), cfg=cfg)
+        assert str(existing_path) in str(excinfo.value)
+    check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('dat', DATA)
