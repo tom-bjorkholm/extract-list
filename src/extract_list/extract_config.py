@@ -148,7 +148,7 @@ class ExtractConfig(ExtractConfigParams, Config):
                                     factory_function=self._output_factory)
         }
 
-    def _get_read_old_configuration(self) -> ReadOldConfiguration:
+    def _get_read_old_config(self) -> ReadOldConfiguration:
         """Return old-file compatibility rules."""
         return ExtractConfigOldReader()
 

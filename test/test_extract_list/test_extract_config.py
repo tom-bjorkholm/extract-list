@@ -7,6 +7,7 @@
 from copy import deepcopy
 from typing import cast
 import sys
+import warnings
 import pytest
 from config_as_json import InvalidConfiguration
 from tableio import CsvDialect
@@ -198,6 +199,17 @@ def test_get_order_rows_by(capsys: pytest.CaptureFixture[str], cols: list[str],
     cfg.order_rows_by = order_row
     ret = cfg.get_order_rows_by()
     assert ret == res
+    check_capsys(capsys=capsys)
+
+
+def test_old_cfg_hook_current(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test parsing uses the current config-as-json read-old hook."""
+    cfg = ExtractConfig()
+    text = cfg.as_json_string()
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', DeprecationWarning)
+        cf2 = ExtractConfig(from_json_data_text=text)
+    check_cfgs_equal(cfg, cf2)
     check_capsys(capsys=capsys)
 
 
