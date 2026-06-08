@@ -47,22 +47,6 @@ pip3 install --upgrade extract-list
 pip install --upgrade extract-list
 ```
 
-## Version history
-
-| Version | Date        | Python version  | Description                         |
-|---------|-------------|-----------------|-------------------------------------|
-| 0.2     | 06 Jan 2025 | 3.12.6 or newer | First released version              |
-| 0.2.2   | 23 Mar 2025 | 3.13.2 or newer | Adapted to Python 3.13.2            |
-| 0.2.3   | 23 Mar 2025 | 3.13.2 or newer | Fix in README only                  |
-| 0.2.5   | 09 Apr 2025 | 3.13.3 or newer | Using newer dependencies            |
-| 0.2.7   | 09 Jun 2025 | 3.12.x          | add version sub-command             |
-| 0.2.8   | 09 Jun 2025 | 3.13 or newer   | add version sub-command             |
-| 0.2.10  | 23 Jul 2025 | 3.12.x          | updated dependencies                |
-| 0.2.11  | 23 Jul 2025 | 3.13 or newer   | updated dependencies                |
-| 0.2.13  | 23 Nov 2025 | 3.12.x          | updated dependencies                |
-| 0.2.14  | 23 Nov 2025 | 3.13 or newer   | updated dependencies                |
-| 0.3     | 01 Jun 2026 | 3.13 or newer   | New output config; more formats     |
-
 ## Running the application
 
 ### Running on macOS and Linux
@@ -288,5 +272,5 @@ Source code and tests are available at
 - No flake8 warnings.
 - No mypy errors found.
 - No python layout warnings.
-- Built version(s): 0.4.1
+- Built version(s): 0.5
 - Build and test using Python 3.14.5
