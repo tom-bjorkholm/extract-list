@@ -23,7 +23,7 @@ class XlVersion(VersionReporter):
         return 'extract-list'
 
     @classmethod
-    def get_recommended_python_version(cls) -> Version:
+    def recommended_python(cls) -> Version:
         """Get recommended Python version."""
         return Version('3.14')
 

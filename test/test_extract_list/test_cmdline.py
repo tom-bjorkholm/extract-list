@@ -6,6 +6,7 @@
 
 from datetime import date
 from importlib.metadata import version as metadata_version
+import sys
 import pytest
 from extract_list.extract_cmd import extract_cmd
 from .check_capsys import check_capsys
@@ -274,7 +275,7 @@ def test_version_cmd1(capsys: pytest.CaptureFixture[str],
     """Test command to print version information."""
     monkeypatch.setattr('extract_list.xl_version.XlVersion.' +
                         '_print_info_on_new_pkgs',
-                        lambda self, versions=None: None)
+                        lambda self, versions=None, out_file=sys.stderr: None)
     extract_cmd(['version'])
     out, err = capsys.readouterr()
     assert '' == err
