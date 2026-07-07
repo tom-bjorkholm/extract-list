@@ -31,7 +31,7 @@ create example configuration files with accompanying description text files.
 
 If you want to use it, install it using pip from
 [https://pypi.org/project/extract-list](https://pypi.org/project/extract-list).
-There is no need to download anything from Bitbucket to use the application.
+There is no need to download anything from GitHub to use the application.
 
 ### Installing on macOS and Linux
 
@@ -56,8 +56,7 @@ or [README_pypi.md](README_pypi.md).
 This repository uses submodules. Clone it with:
 
 ```sh
-git clone --recurse-submodules \
-  git@bitbucket.org:tom-bjorkholm/extract-list.git
+git clone --recurse-submodules git@github.com:tom-bjorkholm/extract-list.git
 ```
 
 If you already cloned without submodules, initialize them with:

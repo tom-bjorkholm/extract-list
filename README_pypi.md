@@ -264,7 +264,7 @@ The default row order is based on the list of columns in `column_order`. Leave
 ## Source code
 
 Source code and tests are available at
-[https://bitbucket.org/tom-bjorkholm/extract-list](https://bitbucket.org/tom-bjorkholm/extract-list).
+[https://github.com/tom-bjorkholm/extract-list](https://github.com/tom-bjorkholm/extract-list).
 
 ## Test summary
 
