@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
   name='extract-list',
-  version='0.6.1',
+  version='0.7',
   description='Extract a list from JSON or XML, save to excel, csv, etc.',
   author='Tom Björkholm',
   author_email='klausuler_linnet0q@icloud.com',

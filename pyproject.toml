@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "extract-list"
-version = "0.6.1"
 authors = [
   { name="Tom Björkholm", email="klausuler_linnet0q@icloud.com" },
 ]
@@ -22,7 +21,7 @@ classifiers = [
     "Topic :: Office/Business",
     "Typing :: Typed"
 ]
-dynamic = ["dependencies"]
+dynamic = ["dependencies", "version"]
 
 [project.urls]
 "Source code" = "https://github.com/tom-bjorkholm/extract-list"
