@@ -268,10 +268,10 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1229 passed in 63s (0:01:03)
+- Test result: 1229 passed in 31s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
 - Built version(s): 0.7
-- Build and test using Python 3.13.15
+- Build and test using Python 3.14.7
