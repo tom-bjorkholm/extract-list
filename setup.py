@@ -14,10 +14,10 @@ setup(
   package_dir={'extract_list': 'src/extract_list'},
   package_data={'extract_list': ['src/py.typed']},
   install_requires=[
-    'argcomplete >= 3.7.0',
-    'config-as-json >= 1.4',
+    'argcomplete >= 3.7.2',
+    'config-as-json >= 1.7',
     'tableio >= 1.1',
-    'tableio-cfg-json >= 0.8',
+    'tableio-cfg-json >= 1.4',
     'versionreporter >= 0.4',
     'xmltodict >= 1.0.4',
     'types-xmltodict >= 1.0.1.20260518'

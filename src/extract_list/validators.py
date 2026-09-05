@@ -5,12 +5,13 @@
 # MIT License
 
 from string import whitespace
-from typing import NoReturn, TextIO, cast
+from typing import NoReturn, Optional, TextIO, cast
 import sys
 from config_as_json import Config, InvalidConfiguration, \
-    MemberValidator, WholeConfigValidator
+    MemberValidator, WholeConfigValidator, member_path
 from extract_list.extract_config_params import ExtractConfigParams, \
     LinkedLineSpec, MainLineSpec
+from extract_list.member_paths import element_path
 
 
 def _raise_invalid_configuration(message: str,
@@ -60,48 +61,50 @@ def _column_names_from_spec(spec: object, stderr_file: TextIO) -> list[str]:
     _raise_invalid_configuration(msg, stderr_file)
 
 
-def _extracted_columns(config: ExtractConfigParams,
-                       stderr_file: TextIO) -> list[str]:
-    """Return names of all extracted columns."""
-    extracted_columns: list[str] = []
-    for linked_line in config.linked_lines:
-        extracted_columns.extend(_column_names_from_spec(linked_line,
-                                                         stderr_file))
-    extracted_columns.extend(_column_names_from_spec(config.main_line,
-                                                     stderr_file))
+def _add_column_paths(paths: dict[str, list[str]], spec: object,
+                      line_path: str, stderr_file: TextIO) -> None:
+    """Record where each column of one line specification is declared."""
+    columns_path = member_path(line_path, 'columns')
+    for name in _column_names_from_spec(spec, stderr_file):
+        paths.setdefault(name, []).append(element_path(columns_path, name))
+
+
+def _column_paths(config: ExtractConfigParams, stderr_file: TextIO,
+                  member_name: Optional[str]) -> dict[str, list[str]]:
+    """Return where each extracted column name is declared."""
+    paths: dict[str, list[str]] = {}
+    linked_path = member_path(member_name, 'linked_lines')
+    for index, linked_line in enumerate(config.linked_lines):
+        line_path = element_path(linked_path, index)
+        _add_column_paths(paths, linked_line, line_path, stderr_file)
+    _add_column_paths(paths, config.main_line,
+                      member_path(member_name, 'main_line'), stderr_file)
     if config.include_key:
-        extracted_columns.append(config.column_name_for_key)
-    return extracted_columns
+        paths.setdefault(config.column_name_for_key, []).append(
+            member_path(member_name, 'column_name_for_key'))
+    return paths
 
 
-def _repeated_names(names: list[str]) -> list[str]:
-    """Return duplicate names in first repeated occurrence order."""
-    seen_names: set[str] = set()
-    repeated_name_set: set[str] = set()
-    repeated_names: list[str] = []
-    for name in names:
-        if name in seen_names and name not in repeated_name_set:
-            repeated_names.append(name)
-            repeated_name_set.add(name)
-        seen_names.add(name)
-    return repeated_names
+def _repeated_report(paths: dict[str, list[str]]) -> str:
+    """Return the reported paths of the column names declared twice."""
+    return '; '.join(f'{name} at ' + ', '.join(at)
+                     for name, at in paths.items() if len(at) > 1)
 
 
 # pylint: disable-next=too-few-public-methods
 class ExtractedColumnNameValidator(WholeConfigValidator):
     """Validate that extracted column names are unique."""
 
-    def validate(self, config: Config,
-                 stderr_file: TextIO = sys.stderr) -> None:
+    def validate(self, config: Config, stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None) -> None:
         """Validate extracted column names in an extract-list config."""
         extract_config = _extract_config_params(config, stderr_file)
-        column_names = _extracted_columns(extract_config, stderr_file)
-        repeated_names = _repeated_names(column_names)
-        if not repeated_names:
+        paths = _column_paths(extract_config, stderr_file, member_name)
+        repeated = _repeated_report(paths)
+        if not repeated:
             return
         msg = 'Invalid configuration: Extracted column names must be unique.'
-        msg += ' Repeated column name(s): '
-        msg += ', '.join(repeated_names)
+        msg += ' Repeated column name(s): ' + repeated
         _raise_invalid_configuration(msg, stderr_file)
 
 

@@ -331,7 +331,59 @@ def test_check_extr_uniq_col_nok1(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
     errmsg = ['Extracted column names must be unique',
-              'Repeated column name(s): b']
+              'Repeated column name(s): b at linked_lines[0].columns[b], '
+              'main_line.columns[b]']
+    check_capsys(capsys=capsys, in_err=errmsg)
+
+
+def _two_linked_lines(cfg: ExtractConfig, name: str) -> None:
+    """Give cfg two linked lines that both extract the column name."""
+    cfg.linked_lines = []
+    for ival in range(2):
+        lls = LinkedLineSpec(data={'line': ['i' + str(ival)],
+                                   'linked_column': ['b'],
+                                   'linked_main_column': ['c'],
+                                   'columns': {name: ['d' + str(ival)]},
+                                   'expand_at': []})
+        cfg.linked_lines.append(lls)
+
+
+def test_uniq_col_linked_path(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that a repeat between two linked lines names both indexes."""
+    cfg = ExtractConfig()
+    cfg.main_line.columns = {'a': ['a1']}
+    _two_linked_lines(cfg, 'b')
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    errmsg = ['Repeated column name(s): b at linked_lines[0].columns[b], '
+              'linked_lines[1].columns[b]']
+    check_capsys(capsys=capsys, in_err=errmsg)
+
+
+def test_uniq_col_key_path(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that a repeat of the key column names column_name_for_key."""
+    cfg = ExtractConfig()
+    cfg.main_line.columns = {'a': ['a1'], 'key col': ['k1']}
+    cfg.linked_lines = []
+    assert cfg.include_key
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    errmsg = ['Repeated column name(s): key col at '
+              'main_line.columns[key col], column_name_for_key']
+    check_capsys(capsys=capsys, in_err=errmsg)
+
+
+def test_uniq_col_nested_path(capsys: pytest.CaptureFixture[str]) -> None:
+    """Test that validating a subtree prefixes the reported paths."""
+    cfg = ExtractConfig()
+    cfg.main_line.columns = {'a': ['a1'], 'b': ['b1']}
+    _two_linked_lines(cfg, 'b')
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr, member_name='extract')
+    errmsg = ['Repeated column name(s): b at '
+              'extract.linked_lines[0].columns[b], '
+              'extract.linked_lines[1].columns[b], '
+              'extract.main_line.columns[b]']
     check_capsys(capsys=capsys, in_err=errmsg)
 
 
@@ -367,7 +419,7 @@ def test_csv_dialect_nok2(capsys: pytest.CaptureFixture[str]) -> None:
     cfg.output.csv.delimiter = '::'
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
-    errmsgs = ['Value for delimiter',
+    errmsgs = ['Value for output.csv.delimiter',
                'length 2',
                'greater than maximum 1']
     check_capsys(capsys=capsys, in_err=errmsgs)
@@ -436,10 +488,10 @@ def test_check_dict_lst_ok(capsys: pytest.CaptureFixture[str], name: str,
                            ['Expected a dict of strings to lists in fg',
                             'but found key: 5', 'of type int']),
                           ({'ab': {'cd': []}}, 'hj',
-                           ['Expected a list of strings in ab in hj',
+                           ['Expected a list of strings in hj[ab]',
                             'but found: {\'cd\': []}', 'of type dict']),
                           ({'ab': [1, 2]}, 'kl',
-                           ['Expected a list of strings in ab in kl',
+                           ['Expected a list of strings in kl[ab]',
                             'but found element: 1', 'of type int']),
                           ])
 def test_check_dict_str_lst_nok(capsys: pytest.CaptureFixture[str],
@@ -498,7 +550,7 @@ def test_mline_part_nok2(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                            MainLineSpec, 'a')
-    errmsgs = ['Expected a list of strings in line in a',
+    errmsgs = ['Expected a list of strings in a.line',
                'but found element: 1', 'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
@@ -511,7 +563,7 @@ def test_mline_part_nok3(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
                                            MainLineSpec, 'a')
-    errmsgs = ['Expected a list of strings in name in columns in a',
+    errmsgs = ['Expected a list of strings in a.columns[name]',
                'but found element: 1', 'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
@@ -555,7 +607,7 @@ def test_check_linkedline_nok1(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         # pylint: disable-next=protected-access
         ExtractConfig._check_linkedline(bad_linked_lines, 'a')
-    errmsgs = ['Expected LinkedLineSpec for element in a, but found:',
+    errmsgs = ['Expected LinkedLineSpec for a[0], but found:',
                'of type MainLineSpec']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
@@ -570,7 +622,7 @@ def test_check_linkedline_nok2(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    errmsgs = ['Expected a list of strings in line in element in a',
+    errmsgs = ['Expected a list of strings in a[0].line',
                'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
@@ -585,9 +637,8 @@ def test_check_linkedline_nok3(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    errmsgs = [
-        'Expected a list of strings in linked_main_column in element in a',
-        'of type int']
+    errmsgs = ['Expected a list of strings in a[0].linked_main_column',
+               'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 
@@ -601,7 +652,7 @@ def test_check_linkedline_nok4(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
                                         'a')
-    errmsgs = ['Expected a list of strings in linked_column in element in a',
+    errmsgs = ['Expected a list of strings in a[0].linked_column',
                'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
 
@@ -617,7 +668,7 @@ def test_check_linkedline_nok5(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit):
         # pylint: disable-next=protected-access
         ExtractConfig._check_linkedline(bad_linked_lines, 'a')
-    errmsgs = ['Expected LinkedLineSpec for element in a',
+    errmsgs = ['Expected LinkedLineSpec for a[1]',
                'of type int']
     check_capsys(capsys=capsys, in_err=errmsgs)
 

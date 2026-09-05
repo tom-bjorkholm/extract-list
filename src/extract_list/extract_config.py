@@ -14,13 +14,14 @@ from config_as_json import CharEncodingValidator, Config, \
     PathOrStr, ReadOldConfiguration, RocfKeyMove, ValidationPlan, \
     WholeConfigValidationStep, ListIsOrderedValidator, \
     ValueTypeValidator, ListValueTypeValidator, \
-    string_to_enum_best_match, migrate_cfg
+    string_to_enum_best_match, member_path, migrate_cfg
 from tableio import FileAccess
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, get_outfile_capabilities, list_out_file_formats
 from extract_list.extract_config_params import ExtractConfigParams, \
     LinkedLineList, LinkedLineSpec, MainLineSpec, _mline_spec_from_dict, \
     _linked_line_from_json_array
+from extract_list.member_paths import element_path
 from extract_list.output_config import ExtractOutputConfig
 from extract_list.validators import ExtractedColumnNameValidator, \
     XmlColumnNameValidator
@@ -116,17 +117,20 @@ class ExtractConfig(ExtractConfigParams, Config):
     def __init__(self, from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[PathOrStr] = None,
                  auto_ch_hook: Optional[ConfigAutoChangeHook] = None,
-                 stderr_file: TextIO = sys.stderr) -> None:
+                 stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None) -> None:
         """Construct extract configuration object."""
         ExtractConfigParams.__init__(self, stderr_file=stderr_file)
         Config.__init__(self, from_json_data_text=from_json_data_text,
                         from_json_filename=from_json_filename,
-                        auto_ch_hook=auto_ch_hook, stderr_file=stderr_file)
-        self._check_self()
+                        auto_ch_hook=auto_ch_hook, stderr_file=stderr_file,
+                        member_name=member_name)
+        self._check_self(member_name)
 
     def _output_factory(self, from_json_data_text: Optional[str] = None,
                         from_json_filename: Optional[PathOrStr] = None,
-                        stderr_file: TextIO = sys.stderr) \
+                        stderr_file: TextIO = sys.stderr, *,
+                        member_name: Optional[str] = None) \
             -> ExtractOutputConfig:
         """Create nested output configuration from JSON."""
         capabilities = get_outfile_capabilities(
@@ -138,7 +142,8 @@ class ExtractConfig(ExtractConfigParams, Config):
                 border=self.outfile_border,
                 filtered_area=self.outfile_filtered_area),
             from_json_data_text=from_json_data_text,
-            from_json_filename=from_json_filename, stderr_file=stderr_file)
+            from_json_filename=from_json_filename, stderr_file=stderr_file,
+            member_name=member_name)
 
     def nested_configs(self) -> NestedConfigs:
         """Get nested configuration declarations."""
@@ -152,11 +157,13 @@ class ExtractConfig(ExtractConfigParams, Config):
         """Return old-file compatibility rules."""
         return ExtractConfigOldReader()
 
-    def _check_self(self) -> None:
+    def _check_self(self, member_name: Optional[str] = None) -> None:
         """Check that configuration is OK after reading from file or str."""
+        main_path = member_path(member_name, 'main_line')
         self._check_mainline_part(var=self.main_line, spectype=MainLineSpec,
-                                  varname='main_line')
-        self._check_linkedline(self.linked_lines, 'linked_lines')
+                                  varname=main_path)
+        self._check_linkedline(self.linked_lines,
+                               member_path(member_name, 'linked_lines'))
         self.cross_check_columns()
         self.cross_check_attrs()
 
@@ -216,9 +223,9 @@ class ExtractConfig(ExtractConfigParams, Config):
                   f'{var}\nof type {type(var).__name__}',
                   file=sys.stderr)
             sys.exit(1)
-        ExtractConfig._check_list_str(var.line, 'line in ' + varname)
+        ExtractConfig._check_list_str(var.line, member_path(varname, 'line'))
         ExtractConfig._check_dict_str_lst_str(var.columns,
-                                              'columns in ' + varname)
+                                              member_path(varname, 'columns'))
 
     @staticmethod
     def _check_linkedline(var: LinkedLineList | list[LinkedLineSpec],
@@ -229,15 +236,16 @@ class ExtractConfig(ExtractConfigParams, Config):
                   f'but found: {var}\nof type {type(var).__name__}',
                   file=sys.stderr)
             sys.exit(1)
-        for elem in var:
-            vname = 'element in ' + varname
+        for index, elem in enumerate(var):
+            vname = element_path(varname, index)
             ExtractConfig._check_mainline_part(var=elem,
                                                spectype=LinkedLineSpec,
                                                varname=vname)
-            ExtractConfig._check_list_str(elem.linked_main_column,
-                                          'linked_main_column in ' + vname)
+            ExtractConfig._check_list_str(
+                elem.linked_main_column,
+                member_path(vname, 'linked_main_column'))
             ExtractConfig._check_list_str(elem.linked_column,
-                                          'linked_column in ' + vname)
+                                          member_path(vname, 'linked_column'))
 
     @staticmethod
     def _check_dict_str_lst_str(var: dict[str, list[str]],
@@ -254,7 +262,7 @@ class ExtractConfig(ExtractConfigParams, Config):
                       f'but found key: {key}\nof type {type(key).__name__}',
                       file=sys.stderr)
                 sys.exit(1)
-            ExtractConfig._check_list_str(value, key + ' in ' + varname)
+            ExtractConfig._check_list_str(value, element_path(varname, key))
 
     @staticmethod
     def _check_list_str(var: list[str], varname: str) -> None:
@@ -343,10 +351,12 @@ class ExtractConfig(ExtractConfigParams, Config):
             WholeConfigValidationStep(ExtractedColumnNameValidator())
         ]
 
-    def as_json_string(self, stderr_file: TextIO = sys.stderr) -> str:
+    def as_json_string(self, stderr_file: TextIO = sys.stderr, *,
+                       member_name: Optional[str] = None) -> str:
         """Get JSON string representing this object."""
         if isinstance(self.main_line, dict):
-            return super().as_json_string(stderr_file=stderr_file)
+            return super().as_json_string(stderr_file=stderr_file,
+                                          member_name=member_name)
         adjusted = deepcopy(self)
         # intentionally violating typing to get wanted JSON
         adjusted.main_line = cast(MainLineSpec, self.main_line.__dict__)
@@ -354,7 +364,8 @@ class ExtractConfig(ExtractConfigParams, Config):
         for i in self.linked_lines:
             # intentionally violating typing to get wanted JSON
             adjusted.linked_lines.append(cast(LinkedLineSpec, i.__dict__))
-        return adjusted.as_json_string(stderr_file=stderr_file)
+        return adjusted.as_json_string(stderr_file=stderr_file,
+                                       member_name=member_name)
 
 
 def migrate_cfg_func(in_filename: str, out_filename: str,

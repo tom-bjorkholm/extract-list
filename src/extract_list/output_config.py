@@ -26,7 +26,8 @@ class ExtractOutputConfig(TioJsonConfig):
                  from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[PathOrStr] = None,
                  allowed_formats: Optional[list[str]] = None,
-                 stderr_file: TextIO = sys.stderr) -> None:
+                 stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None) -> None:
         """Create output settings or read them from a JSON source."""
         internal = format_name is not None and \
             is_internal_out_file_format(format_name)
@@ -38,13 +39,13 @@ class ExtractOutputConfig(TioJsonConfig):
                          include_all_options=include_all_options,
                          from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
-                         stderr_file=stderr_file)
+                         stderr_file=stderr_file, member_name=member_name)
         if internal and from_json_data_text is None and \
                 from_json_filename is None:
             assert format_name is not None
             self.format_name = format_name
             self.implementation = implementation
-            self.validate(stderr_file=stderr_file)
+            self.validate(stderr_file=stderr_file, member_name=member_name)
 
     def _format_names(self) -> list[str]:
         """Return internal output formats allowed for this configuration."""
@@ -86,9 +87,12 @@ class ExtractOutputConfig(TioJsonConfig):
         ]
 
     @override
-    def validate(self, stderr_file: TextIO) -> None:
+    def validate(self, stderr_file: TextIO, *,
+                 member_name: Optional[str] = None) -> None:
         """Validate internal output or the TableIO output configuration."""
         if is_internal_out_file_format(self.format_name):
-            Config.validate(self, stderr_file=stderr_file)
+            Config.validate(self, stderr_file=stderr_file,
+                            member_name=member_name)
             return
-        TioJsonConfig.validate(self, stderr_file=stderr_file)
+        TioJsonConfig.validate(self, stderr_file=stderr_file,
+                               member_name=member_name)
