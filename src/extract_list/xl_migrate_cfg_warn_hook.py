@@ -15,7 +15,7 @@ class XlMigrateCfgWarnHook(MigrateCfgWarnHook):
     def migrate_instructions(cls) -> str:
         """Return instructions for migrating the configuration file."""
         python = 'python3'
-        if sys.platform.lower() == 'win32' or sys.platform.lower() == 'nt':
+        if sys.platform == 'win32':
             python = 'python'
         txt = f'Use "{python} -m extract_list migrate-cfg" to migrate the\n'
         txt += 'configuration file to the new format.\n\n'

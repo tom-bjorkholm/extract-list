@@ -429,8 +429,7 @@ def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:
 
 @pytest.mark.parametrize('platform, python_cmd',
                          [('darwin', 'python3'),
-                          ('win32', 'python'),
-                          ('nt', 'python')])
+                          ('win32', 'python')])
 def test_migrate_cmd_name(capsys: pytest.CaptureFixture[str],
                           monkeypatch: pytest.MonkeyPatch, platform: str,
                           python_cmd: str) -> None:

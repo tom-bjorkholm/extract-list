@@ -6,6 +6,7 @@
 
 from tempfile import TemporaryDirectory
 from copy import deepcopy
+from pathlib import Path
 from typing import Optional
 import pytest
 from config_as_json import JsonType
@@ -171,8 +172,8 @@ def dict_add(thedict: dict[str, list[str]], dictkey: str, addtxt: str) -> None:
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def test_xml_output_2(capsys: pytest.CaptureFixture[str],
                       monkeypatch: pytest.MonkeyPatch, enc: str, dat: Data,
-                      attr: list[str], key: Optional[str],
-                      res: JsonType) -> None:
+                      attr: list[str], key: Optional[str], res: JsonType,
+                      tmp_path: Path) -> None:
     """Test xml output with mocking."""
     calls: dict[str, list[str]] = {}
 
@@ -203,7 +204,7 @@ def test_xml_output_2(capsys: pytest.CaptureFixture[str],
     if key is not None:
         cfg.column_name_for_key = key
     cfg.out_xml_attributes = attr
-    handle_xml_output(data=dat, filename='/tmp/a.xml', cfg=cfg)
+    handle_xml_output(data=dat, filename=str(tmp_path / 'a.xml'), cfg=cfg)
     assert count == 1
     if len(attr) != 0:
         assert len(calls) == 1
