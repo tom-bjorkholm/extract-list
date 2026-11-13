@@ -7,7 +7,7 @@
 from typing import Optional, Tuple, Generator, cast, Sequence
 import sys
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import cmp_to_key
 from config_as_json import JsonType
 from extract_list.extract_config import ExtractConfig
@@ -247,6 +247,33 @@ class RowCompare:  # pylint: disable=too-few-public-methods
         """Construct object that will be used to compare rows."""
         self.cols: list[str] = cols
 
+    def _timedelta_compare(self, left: Value, right: Value) -> int:
+        """Compare a timedelta value to another value.
+
+        The other value can be timedelta or not.
+        """
+        assert isinstance(left, timedelta) or isinstance(right, timedelta)
+        if isinstance(left, (int, float)):
+            left = timedelta(seconds=left)
+        if isinstance(right, (int, float)):
+            right = timedelta(seconds=right)
+        if isinstance(left, (str, datetime)) or \
+                isinstance(right, (str, datetime)):
+            s_left = str(left)
+            s_right = str(right)
+            if s_left < s_right:
+                return -1
+            if s_right < s_left:
+                return 1
+            return 0
+        assert isinstance(left, timedelta)
+        assert isinstance(right, timedelta)
+        if left < right:
+            return -1
+        if right < left:
+            return 1
+        return 0
+
     def compare(self,  # pylint: disable=too-many-return-statements
                 left_row: Row, right_row: Row) -> int:
         """Compare two Rows."""
@@ -261,6 +288,12 @@ class RowCompare:  # pylint: disable=too-few-public-methods
                 continue
             assert left is not None  # keep mypy happy
             assert right is not None  # keep mypy happy
+            if isinstance(left, timedelta) or isinstance(right, timedelta):
+                tdcmp = self._timedelta_compare(left, right)
+                if tdcmp != 0:
+                    return tdcmp
+            assert not isinstance(left, timedelta)
+            assert not isinstance(right, timedelta)
             if isinstance(left, (str, datetime)) or \
                isinstance(right, (str, datetime)):
                 # keep mypy happy

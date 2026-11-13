@@ -5,10 +5,10 @@
 # MIT License
 
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum, auto
 
-type Value = Optional[str | int | bool | float | datetime]
+type Value = Optional[str | int | bool | float | datetime | timedelta]
 type Row = dict[str, Value]
 type Data = list[Row]
 
