@@ -108,6 +108,50 @@ class ExtractedColumnNameValidator(WholeConfigValidator):
         _raise_invalid_configuration(msg, stderr_file)
 
 
+def _unknown_references(config: ExtractConfigParams, extracted: list[str],
+                        member_name: Optional[str]) -> list[str]:
+    """Return one problem per listed column that is not extracted."""
+    references = {'column_order': config.column_order,
+                  'order_rows_by': config.order_rows_by,
+                  'out_xml_attributes': config.out_xml_attributes}
+    return [f'{member_path(member_name, member)} includes column "{name}", '
+            'but that column is not extracted'
+            for member, names in references.items() for name in names
+            if name not in extracted]
+
+
+def _unordered_columns(config: ExtractConfigParams, extracted: list[str],
+                       member_name: Optional[str]) -> list[str]:
+    """Return one problem per extracted column missing in column_order."""
+    order_path = member_path(member_name, 'column_order')
+    return [f'extracted column "{name}" is missing in {order_path}'
+            for name in extracted if name not in config.column_order]
+
+
+# pylint: disable-next=too-few-public-methods
+class ColumnReferenceValidator(WholeConfigValidator):
+    """Validate that column lists refer to exactly the extracted columns.
+
+    column_order must hold every extracted column and nothing else, while
+    order_rows_by and out_xml_attributes may only hold extracted columns.
+    All problems are reported in one message, so that a user fixing the
+    configuration sees everything that is wrong at once.
+    """
+
+    def validate(self, config: Config, stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None) -> None:
+        """Validate column references in an extract-list config."""
+        extract_config = _extract_config_params(config, stderr_file)
+        extracted = list(_column_paths(extract_config, stderr_file,
+                                       member_name))
+        problems = _unknown_references(extract_config, extracted, member_name)
+        problems += _unordered_columns(extract_config, extracted, member_name)
+        if not problems:
+            return
+        msg = 'Invalid configuration: ' + '; '.join(problems) + '.'
+        _raise_invalid_configuration(msg, stderr_file)
+
+
 # pylint: disable-next=too-few-public-methods
 class XmlColumnNameValidator(MemberValidator):
     """Validate XML output column names."""

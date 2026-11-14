@@ -134,7 +134,7 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
                                         'Street', 'Street number', 'key col']
         self.order_rows_by: list[str] = []
-        self.out_xml_attributes = ['What']
+        self.out_xml_attributes: list[str] = ['What']
 
     def output_encoding(self) -> str:
         """Get the configured output character encoding."""

@@ -128,6 +128,9 @@ def test_handle_output_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disabl
     cfg.output.format_name = typ
     cfg.output.character_encoding = enc
     cfg.column_order = list(dat[0].keys())
+    cfg.main_line.columns = {name: [name] for name in cfg.column_order}
+    cfg.linked_lines = []
+    cfg.include_key = False
     cfg.out_xml_attributes = []
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a'

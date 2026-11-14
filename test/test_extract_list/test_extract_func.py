@@ -7,11 +7,13 @@
 from copy import deepcopy
 from tempfile import TemporaryDirectory
 from collections.abc import Callable
+from pathlib import Path
 import pytest
 from extract_list.extract_func import extract_func
 from extract_list.extract_config import ExtractConfig
 from extract_list.config_enums import InFileType
 from extract_list.commontypes import Data, Row
+from .bogus_cfg import write_bogus_cfg
 from .example_data import ExampleData
 from .test_handle_output import read_csv, read_excel, \
     read_json
@@ -114,3 +116,16 @@ def test_extract_func_ok1(capsys: pytest.CaptureFixture[str],  # pylint: disable
         assert num_calls['carrot'][345] == 1
         assert num_calls['orange'][345] == 1
         assert num_calls['orange'][234] == 1
+
+
+def test_extract_func_bad_cfg(capsys: pytest.CaptureFixture[str],
+                              tmp_path: Path) -> None:
+    """Test that an invalid configuration file gives exit code 1."""
+    cfg_file = tmp_path / 'bad.cfg'
+    write_bogus_cfg(cfg_file)
+    ret = extract_func(in_file_name=str(tmp_path / 'in.json'),
+                       cfg_file_name=str(cfg_file),
+                       out_file_name=str(tmp_path / 'out.csv'))
+    assert ret == 1
+    errmsg = 'column_order includes column "Bogus", but that column is not'
+    check_capsys(capsys=capsys, in_err=errmsg)

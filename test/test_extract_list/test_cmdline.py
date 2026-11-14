@@ -19,7 +19,9 @@ def test_help_main(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
     with pytest.raises(SystemExit):
         _ = extract_cmd(cmd)
     msgs = [
-        'usage: extract_list [-h] {cfg-example,extract,version,migrate-cfg}',
+        'usage: extract_list [-h]',
+        '{cfg-example,extract,version,migrate-cfg,editcfg,edit-cfg}',
+        'Edit a configuration file in an interactive editor',
         'Extract data from an input file in JSON or XML format',
         'Generate example configuration file',
         'Extract list of columns of data from JSON or XML',
@@ -58,6 +60,23 @@ def test_help_example(capsys: pytest.CaptureFixture[str], hflag: str) -> None:
         '-t {CSV,csv,Csv,Excel,',
         '--typeofoutput {CSV,csv,Csv,Excel,',
         '-o, --output OUTPUT'
+    ]
+    check_capsys(capsys=capsys, in_out=msgs)
+
+
+@pytest.mark.parametrize('hflag', ['-h', '--help'])
+@pytest.mark.parametrize('subcmd', ['editcfg', 'edit-cfg'])
+def test_help_editcfg(capsys: pytest.CaptureFixture[str], hflag: str,
+                      subcmd: str) -> None:
+    """Test help printout of editcfg sub-command and its alias."""
+    with pytest.raises(SystemExit):
+        _ = extract_cmd([subcmd, hflag])
+    msgs = [
+        'usage: extract_list editcfg [-h] -i INPUT [-o OUTPUT]',
+        'Edit a configuration file in an interactive editor',
+        'The editor opens in a window where there is a display',
+        '-i, --input INPUT', '-o, --output OUTPUT', '--ui {',
+        'CFG_EDIT_CFG_JSON'
     ]
     check_capsys(capsys=capsys, in_out=msgs)
 
@@ -199,8 +218,8 @@ def test_cmdline_ok4(capsys: pytest.CaptureFixture[str],
 @pytest.mark.parametrize('line,errmsgs',
                          [('-o out.xlsx -c cfg.cfg -i in.json',
                            ['error: argument subparser_name: invalid choice',
-                            'usage: extract_list [-h] {cfg-example,extract,'
-                            'version,migrate-cfg}',
+                            '{cfg-example,extract,version,migrate-cfg,'
+                            'editcfg,edit-cfg}',
                             "invalid choice: 'out.xlsx' (choose from"]),
                           ('extract -i in.jspon -o out.xlsx -c a.cfg -b',
                            ['extract_list: error: unrecognized ' +

@@ -5,7 +5,7 @@
 # MIT License
 
 from copy import deepcopy
-from typing import cast
+from typing import Optional, cast
 import sys
 import warnings
 import pytest
@@ -222,7 +222,7 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
                                 main: dict[str, list[str]], rworder: list[str],
                                 linked: list[LinkedLineSpec],
                                 keyinc: bool) -> None:
-    """Test OK case(s) of cross_check_columns."""
+    """Test OK case(s) of column reference validation."""
     col_order: list[str] = deepcopy(list(main.keys()))
     for elem in linked:
         col_order += deepcopy(list(elem.columns.keys()))
@@ -234,7 +234,8 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
     cfg.linked_lines = linked
     cfg.column_order = col_order
     cfg.order_rows_by = rworder
-    cfg.cross_check_columns()
+    cfg.out_xml_attributes = []
+    cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
 
@@ -249,7 +250,7 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
                                'linked_main_column': [],
                                'expand_at': []
                            })], ['a', 'b', 'd'], [],
-                           'Extracted column "c" is missing'),
+                           'extracted column "c" is missing in column_order'),
                           (MainLineSpec(data={'line': [],
                                               'columns': {'a': [], 'b': []},
                                               'expand_at': []}),
@@ -260,7 +261,7 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
                                'linked_main_column': [],
                                'expand_at': []
                            })], ['a', 'c', 'd'], [],
-                           'Extracted column "b" is missing'),
+                           'extracted column "b" is missing in column_order'),
                           (MainLineSpec(data={'line': [],
                                               'columns': {'a': [], 'b': []},
                                               'expand_at': []}),
@@ -271,7 +272,8 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
                                'linked_main_column': [],
                                'expand_at': []})],
                            ['a', 'b', 'k', 'c', 'd'], [],
-                           'includes column "k"\nbut that column is not ex'),
+                           'column_order includes column "k", but that '
+                           'column is not extracted'),
                           (MainLineSpec(data={'line': [],
                                               'columns': {'a': [], 'b': []},
                                               'expand_at': []}),
@@ -282,20 +284,42 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
                                'linked_main_column': [],
                                'expand_at': []
                            })], ['a', 'b', 'c', 'd'], ['c', 'b', 'f'],
-                           'order rows by includes column "f"\nbut that')])
+                           'order_rows_by includes column "f", but that '
+                           'column is not extracted')])
 def test_cross_check_columns_nok(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
                                  main: MainLineSpec,
                                  link: list[LinkedLineSpec], col: list[str],
                                  orw: list[str], errmsg: str) -> None:
-    """Test not OK case(s) of cross_check_columns."""
+    """Test not OK case(s) of column reference validation."""
     cfg = ExtractConfig()
     cfg.main_line = main
     cfg.linked_lines = link
     cfg.column_order = col
     cfg.order_rows_by = orw
     cfg.include_key = False
-    with pytest.raises(SystemExit):
-        cfg.cross_check_columns()
+    cfg.out_xml_attributes = []
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
+    check_capsys(capsys=capsys, in_err=errmsg)
+
+
+@pytest.mark.parametrize('member, prefix', [(None, ''),
+                                            ('extract', 'extract.')])
+def test_column_refs_all(capsys: pytest.CaptureFixture[str],
+                         member: Optional[str], prefix: str) -> None:
+    """Test that every column reference problem is reported at once."""
+    cfg = ExtractConfig()
+    cfg.column_order = ['What', 'Bogus', 'Customer name', 'Street',
+                        'Street number', 'key col']
+    cfg.order_rows_by = ['Sorter']
+    cfg.out_xml_attributes = ['Attr']
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr, member_name=member)
+    errmsg = [f'{prefix}column_order includes column "Bogus"',
+              f'{prefix}order_rows_by includes column "Sorter"',
+              f'{prefix}out_xml_attributes includes column "Attr"',
+              'extracted column "How many" is missing in '
+              f'{prefix}column_order']
     check_capsys(capsys=capsys, in_err=errmsg)
 
 
@@ -313,6 +337,9 @@ def test_check_extr_uniq_col_ok1(capsys: pytest.CaptureFixture[str]) -> None:
         for cnum in range(10, 13):
             lls.columns['c' + str(cnum) + '_' + str(ival)] = ['d', str(cnum)]
         cfg.linked_lines.append(lls)
+    cfg.column_order = [name for lls in cfg.linked_lines
+                        for name in lls.columns] + ['a', 'b', 'key col']
+    cfg.out_xml_attributes = []
     cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
@@ -678,29 +705,29 @@ def test_check_linkedline_nok5(capsys: pytest.CaptureFixture[str]) -> None:
                           ['How many', 'Street number']])
 def test_cross_check_attrs_ok(capsys: pytest.CaptureFixture[str],
                               attr: list[str]) -> None:
-    """Test OK case of cross_check_attrs."""
+    """Test OK case of out_xml_attributes reference validation."""
     cfg = ExtractConfig()
     cfg.out_xml_attributes = attr
-    cfg.cross_check_attrs()
+    cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
 
 @pytest.mark.parametrize('attr, errmsgs',
                          [(['Where'],
-                           ['Attribute name "Where" in out_xml_attributes']),
+                           ['out_xml_attributes includes column "Where"']),
                           (['Road'],
-                           ['Attribute name "Road" in out_xml_attributes']),
+                           ['out_xml_attributes includes column "Road"']),
                           (['How many', 'Street number', 'abc'],
-                           ['Attribute name "abc" in out_xml_attributes'])])
+                           ['out_xml_attributes includes column "abc"'])])
 def test_cross_check_attrs_nok(capsys: pytest.CaptureFixture[str],
                                attr: list[str], errmsgs: list[str]) -> None:
-    """Test OK case of cross_check_attrs."""
+    """Test not OK case of out_xml_attributes reference validation."""
     cfg = ExtractConfig()
     cfg.out_xml_attributes = attr
-    with pytest.raises(SystemExit):
-        cfg.cross_check_attrs()
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr)
     checkmsg = deepcopy(errmsgs)
-    checkmsg.append('but no column with that name extracted')
+    checkmsg.append('but that column is not extracted')
     check_capsys(capsys=capsys, in_err=checkmsg)
 
 

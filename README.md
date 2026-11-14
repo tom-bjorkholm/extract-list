@@ -25,7 +25,9 @@ This small Python application:
     - LaTeX
 
 How this is done is governed by a configuration file. The application can
-create example configuration files with accompanying description text files.
+create example configuration files with accompanying description text files,
+and open a configuration file in an editor that explains every setting and
+checks the values before saving (the `editcfg` sub-command).
 
 ## Using it
 
@@ -111,7 +113,7 @@ the built and installed application in the virtual environment `./venv`.
 
 ## Test summary
 
-- Test result: 1282 passed in 34s
+- Test result: 1309 passed in 37s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

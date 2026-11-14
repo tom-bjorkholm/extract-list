@@ -23,8 +23,8 @@ from extract_list.extract_config_params import ExtractConfigParams, \
     _linked_line_from_json_array
 from extract_list.member_paths import element_path
 from extract_list.output_config import ExtractOutputConfig
-from extract_list.validators import ExtractedColumnNameValidator, \
-    XmlColumnNameValidator
+from extract_list.validators import ColumnReferenceValidator, \
+    ExtractedColumnNameValidator, XmlColumnNameValidator
 
 
 def _old_0214_format_name(value: object) -> object:
@@ -164,53 +164,12 @@ class ExtractConfig(ExtractConfigParams, Config):
                                   varname=main_path)
         self._check_linkedline(self.linked_lines,
                                member_path(member_name, 'linked_lines'))
-        self.cross_check_columns()
-        self.cross_check_attrs()
-
-    def _extracted_columns(self) -> list[str]:
-        """Get list names of all extracted columns."""
-        extracted_cols: list[str] = []
-        for link in self.linked_lines:
-            extracted_cols += link.columns.keys()
-        extracted_cols += self.main_line.columns.keys()
-        if self.include_key:
-            extracted_cols.append(self.column_name_for_key)
-        return extracted_cols
 
     def get_order_rows_by(self) -> list[str]:
         """Get list of columns to use for sorting rows."""
         if self.order_rows_by:
             return self.order_rows_by
         return self.column_order
-
-    def cross_check_attrs(self) -> None:
-        """Check that out_xml_attributes refer to existing 'columns'."""
-        extracted_cols = self._extracted_columns()
-        for att in self.out_xml_attributes:
-            if att not in extracted_cols:
-                print(f'Attribute name "{att}" in out_xml_attributes\n' +
-                      'but no column with that name extracted',
-                      file=sys.stderr)
-                sys.exit(1)
-
-    def cross_check_columns(self) -> None:
-        """Do cross-check column order to extracted columns."""
-        extracted_cols = self._extracted_columns()
-        for col in self.column_order:
-            if col not in extracted_cols:
-                print(f'column order includes column "{col}"\n' +
-                      'but that column is not extracted', file=sys.stderr)
-                sys.exit(1)
-        for col in extracted_cols:
-            if col not in self.column_order:
-                print(f'Extracted column "{col}" is missing in column_order',
-                      file=sys.stderr)
-                sys.exit(1)
-        for col in self.order_rows_by:
-            if col not in extracted_cols:
-                print(f'order rows by includes column "{col}"\n' +
-                      'but that column is not extracted', file=sys.stderr)
-                sys.exit(1)
 
     @staticmethod
     def _check_mainline_part(var: MainLineSpec | LinkedLineSpec,
@@ -348,7 +307,8 @@ class ExtractConfig(ExtractConfigParams, Config):
             MemberValidationStep(['column_order'], unique_val),
             MemberValidationStep(['infile_encoding'], CharEncodingValidator()),
             MemberValidationStep(['column_order'], XmlColumnNameValidator()),
-            WholeConfigValidationStep(ExtractedColumnNameValidator())
+            WholeConfigValidationStep(ExtractedColumnNameValidator()),
+            WholeConfigValidationStep(ColumnReferenceValidator())
         ]
 
     def as_json_string(self, stderr_file: TextIO = sys.stderr, *,

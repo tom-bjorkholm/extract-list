@@ -216,13 +216,13 @@ def _set_config_value(config: ExtractConfig, member_path: str,
                           ('column_order', [7], InvalidConfiguration,
                            ['Value 7 for column_order at index 0',
                             'is not of type str.']),
-                          ('column_order', ['What'], SystemExit,
-                           ['Extracted column "Customer name" is missing']),
+                          ('column_order', ['What'], InvalidConfiguration,
+                           ['extracted column "Customer name" is missing']),
                           ('column_order',
                            ['What', 'How many', 'Customer name',
                             'Street', 'Street number', 'key col', 'abc'],
-                           SystemExit,
-                           ['column order includes column "abc"',
+                           InvalidConfiguration,
+                           ['column_order includes column "abc"',
                             'but that column is not extracted']),
                           ('column_order',
                            ['What', 'How many', 'What', 'Customer name',
@@ -233,14 +233,15 @@ def _set_config_value(config: ExtractConfig, member_path: str,
                           ('out_xml_attributes', 'What',
                            InvalidConfiguration,
                            'Value for out_xml_attributes is not a list.'),
-                          ('out_xml_attributes', ['nothing'], SystemExit,
-                           ['Attribute name "nothing" in out_xml_attributes',
-                            'but no column with that name extracted']),
+                          ('out_xml_attributes', ['nothing'],
+                           InvalidConfiguration,
+                           ['out_xml_attributes includes column "nothing"',
+                            'but that column is not extracted']),
                           ('output.csv', 'dial', TypeError,
                            ['Nested Config member output.csv',
                             'must be TioJsonCsvConfig']),
-                          ('order_rows_by', ['Whatt'], SystemExit,
-                           ['order rows by includes column "Whatt"',
+                          ('order_rows_by', ['Whatt'], InvalidConfiguration,
+                           ['order_rows_by includes column "Whatt"',
                             'but that column is not extracted']),
                           ('order_rows_by', 'What', InvalidConfiguration,
                            'Value for order_rows_by is not a list.'),
@@ -381,38 +382,36 @@ def test_current_output_wins_over_old_keys(
     check_capsys(capsys=capsys, in_err=msgs)
 
 
-def test_extract_config_err2(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK variation 2 of ExtractConfig."""
-    cfg = ExtractConfig(stderr_file=sys.stderr)
-    cfg.main_line.columns['Cost'] = ['item info', 'cost']
-    txt = cfg.as_json_string(stderr_file=sys.stderr)
-    with pytest.raises(SystemExit):
-        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
-    check_capsys(capsys=capsys,
-                 in_err='Extracted column "Cost" is missing in column_order')
+@pytest.mark.parametrize('where, key, value, msg',
+                         [(('main_line', 'columns'), 'Cost',
+                           ['item info', 'cost'],
+                           'extracted column "Cost" is missing in '
+                           'column_order'),
+                          (('linked_lines', 0, 'columns'), 'Zip', ['zip'],
+                           'extracted column "Zip" is missing in '
+                           'column_order'),
+                          ((), 'column_order',
+                           ['What', 'How many', 'Customer name', 'Street',
+                            'Street number', 'key col', 'Zip'],
+                           'column_order includes column "Zip", but that '
+                           'column is not extracted')])
+def test_extract_config_err2(capsys: pytest.CaptureFixture[str],
+                             where: tuple[str | int, ...], key: str,
+                             value: list[str], msg: str) -> None:
+    """Test that JSON with inconsistent column references is refused.
 
-
-def test_extract_config_err3(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK variation 3 of ExtractConfig."""
-    cfg = ExtractConfig(stderr_file=sys.stderr)
-    cfg.linked_lines[0].columns['Zip'] = ['zip']
-    txt = cfg.as_json_string(stderr_file=sys.stderr)
-    with pytest.raises(SystemExit):
-        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
-    check_capsys(capsys=capsys,
-                 in_err='Extracted column "Zip" is missing in column_order')
-
-
-def test_extract_config_err4(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK variation 4 of ExtractConfig."""
-    cfg = ExtractConfig()
-    cfg.column_order.append('Zip')
-    txt = cfg.as_json_string(stderr_file=sys.stderr)
-    with pytest.raises(SystemExit):
-        _ = ExtractConfig(from_json_data_text=txt, stderr_file=sys.stderr)
-    msgs = ['column order includes column "Zip"',
-            'but that column is not extracted']
-    check_capsys(capsys=capsys, in_err=msgs)
+    The JSON is changed directly, as writing it from a configuration
+    object validates it first.
+    """
+    data = json_loads(ExtractConfig().as_json_string(stderr_file=sys.stderr))
+    target = data
+    for step in where:
+        target = target[step]
+    target[key] = value
+    with pytest.raises(InvalidConfiguration):
+        _ = ExtractConfig(from_json_data_text=json_dumps(data),
+                          stderr_file=sys.stderr)
+    check_capsys(capsys=capsys, in_err=msg)
 
 
 def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:

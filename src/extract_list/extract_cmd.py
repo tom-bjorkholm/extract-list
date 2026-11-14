@@ -10,6 +10,8 @@ from copy import deepcopy
 from typing import Optional
 import argparse
 import argcomplete
+from edit_cfg_json import available_uis
+from extract_list.edit_cfg import edit_cfg_func
 from extract_list.generate_cfg import generate_example_cfg, \
     get_types_of_cfg
 from extract_list.config_enums import list_out_file_formats
@@ -36,6 +38,12 @@ def do_extract_cmd(args: argparse.Namespace) -> int:
                         cfg_file_name=cfgfilename)
 
 
+def edit_cfg_cmd(args: argparse.Namespace) -> int:
+    """Edit configuration file in an interactive editor."""
+    return edit_cfg_func(in_file=args.input, out_file=args.output,
+                         ui_name=args.ui, stderr_file=sys.stderr)
+
+
 def version_cmd(_: argparse.Namespace) -> int:
     """Print version information."""
     vers = XlVersion()
@@ -59,6 +67,8 @@ files with description (.txt) files are generated.
 description (.txt) files.
 (3) Find an example that is close to what you want to achieve.
 (4) Modify that configuration file to achieve what you want to achieve.
+The "editcfg" sub-command opens it in an editor that explains every
+setting and checks the values (a plain text editor works too).
 (5) Use the "extract" sub-command to extract data from input (JSON or XML)
 and output it as a list according to your modified configuration
 file.
@@ -81,6 +91,18 @@ as command line arguments.
 The command can also generate a few example configuration files.
 When generating an example configuration file the output file name
 switch gives the name of the generated configuration file.
+'''
+
+EDITOR_DESCRIPTION = '''
+The editor opens in a window where there is a display, and in the terminal
+where there is none. The terminal editor needs the optional package
+edit-cfg-json-textual (pip install "extract-list[textual]"). Use --ui to
+choose. Press F1 in the editor for an explanation of the selected setting.
+Key combinations and backup files of the editor are configured in the
+settings files of edit-cfg-json: the file named by environment variable
+CFG_EDIT_CFG_JSON, else $HOME/.edit-cfg-json-tk.cfg or
+$HOME/.edit-cfg-json-textual.cfg for that editor, else
+$HOME/.edit-cfg-json.cfg.
 '''
 
 SEE_MAIN_HELP = '''
@@ -167,6 +189,25 @@ def extract_args(subparsers: SubParseAct) -> None:
                                 required=True)
 
 
+def edit_cfg_args(subparsers: SubParseAct) -> None:
+    """Add arguments for edit configuration file sub-command."""
+    edit_help = 'Edit a configuration file in an interactive editor that '
+    edit_help += 'explains every setting and checks the values.'
+    edit_parser = subparsers.add_parser('editcfg', aliases=['edit-cfg'],
+                                        help=edit_help, epilog=USAGE_ORDER,
+                                        description=edit_help +
+                                        EDITOR_DESCRIPTION + SEE_MAIN_HELP)
+    edit_parser.set_defaults(func=edit_cfg_cmd)
+    edit_parser.add_argument('-i', '--input', required=True,
+                             help='Name of configuration file to edit.')
+    o_help = 'Name of configuration file to save to, if not the input file.'
+    edit_parser.add_argument('-o', '--output', default=None, help=o_help)
+    ui_help = 'User interface to edit in, instead of the best one for '
+    ui_help += 'this machine.'
+    edit_parser.add_argument('--ui', default=None, choices=available_uis(),
+                             help=ui_help)
+
+
 def version_args(subparsers: SubParseAct) -> None:
     """Add arguments for version sub-command."""
     version_help = 'Only print versions of extract_list '
@@ -200,6 +241,7 @@ def extract_cmd(arguments: Optional[list[str]] = None) -> int:
     extract_args(subparsers)
     version_args(subparsers)
     migrate_cfg_args(subparsers)
+    edit_cfg_args(subparsers)
     argcomplete.autocomplete(parser)
     args = parser.parse_args(args=fixed_args)
     ret = args.func(args)
