@@ -15,11 +15,12 @@ import pytest
 from config_as_json import Config, ConfigPath
 from edit_cfg_json import NoEditorError, Settings, UiBackend, chosen_ui, \
     editor_model
+from edit_cfg_json.descriptions import INFERRED_TEXT
 from extract_list.cfg_descriptions import EVERY, extract_descriptions
 from extract_list import edit_cfg
 from extract_list.extract_cmd import extract_cmd
 from extract_list.extract_config import ExtractConfig
-from .bogus_cfg import write_bogus_cfg
+from .bogus_cfg import write_bogus_cfg, write_cfg_without
 from .check_capsys import check_capsys
 
 
@@ -50,6 +51,14 @@ def test_every_row_described() -> None:
     model = editor_model(_populated_config(),
                          descriptions=extract_descriptions())
     assert [row.path for row in model.rows if not row.description] == []
+
+
+def test_every_type_declared() -> None:
+    """Test that no member has its type taken from its value only."""
+    model = editor_model(_populated_config(),
+                         descriptions=extract_descriptions())
+    assert [row.path for row in model.rows
+            if INFERRED_TEXT in row.description] == []
 
 
 def test_no_unused_selector() -> None:
@@ -100,6 +109,21 @@ def test_editcfg_invalid(capsys: pytest.CaptureFixture[str],
     assert ret == 1
     msgs = ['cannot be opened', 'column_order includes column "Bogus"']
     check_capsys(capsys=capsys, in_err=msgs)
+
+
+@pytest.mark.parametrize('linked, spec', [(False, 'main_line'),
+                                          (True, 'linked_lines[0]')])
+@pytest.mark.parametrize('key', ['line', 'columns', 'expand_at'])
+def test_editcfg_missing_key(capsys: pytest.CaptureFixture[str],
+                             tmp_path: Path, linked: bool, spec: str,
+                             key: str) -> None:
+    """Test that a key missing in a line specification is named in full."""
+    write_cfg_without(tmp_path / 'bad.cfg', linked, key)
+    ret = extract_cmd(['editcfg', '-i', str(tmp_path / 'bad.cfg'), '--ui',
+                       'dump'])
+    assert ret == 1
+    check_capsys(capsys=capsys,
+                 in_err=f'No value for {spec}.{key} in JSON data')
 
 
 def test_editcfg_bad_ui(capsys: pytest.CaptureFixture[str]) -> None:

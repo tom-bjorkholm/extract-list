@@ -4,24 +4,21 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, TextIO, cast
+from typing import Optional, TextIO
 from enum import Enum
 import sys
-from copy import deepcopy
 from config_as_json import CharEncodingValidator, Config, \
     ConfigAutoChangeHook, ConfigNesting, ConfigNestingKind, \
     ConfigPath, MemberValidationStep, NestedConfigs, ParseConverter, \
     PathOrStr, ReadOldConfiguration, RocfKeyMove, ValidationPlan, \
     WholeConfigValidationStep, ListIsOrderedValidator, \
     ValueTypeValidator, ListValueTypeValidator, \
-    string_to_enum_best_match, member_path, migrate_cfg
+    string_to_enum_best_match, migrate_cfg
 from tableio import FileAccess
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, get_outfile_capabilities, list_out_file_formats
 from extract_list.extract_config_params import ExtractConfigParams, \
-    LinkedLineList, LinkedLineSpec, MainLineSpec, _mline_spec_from_dict, \
-    _linked_line_from_json_array
-from extract_list.member_paths import element_path
+    LinkedLineSpec, MainLineSpec
 from extract_list.output_config import ExtractOutputConfig
 from extract_list.validators import ColumnReferenceValidator, \
     ExtractedColumnNameValidator, XmlColumnNameValidator
@@ -125,7 +122,6 @@ class ExtractConfig(ExtractConfigParams, Config):
                         from_json_filename=from_json_filename,
                         auto_ch_hook=auto_ch_hook, stderr_file=stderr_file,
                         member_name=member_name)
-        self._check_self(member_name)
 
     def _output_factory(self, from_json_data_text: Optional[str] = None,
                         from_json_filename: Optional[PathOrStr] = None,
@@ -150,20 +146,16 @@ class ExtractConfig(ExtractConfigParams, Config):
         return {
             'output': ConfigNesting(kind=ConfigNestingKind.MEMBER,
                                     config_type=ExtractOutputConfig,
-                                    factory_function=self._output_factory)
+                                    factory_function=self._output_factory),
+            'main_line': ConfigNesting(kind=ConfigNestingKind.MEMBER,
+                                       config_type=MainLineSpec),
+            'linked_lines': ConfigNesting(kind=ConfigNestingKind.LIST_ELEMENT,
+                                          config_type=LinkedLineSpec)
         }
 
     def _get_read_old_config(self) -> ReadOldConfiguration:
         """Return old-file compatibility rules."""
         return ExtractConfigOldReader()
-
-    def _check_self(self, member_name: Optional[str] = None) -> None:
-        """Check that configuration is OK after reading from file or str."""
-        main_path = member_path(member_name, 'main_line')
-        self._check_mainline_part(var=self.main_line, spectype=MainLineSpec,
-                                  varname=main_path)
-        self._check_linkedline(self.linked_lines,
-                               member_path(member_name, 'linked_lines'))
 
     def get_order_rows_by(self) -> list[str]:
         """Get list of columns to use for sorting rows."""
@@ -172,91 +164,11 @@ class ExtractConfig(ExtractConfigParams, Config):
         return self.column_order
 
     @staticmethod
-    def _check_mainline_part(var: MainLineSpec | LinkedLineSpec,
-                             spectype:
-                             type[MainLineSpec] | type[LinkedLineSpec],
-                             varname: str) -> None:
-        """Check MainLineSpec or MainLineSpec part of LinkedLineSpec."""
-        if not isinstance(var, spectype):
-            print(f'Expected {spectype.__name__} for {varname}, but found: \n'
-                  f'{var}\nof type {type(var).__name__}',
-                  file=sys.stderr)
-            sys.exit(1)
-        ExtractConfig._check_list_str(var.line, member_path(varname, 'line'))
-        ExtractConfig._check_dict_str_lst_str(var.columns,
-                                              member_path(varname, 'columns'))
-
-    @staticmethod
-    def _check_linkedline(var: LinkedLineList | list[LinkedLineSpec],
-                          varname: str) -> None:
-        """Check that we have correct LinkedLineSpec list."""
-        if not isinstance(var, list):
-            print(f'Expected a list of LinkedLineSpec in {varname}\n' +
-                  f'but found: {var}\nof type {type(var).__name__}',
-                  file=sys.stderr)
-            sys.exit(1)
-        for index, elem in enumerate(var):
-            vname = element_path(varname, index)
-            ExtractConfig._check_mainline_part(var=elem,
-                                               spectype=LinkedLineSpec,
-                                               varname=vname)
-            ExtractConfig._check_list_str(
-                elem.linked_main_column,
-                member_path(vname, 'linked_main_column'))
-            ExtractConfig._check_list_str(elem.linked_column,
-                                          member_path(vname, 'linked_column'))
-
-    @staticmethod
-    def _check_dict_str_lst_str(var: dict[str, list[str]],
-                                varname: str) -> None:
-        """Check that var is dict[str, list[str]]."""
-        if not isinstance(var, dict):
-            print(f'Expected a dict of strings to lists in {varname}\n' +
-                  f'but found: {var}\nof type {type(var).__name__}',
-                  file=sys.stderr)
-            sys.exit(1)
-        for key, value in var.items():
-            if not isinstance(key, str):
-                print(f'Expected a dict of strings to lists in {varname}\n' +
-                      f'but found key: {key}\nof type {type(key).__name__}',
-                      file=sys.stderr)
-                sys.exit(1)
-            ExtractConfig._check_list_str(value, element_path(varname, key))
-
-    @staticmethod
-    def _check_list_str(var: list[str], varname: str) -> None:
-        """Check that variable is list of str."""
-        if not isinstance(var, list):
-            print(f'Expected a list of strings in {varname}\n' +
-                  f'but found: {var}\nof type {type(var).__name__}',
-                  file=sys.stderr)
-            sys.exit(1)
-        for elem in var:
-            if not isinstance(elem, str):
-                print(f'Expected a list of strings in {varname}\n' +
-                      f'but found element: {elem}\n' +
-                      f'of type {type(elem).__name__}',
-                      file=sys.stderr)
-                sys.exit(1)
-
-    @staticmethod
     def get_converter_dict(enum_type: type[Enum]) -> ParseConverter:
         """Get dict for converting to given enum_type."""
         return ParseConverter(result_type=enum_type,
                               func=string_to_enum_best_match,
                               args={'num_type': enum_type})
-
-    @staticmethod
-    def get_converter_mainline(nttype: type[MainLineSpec]) -> ParseConverter:
-        """Get dict for converting to given namedtuple type."""
-        return ParseConverter(result_type=nttype, func=_mline_spec_from_dict,
-                              args={})
-
-    @staticmethod
-    def get_converter_linkedline() -> ParseConverter:
-        """Get dict for converting to linked_lines."""
-        return ParseConverter(result_type=LinkedLineList,
-                              func=_linked_line_from_json_array, args={})
 
     def parse_converters(self) -> dict[str, ParseConverter]:
         """Get converters for use when parsing JSON.
@@ -273,9 +185,7 @@ class ExtractConfig(ExtractConfigParams, Config):
                 'outfile_filtered_area':
                     self.get_converter_dict(FormatRequest),
                 'missing_input_for_column':
-                    self.get_converter_dict(MissingInputForColumn),
-                'main_line': self.get_converter_mainline(MainLineSpec),
-                'linked_lines': self.get_converter_linkedline()}
+                    self.get_converter_dict(MissingInputForColumn)}
 
     def _omit_none_from_json(self) -> list[str]:
         """Get list of keys that shall be omitted from JSON if None."""
@@ -310,22 +220,6 @@ class ExtractConfig(ExtractConfigParams, Config):
             WholeConfigValidationStep(ExtractedColumnNameValidator()),
             WholeConfigValidationStep(ColumnReferenceValidator())
         ]
-
-    def as_json_string(self, stderr_file: TextIO = sys.stderr, *,
-                       member_name: Optional[str] = None) -> str:
-        """Get JSON string representing this object."""
-        if isinstance(self.main_line, dict):
-            return super().as_json_string(stderr_file=stderr_file,
-                                          member_name=member_name)
-        adjusted = deepcopy(self)
-        # intentionally violating typing to get wanted JSON
-        adjusted.main_line = cast(MainLineSpec, self.main_line.__dict__)
-        adjusted.linked_lines = []
-        for i in self.linked_lines:
-            # intentionally violating typing to get wanted JSON
-            adjusted.linked_lines.append(cast(LinkedLineSpec, i.__dict__))
-        return adjusted.as_json_string(stderr_file=stderr_file,
-                                       member_name=member_name)
 
 
 def migrate_cfg_func(in_filename: str, out_filename: str,

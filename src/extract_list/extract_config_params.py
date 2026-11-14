@@ -4,8 +4,11 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
-from typing import Optional, TextIO, TypedDict
+from typing import Optional, TextIO, TypedDict, override
 import sys
+from config_as_json import Config, DictKeyValueTypesValidator, \
+    ListForEachValidator, ListValueTypeValidator, MemberValidationStep, \
+    PathOrStr, ValidationPlan
 from tableio import FileAccess
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, get_outfile_capabilities
@@ -22,62 +25,79 @@ LLineDict = TypedDict('LLineDict', {'line': list[str],
                                     'expand_at': list[list[str]]})
 
 
-class MainLineSpec:  # pylint: disable=too-few-public-methods
+class LineSpecBase(Config):
+    """Members that the specifications of main and linked lines share.
+
+    The main line and the linked lines are siblings deriving from this, as
+    a linked line specification cannot be used as a main line one.
+    """
+
+    def __init__(self, data: Optional[MLineDict] = None,
+                 from_json_data_text: Optional[str] = None,
+                 from_json_filename: Optional[PathOrStr] = None,
+                 stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None) -> None:
+        """Construct the shared members from data, JSON or else empty."""
+        # The column names are chosen by the user, so the keys of columns
+        # are checked by the validation plan and not against the default.
+        self._unchecked_dicts: list[str] = ['columns']
+        self.line: list[str] = [] if data is None else data['line']
+        self.columns: dict[str, list[str]] = \
+            {} if data is None else data['columns']
+        self.expand_at: list[list[str]] = \
+            [] if data is None else data['expand_at']
+        super().__init__(from_json_data_text=from_json_data_text,
+                         from_json_filename=from_json_filename,
+                         stderr_file=stderr_file, member_name=member_name)
+
+    def __str__(self) -> str:
+        """Get the class name and the public members."""
+        public = {name: value for name, value in vars(self).items()
+                  if not name.startswith('_')}
+        return f'{type(self).__name__}({public})'
+
+    @override
+    def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
+        """Return validation of the shared members."""
+        _ = stderr_file
+        list_str = ListValueTypeValidator(str)
+        return [
+            MemberValidationStep(['line'], list_str),
+            MemberValidationStep(['columns'], DictKeyValueTypesValidator(
+                key_type=str, value_type=list, value_validator=list_str)),
+            MemberValidationStep(['expand_at'], ListForEachValidator(
+                element_validators=[list_str]))]
+
+
+class MainLineSpec(LineSpecBase):
     """Specification for one input main line."""
 
-    def __init__(self, data: Optional[MLineDict] = None) -> None:
-        """Construct main line specification."""
-        self.line: list[str] = []
-        self.columns: dict[str, list[str]] = {}
-        self.expand_at: list[list[str]] = []
-        if data is not None:
-            self.line = data['line']
-            self.columns = data['columns']
-            self.expand_at = data['expand_at']
 
-    def __str__(self) -> str:
-        """Get string representation."""
-        return 'MainLineSpec(' + str(self.__dict__) + ')'
-
-
-class LinkedLineSpec:  # pylint: disable=too-few-public-methods
+class LinkedLineSpec(LineSpecBase):
     """Specification for one input linked line."""
 
-    def __init__(self, data: Optional[LLineDict] = None) -> None:
-        """Construct linked line specification."""
-        self.line: list[str] = []
-        self.columns: dict[str, list[str]] = {}
-        self.linked_main_column: list[str] = []
-        self.linked_column: list[str] = []
-        self.expand_at: list[list[str]] = []
-        if data is not None:
-            self.line = data['line']
-            self.columns = data['columns']
-            self.linked_main_column = data['linked_main_column']
-            self.linked_column = data['linked_column']
-            self.expand_at = data['expand_at']
+    def __init__(self, data: Optional[LLineDict] = None,
+                 from_json_data_text: Optional[str] = None,
+                 from_json_filename: Optional[PathOrStr] = None,
+                 stderr_file: TextIO = sys.stderr, *,
+                 member_name: Optional[str] = None) -> None:
+        """Construct linked line specification from data, JSON or empty."""
+        # Config requires every member to be set before it is constructed.
+        self.linked_main_column: list[str] = \
+            [] if data is None else data['linked_main_column']
+        self.linked_column: list[str] = \
+            [] if data is None else data['linked_column']
+        super().__init__(data=data, from_json_data_text=from_json_data_text,
+                         from_json_filename=from_json_filename,
+                         stderr_file=stderr_file, member_name=member_name)
 
-    def __str__(self) -> str:
-        """Get string representation."""
-        return 'LinkedLineSpec(' + str(self.__dict__) + ')'
-
-
-class LinkedLineList(list[LinkedLineSpec]):
-    """Type trick for JSON parser."""
-
-
-def _mline_spec_from_dict(data: MLineDict) -> MainLineSpec:
-    """Get main line specification converted from dict."""
-    return MainLineSpec(data=data)
-
-
-def _linked_line_from_json_array(data: list[LLineDict]) -> LinkedLineList:
-    """Get list of LinkedLineSpec from list of dict."""
-    assert isinstance(data, list)
-    ret = []
-    for elem in data:
-        ret.append(LinkedLineSpec(data=elem))
-    return LinkedLineList(ret)
+    @override
+    def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
+        """Return validation of the shared and the linking members."""
+        link_step = MemberValidationStep(
+            ['linked_main_column', 'linked_column'],
+            ListValueTypeValidator(str))
+        return super().get_validation_plan(stderr_file) + [link_step]
 
 
 class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes

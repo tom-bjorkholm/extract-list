@@ -61,8 +61,8 @@ _TOP_LEVEL: dict[ConfigPath, str] = {
     ('linked_lines',):
         'Other records whose data is added to the main line record they are '
         'linked to, such as the customer of each order. Leave empty when '
-        'all data is in the main line records. A new element may start as a '
-        'copy of an existing one: give its columns new names before saving.',
+        'all data is in the main line records. A new element starts empty: '
+        'fill in at least its line, columns and how it is linked.',
     ('linked_lines', EVERY):
         'One kind of linked record, and how it is linked to the main line. '
         'A linked record belongs to a main line record when its value at '

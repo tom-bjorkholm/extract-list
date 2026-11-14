@@ -9,6 +9,7 @@ from json import loads as json_loads
 from shutil import copyfile
 from collections.abc import Callable
 from typing import Optional, cast
+import sys
 import pytest
 from config_as_json.file_extension import fix_file_extension
 from extract_list.generate_cfg import generate_cfg_example, \
@@ -150,7 +151,8 @@ def check_txt_file_for_cfg(cfg_fname: str,
     txt_fname = fix_file_extension(filename=cfg_fname, ext_to_add='.txt',
                                    ext_to_remove='.cfg', for_reading=False)
     cfg = ExtractConfig(from_json_filename=cfg_fname)
-    cfg_data = cast(dict[str, object], json_loads(cfg.as_json_string()))
+    text = cfg.as_json_string(stderr_file=sys.stderr)
+    cfg_data = cast(dict[str, object], json_loads(text))
     num_keys_checked = 0
     with open(file=txt_fname, mode='r', encoding='utf-8') as file:
         txt = file.read()

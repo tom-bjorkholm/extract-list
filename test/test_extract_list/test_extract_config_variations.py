@@ -45,7 +45,7 @@ def test_extract_config_var1(capsys: pytest.CaptureFixture[str], inenc: str,
         cfg.column_order = ['What', 'Quantity']
         cfg.out_xml_attributes = ['What']
     cfg.validate(stderr_file=sys.stderr)
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.infile_type == infiletype
@@ -72,7 +72,7 @@ def test_extract_config_var2(capsys: pytest.CaptureFixture[str], strip: bool,
     cfg.out_xml_attributes = deepcopy(attr)
     if not inck:
         cfg.column_order.remove('key col')
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.in_xml_strip_at == strip
@@ -98,7 +98,7 @@ def test_extract_config_var3(capsys: pytest.CaptureFixture[str], coname: str,
     cfg.output.implementation = deepcopy(excl)
     cfg.column_order.remove('key col')
     cfg.column_order.append(deepcopy(coname))
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.column_name_for_key == coname
@@ -134,7 +134,7 @@ def test_extract_config_var4(capsys: pytest.CaptureFixture[str],
     cfg.main_line = deepcopy(main)
     cfg.linked_lines = deepcopy([linked])
     cfg.column_order = deepcopy(order)
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.main_line.columns == main.columns
@@ -157,7 +157,7 @@ def test_extract_config_var5(capsys: pytest.CaptureFixture[str], one: bool,
     cfg = ExtractConfig()
     cfg.one_output_line_per_main_line = deepcopy(one)
     cfg.order_rows_by = deepcopy(ord_row)
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     assert cf2.one_output_line_per_main_line == one

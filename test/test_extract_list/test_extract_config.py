@@ -5,7 +5,8 @@
 # MIT License
 
 from copy import deepcopy
-from typing import Optional, cast
+from typing import Optional
+import json
 import sys
 import warnings
 import pytest
@@ -14,8 +15,7 @@ from tableio import CsvDialect
 from tableio_cfg_json import TioJsonCsvConfig
 from extract_list.extract_config import ExtractConfig
 from extract_list.extract_config_params import \
-    MainLineSpec, MLineDict, _mline_spec_from_dict, \
-    LinkedLineSpec, LLineDict, _linked_line_from_json_array
+    LineSpecBase, MainLineSpec, MLineDict, LinkedLineSpec, LLineDict
 from .check_cfgs_equal import check_cfgs_equal
 from .check_capsys import check_capsys
 
@@ -67,13 +67,13 @@ def test_mainlinespec_2(capsys: pytest.CaptureFixture[str], lin: list[str],
                          [(['abc', 'def'], {'gh': ['ij', 'kl']}),
                           (['xf', 'as'], {'fds': ['a1', 'a2'],
                                           'col2': ['sdf', 'b1']})])
-def test_mlinespecfromdict(capsys: pytest.CaptureFixture[str], lin: list[str],
-                           col: dict[str, list[str]]) -> None:
-    """Test _mline_spec_from_dict."""
+def test_mlinespec_json(capsys: pytest.CaptureFixture[str], lin: list[str],
+                        col: dict[str, list[str]]) -> None:
+    """Test MainLineSpec read from JSON."""
     mld: MLineDict = {'line': deepcopy(lin),
                       'columns': deepcopy(col),
                       'expand_at': []}
-    spec = _mline_spec_from_dict(data=mld)
+    spec = MainLineSpec(from_json_data_text=json.dumps(mld))
     txt = str(spec)
     for lpart in lin:
         assert lpart in txt
@@ -155,21 +155,16 @@ def test_linklinespec_2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
                           (['xf', 'as'], {'fds': ['a1', 'a2'],
                                           'col2': ['sdf', 'b1']},
                            ['a'], ['b', 'c'])])
-def test_llinefromjson(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-locals # noqa: E501
-                       lin: list[str], col: dict[str, list[str]],
-                       lmc: list[str], lcol: list[str]) -> None:
-    """Test _linked_line_from_json_array."""
+def test_llinespec_json(capsys: pytest.CaptureFixture[str], lin: list[str],
+                        col: dict[str, list[str]], lmc: list[str],
+                        lcol: list[str]) -> None:
+    """Test LinkedLineSpec read from JSON."""
     lld: LLineDict = {'line': deepcopy(lin),
                       'columns': deepcopy(col),
                       'linked_main_column': deepcopy(lmc),
                       'linked_column': deepcopy(lcol),
                       'expand_at': []}
-    speclist = _linked_line_from_json_array(data=[lld, lld])
-    assert len(speclist) == 2
-    assert speclist[0].line == speclist[1].line
-    assert speclist[0].linked_column == speclist[1].linked_column
-    assert speclist[0].linked_main_column == speclist[1].linked_main_column
-    spec = speclist[0]
+    spec = LinkedLineSpec(from_json_data_text=json.dumps(lld))
     txt = str(spec)
     check_capsys(capsys=capsys)
     for lpart in lin:
@@ -205,7 +200,7 @@ def test_get_order_rows_by(capsys: pytest.CaptureFixture[str], cols: list[str],
 def test_old_cfg_hook_current(capsys: pytest.CaptureFixture[str]) -> None:
     """Test parsing uses the current config-as-json read-old hook."""
     cfg = ExtractConfig()
-    text = cfg.as_json_string()
+    text = cfg.as_json_string(stderr_file=sys.stderr)
     with warnings.catch_warnings():
         warnings.simplefilter('error', DeprecationWarning)
         cf2 = ExtractConfig(from_json_data_text=text)
@@ -452,252 +447,90 @@ def test_csv_dialect_nok2(capsys: pytest.CaptureFixture[str]) -> None:
     check_capsys(capsys=capsys, in_err=errmsgs)
 
 
-@pytest.mark.parametrize('var, varname',
-                         [(['a', 'b', 'c'], 'abc'),
-                          (['hello world'], 'hw')])
-def test_check_list_str_ok(capsys: pytest.CaptureFixture[str], var: list[str],
-                           varname: str) -> None:
-    """Test OK cases of _check_list_str."""
-    ExtractConfig._check_list_str(var=var,  # pylint: disable=protected-access
-                                  varname=varname)
+def _line_spec(cfg: ExtractConfig, spec: str) -> LineSpecBase:
+    """Return the main line, or the first linked line, of cfg."""
+    return cfg.main_line if spec == 'main_line' else cfg.linked_lines[0]
+
+
+@pytest.mark.parametrize('spec, member, value',
+                         [('main_line', 'line', ['ab', 'cd']),
+                          ('main_line', 'expand_at', []),
+                          ('linked_lines[0]', 'columns',
+                           {'Customer name': [], 'Street': ['s'],
+                            'Street number': ['n', 'm']}),
+                          ('linked_lines[0]', 'linked_main_column',
+                           ['xy', 'ab']),
+                          ('linked_lines[0]', 'linked_column', []),
+                          ('linked_lines[0]', 'expand_at', [['a', 'b'], []])])
+def test_line_spec_value_ok(capsys: pytest.CaptureFixture[str], spec: str,
+                            member: str, value: object) -> None:
+    """Test OK values of the members of the line specifications."""
+    cfg = ExtractConfig()
+    setattr(_line_spec(cfg, spec), member, value)
+    cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
 
 
-@pytest.mark.parametrize('var,name,msg',
-                         [('str', 'abc',
-                           ['Expected a list of strings in abc',
-                            'of type str']),
-                          (2, 'def',
-                           ['Expected a list of strings in def',
-                            'of type int']),
-                          ([2], 'ghi',
-                           ['Expected a list of strings in ghi',
-                            'of type int',
-                            'but found element: 2']),
-                          (['str', [2]], 'jkl',
-                           ['Expected a list of strings in jkl',
-                            'of type list',
-                            'but found element: [2]'])])
-def test_check_list_str_nok(capsys: pytest.CaptureFixture[str], var: object,
-                            name: str, msg: list[str]) -> None:
-    """Test not OK cases of _check_list_str."""
-    bad_list = cast(list[str], var)
-    with pytest.raises(SystemExit):
-        # pylint: disable-next=protected-access
-        ExtractConfig._check_list_str(var=bad_list, varname=name)
-    check_capsys(capsys=capsys, in_err=msg)
+@pytest.mark.parametrize('member, prefix', [(None, ''),
+                                            ('extract', 'extract.')])
+@pytest.mark.parametrize('spec, attr, value, errmsg',
+                         [('main_line', 'line', 'str',
+                           'Value for {p}.line is not a list'),
+                          ('main_line', 'line', [1, 2],
+                           'Value 1 for {p}.line at index 0 is not of type '
+                           'str'),
+                          ('linked_lines[0]', 'line', ['ab', 2],
+                           'Value 2 for {p}.line at index 1 is not of type '
+                           'str'),
+                          ('main_line', 'columns', 2,
+                           'Value for {p}.columns is not a dict'),
+                          ('linked_lines[0]', 'columns', {3: ['a']},
+                           'Key 3 in {p}.columns is not of type str'),
+                          ('main_line', 'columns', {'ab': 'cd'},
+                           'Value cd for {p}.columns[ab] is not of type '
+                           'list'),
+                          ('linked_lines[0]', 'columns', {'ab': ['c', 1]},
+                           'Value 1 for {p}.columns[ab] at index 1 is not '
+                           'of type str'),
+                          ('main_line', 'expand_at', ['x'],
+                           'Value for {p}.expand_at[0] is not a list'),
+                          ('linked_lines[0]', 'expand_at', [['a', 2]],
+                           'Value 2 for {p}.expand_at[0] at index 1 is not '
+                           'of type str'),
+                          ('linked_lines[0]', 'linked_main_column',
+                           ['xy', 4], 'Value 4 for {p}.linked_main_column '
+                           'at index 1 is not of type str'),
+                          ('linked_lines[0]', 'linked_column', 'ab',
+                           'Value for {p}.linked_column is not a list')])
+def test_line_spec_value_nok(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
+                             member: Optional[str], prefix: str, spec: str,
+                             attr: str, value: object, errmsg: str) -> None:
+    """Test that a bad member value is refused, naming its whole path."""
+    cfg = ExtractConfig()
+    setattr(_line_spec(cfg, spec), attr, value)
+    with pytest.raises(InvalidConfiguration):
+        cfg.validate(stderr_file=sys.stderr, member_name=member)
+    check_capsys(capsys=capsys, in_err=errmsg.format(p=prefix + spec))
 
 
-@pytest.mark.parametrize('name', ['abc', 'def'])
-@pytest.mark.parametrize('dval',
-                         [{'ab': [], 'de': ['ef', 'gh']},
-                          {'zx': ['abc', 'def']},
-                          {'as': []}])
-def test_check_dict_lst_ok(capsys: pytest.CaptureFixture[str], name: str,
-                           dval: dict[str, list[str]]) -> None:
-    """Test OK cases of _check_dict_str_lst_str."""
-    ExtractConfig._check_dict_str_lst_str(var=dval,  # pylint: disable=protected-access # noqa: E501
-                                          varname=name)
-    check_capsys(capsys=capsys)
-
-
-@pytest.mark.parametrize('val,name,errmsgs',
-                         [(2, 'abc',
-                           ['Expected a dict of strings to lists in abc',
-                            'but found: 2', 'of type int']),
-                          ({3: []}, 'def',
-                           ['Expected a dict of strings to lists in def',
-                            'but found key: 3', 'of type int']),
-                          ({4: ['ab', 'cd']}, 'de',
-                           ['Expected a dict of strings to lists in de',
-                            'but found key: 4', 'of type int']),
-                          ({'x': ['ab', 'cd'], 5: []}, 'fg',
-                           ['Expected a dict of strings to lists in fg',
-                            'but found key: 5', 'of type int']),
-                          ({'ab': {'cd': []}}, 'hj',
-                           ['Expected a list of strings in hj[ab]',
-                            'but found: {\'cd\': []}', 'of type dict']),
-                          ({'ab': [1, 2]}, 'kl',
-                           ['Expected a list of strings in kl[ab]',
-                            'but found element: 1', 'of type int']),
-                          ])
-def test_check_dict_str_lst_nok(capsys: pytest.CaptureFixture[str],
-                                val: object, name: str,
-                                errmsgs: list[str]) -> None:
-    """Test not OK cases of _check_dict_str_lst_str."""
-    bad_dict = cast(dict[str, list[str]], val)
-    with pytest.raises(SystemExit):
-        # pylint: disable-next=protected-access
-        ExtractConfig._check_dict_str_lst_str(var=bad_dict, varname=name)
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_mline_part_ok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test OK case 1 of _check_main_line_part."""
-    a = MainLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
-                                       MainLineSpec, 'a')
-    check_capsys(capsys=capsys)
-
-
-def test_mline_part_ok2(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test OK case 2 of _check_main_line_part."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = ['ab', 'cd', 'ef']
-    ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
-                                       LinkedLineSpec, 'a')
-    check_capsys(capsys=capsys)
-
-
-def test_mline_part_nok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 1 of _check_main_line_part."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = ['ab', 'cd', 'ef']
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
-                                           MainLineSpec, 'a')
-    errmsgs = ['Expected MainLineSpec for a, but found',
-               'of type LinkedLineSpec']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_mline_part_nok2(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 2 of _check_main_line_part."""
-    a = MainLineSpec()
-    a.line = cast(list[str], [1, 2])
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
-                                           MainLineSpec, 'a')
-    errmsgs = ['Expected a list of strings in a.line',
-               'but found element: 1', 'of type int']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_mline_part_nok3(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 3 of _check_main_line_part."""
-    a = MainLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = cast(dict[str, list[str]], {'name': [1], 'address': ['gh']})
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_mainline_part(a,  # pylint: disable=protected-access # noqa: E501
-                                           MainLineSpec, 'a')
-    errmsgs = ['Expected a list of strings in a.columns[name]',
-               'but found element: 1', 'of type int']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_check_linkedline_ok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test OK case 1 of _check_linkedline."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = ['ab', 'cd', 'ef']
-    ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
-                                    'a')
-    check_capsys(capsys=capsys)
-
-
-def test_check_linkedline_nok0(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 0 of _check_linkedline."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = ['ab', 'cd', 'ef']
-    bad_linked_lines = cast(list[LinkedLineSpec], a)
-    with pytest.raises(SystemExit):
-        # pylint: disable-next=protected-access
-        ExtractConfig._check_linkedline(bad_linked_lines, 'a')
-    errmsgs = ['Expected a list of LinkedLineSpec in a',
-               'of type LinkedLineSpec']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_check_linkedline_nok1(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 1 of _check_linked."""
-    a = MainLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    setattr(a, 'linked_main_column', ['xy', 'ab', 'cd', 'ef'])
-    setattr(a, 'linked_column', ['ab', 'cd', 'ef'])
-    bad_linked_lines = cast(list[LinkedLineSpec], [a])
-    with pytest.raises(SystemExit):
-        # pylint: disable-next=protected-access
-        ExtractConfig._check_linkedline(bad_linked_lines, 'a')
-    errmsgs = ['Expected LinkedLineSpec for a[0], but found:',
-               'of type MainLineSpec']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_check_linkedline_nok2(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 3 of _check_linked."""
-    a = LinkedLineSpec()
-    a.line = cast(list[str], ['ab', 2])
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = ['ab', 'cd', 'ef']
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
-                                        'a')
-    errmsgs = ['Expected a list of strings in a[0].line',
-               'of type int']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_check_linkedline_nok3(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 3 of _check_linked."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = cast(list[str], ['xy', 4, 'cd', 'ef'])
-    a.linked_column = ['ab', 'cd', 'ef']
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
-                                        'a')
-    errmsgs = ['Expected a list of strings in a[0].linked_main_column',
-               'of type int']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_check_linkedline_nok4(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 4 of _check_linked."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = cast(list[str], ['ab', 'cd', 7])
-    with pytest.raises(SystemExit):
-        ExtractConfig._check_linkedline([a],  # pylint: disable=protected-access # noqa: E501
-                                        'a')
-    errmsgs = ['Expected a list of strings in a[0].linked_column',
-               'of type int']
-    check_capsys(capsys=capsys, in_err=errmsgs)
-
-
-def test_check_linkedline_nok5(capsys: pytest.CaptureFixture[str]) -> None:
-    """Test not OK case 5 of _check_linkedline."""
-    a = LinkedLineSpec()
-    a.line = ['ab', 'cd']
-    a.columns = {'name': ['ef'], 'address': ['gh']}
-    a.linked_main_column = ['xy', 'ab', 'cd', 'ef']
-    a.linked_column = ['ab', 'cd', 'ef']
-    bad_linked_lines = cast(list[LinkedLineSpec], [a, 2])
-    with pytest.raises(SystemExit):
-        # pylint: disable-next=protected-access
-        ExtractConfig._check_linkedline(bad_linked_lines, 'a')
-    errmsgs = ['Expected LinkedLineSpec for a[1]',
-               'of type int']
-    check_capsys(capsys=capsys, in_err=errmsgs)
+@pytest.mark.parametrize('member, value, errmsg',
+                         [('main_line', LinkedLineSpec(),
+                           'main_line must be MainLineSpec'),
+                          ('main_line', 3, 'main_line must be MainLineSpec'),
+                          ('linked_lines', LinkedLineSpec(),
+                           'linked_lines must be a list'),
+                          ('linked_lines', [LinkedLineSpec(), MainLineSpec()],
+                           'linked_lines[1] must be LinkedLineSpec'),
+                          ('linked_lines', [2],
+                           'linked_lines[0] must be LinkedLineSpec')])
+def test_line_spec_type_nok(capsys: pytest.CaptureFixture[str], member: str,
+                            value: object, errmsg: str) -> None:
+    """Test that a line specification of the wrong type is refused."""
+    cfg = ExtractConfig()
+    setattr(cfg, member, value)
+    with pytest.raises(TypeError):
+        cfg.validate(stderr_file=sys.stderr)
+    check_capsys(capsys=capsys, in_err=errmsg)
 
 
 @pytest.mark.parametrize('attr',
@@ -734,7 +567,7 @@ def test_cross_check_attrs_nok(capsys: pytest.CaptureFixture[str],
 def test_extract_cfg_nochange(capsys: pytest.CaptureFixture[str]) -> None:
     """Test default configured ExtractConfig."""
     cfg = ExtractConfig()
-    txt = cfg.as_json_string()
+    txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
     check_capsys(capsys=capsys)
