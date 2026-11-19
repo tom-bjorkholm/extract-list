@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 import sys
 import pytest
-from config_as_json import Config, ConfigPath
+from config_as_json import Config, ConfigPath, JsonPath
 from edit_cfg_json import NoEditorError, Settings, UiBackend, chosen_ui, \
     editor_model
 from edit_cfg_json.descriptions import INFERRED_TEXT
@@ -111,19 +111,31 @@ def test_editcfg_invalid(capsys: pytest.CaptureFixture[str],
     check_capsys(capsys=capsys, in_err=msgs)
 
 
-@pytest.mark.parametrize('linked, spec', [(False, 'main_line'),
-                                          (True, 'linked_lines[0]')])
-@pytest.mark.parametrize('key', ['line', 'columns', 'expand_at'])
+@pytest.mark.parametrize('path, marks',
+                         [(('include_key',),
+                           ['include_key: bool = true (filled from default)']),
+                          (('main_line', 'line'), []),
+                          (('main_line', 'columns'), []),
+                          (('main_line', 'expand_at'), []),
+                          (('linked_lines', 0, 'line'), []),
+                          (('linked_lines', 0, 'linked_column'), []),
+                          (('output', 'format_name'), [])])
 def test_editcfg_missing_key(capsys: pytest.CaptureFixture[str],
-                             tmp_path: Path, linked: bool, spec: str,
-                             key: str) -> None:
-    """Test that a key missing in a line specification is named in full."""
-    write_cfg_without(tmp_path / 'bad.cfg', linked, key)
-    ret = extract_cmd(['editcfg', '-i', str(tmp_path / 'bad.cfg'), '--ui',
-                       'dump'])
-    assert ret == 1
-    check_capsys(capsys=capsys,
-                 in_err=f'No value for {spec}.{key} in JSON data')
+                             tmp_path: Path, path: JsonPath,
+                             marks: list[str]) -> None:
+    """Test that a missing key is filled in from the defaults and marked.
+
+    The dump user interface shows nested objects folded, so the mark is
+    only seen for a key at the top level.
+    """
+    write_cfg_without(tmp_path / 'lacking.cfg', path)
+    ret = extract_cmd(['editcfg', '-i', str(tmp_path / 'lacking.cfg'),
+                       '--ui', 'dump'])
+    assert ret == 0
+    msgs = ['This file did not hold every value. What it left out was '
+            'filled in from the defaults, and is marked.',
+            'Nothing was saved.'] + marks
+    check_capsys(capsys=capsys, in_out=msgs)
 
 
 def test_editcfg_bad_ui(capsys: pytest.CaptureFixture[str]) -> None:

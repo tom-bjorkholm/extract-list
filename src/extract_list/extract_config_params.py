@@ -32,12 +32,18 @@ class LineSpecBase(Config):
     a linked line specification cannot be used as a main line one.
     """
 
+    # pylint: disable-next=too-many-arguments
     def __init__(self, data: Optional[MLineDict] = None,
                  from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[PathOrStr] = None,
                  stderr_file: TextIO = sys.stderr, *,
-                 member_name: Optional[str] = None) -> None:
-        """Construct the shared members from data, JSON or else empty."""
+                 member_name: Optional[str] = None,
+                 ok_to_use_defaults: bool = False) -> None:
+        """Construct the shared members from data, JSON or else empty.
+
+        With ok_to_use_defaults true, the JSON data may lack keys, which
+        then keep the values from data, or else empty values.
+        """
         # The column names are chosen by the user, so the keys of columns
         # are checked by the validation plan and not against the default.
         self._unchecked_dicts: list[str] = ['columns']
@@ -48,7 +54,8 @@ class LineSpecBase(Config):
             [] if data is None else data['expand_at']
         super().__init__(from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
-                         stderr_file=stderr_file, member_name=member_name)
+                         stderr_file=stderr_file, member_name=member_name,
+                         ok_to_use_defaults=ok_to_use_defaults)
 
     def __str__(self) -> str:
         """Get the class name and the public members."""
@@ -76,12 +83,18 @@ class MainLineSpec(LineSpecBase):
 class LinkedLineSpec(LineSpecBase):
     """Specification for one input linked line."""
 
+    # pylint: disable-next=too-many-arguments
     def __init__(self, data: Optional[LLineDict] = None,
                  from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[PathOrStr] = None,
                  stderr_file: TextIO = sys.stderr, *,
-                 member_name: Optional[str] = None) -> None:
-        """Construct linked line specification from data, JSON or empty."""
+                 member_name: Optional[str] = None,
+                 ok_to_use_defaults: bool = False) -> None:
+        """Construct linked line specification from data, JSON or empty.
+
+        With ok_to_use_defaults true, the JSON data may lack keys, which
+        then keep the values from data, or else empty values.
+        """
         # Config requires every member to be set before it is constructed.
         self.linked_main_column: list[str] = \
             [] if data is None else data['linked_main_column']
@@ -89,7 +102,8 @@ class LinkedLineSpec(LineSpecBase):
             [] if data is None else data['linked_column']
         super().__init__(data=data, from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
-                         stderr_file=stderr_file, member_name=member_name)
+                         stderr_file=stderr_file, member_name=member_name,
+                         ok_to_use_defaults=ok_to_use_defaults)
 
     @override
     def get_validation_plan(self, stderr_file: TextIO) -> ValidationPlan:
@@ -107,12 +121,9 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
     def default_output_config(
             stderr_file: TextIO = sys.stderr) -> ExtractOutputConfig:
         """Get default configuration for output."""
-        capabilities = get_outfile_capabilities()
-        config = ExtractOutputConfig(capabilities=capabilities,
-                                     file_access=FileAccess.CREATE,
-                                     stderr_file=stderr_file)
-        config.character_encoding = 'utf-8'
-        return config
+        return ExtractOutputConfig(capabilities=get_outfile_capabilities(),
+                                   file_access=FileAccess.CREATE,
+                                   stderr_file=stderr_file)
 
     @staticmethod
     def example_main_line() -> MainLineSpec:

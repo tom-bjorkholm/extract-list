@@ -7,6 +7,7 @@
 import json
 import sys
 from pathlib import Path
+from config_as_json import JsonPath
 from extract_list.extract_config import ExtractConfig
 
 
@@ -30,18 +31,29 @@ def write_bogus_cfg(filename: Path) -> None:
     filename.write_text(json.dumps(data), encoding='utf-8')
 
 
-def write_cfg_without(filename: Path, linked: bool, key: str) -> None:
-    """Write a configuration with key left out of one line specification.
+def _child(node: object, key: str | int) -> object:
+    """Return the value at key in a JSON object or array."""
+    if isinstance(node, list):
+        assert isinstance(key, int)
+        return node[key]
+    assert isinstance(node, dict)
+    return node[key]
 
-    The key is left out of the first linked line if linked, else out of the
-    main line.
+
+def cfg_text_without(path: JsonPath) -> str:
+    """Return the default configuration as JSON text, without path.
+
+    The last key of path is a key of a JSON object.
     """
     data = _default_data()
-    spec = data['main_line']
-    if linked:
-        linked_lines = data['linked_lines']
-        assert isinstance(linked_lines, list)
-        spec = linked_lines[0]
-    assert isinstance(spec, dict)
-    del spec[key]
-    filename.write_text(json.dumps(data), encoding='utf-8')
+    parent: object = data
+    for key in path[:-1]:
+        parent = _child(parent, key)
+    assert isinstance(parent, dict)
+    del parent[path[-1]]
+    return json.dumps(data)
+
+
+def write_cfg_without(filename: Path, path: JsonPath) -> None:
+    """Write the default configuration with the value at path left out."""
+    filename.write_text(cfg_text_without(path), encoding='utf-8')

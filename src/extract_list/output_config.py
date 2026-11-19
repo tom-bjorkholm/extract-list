@@ -27,8 +27,15 @@ class ExtractOutputConfig(TioJsonConfig):
                  from_json_filename: Optional[PathOrStr] = None,
                  allowed_formats: Optional[list[str]] = None,
                  stderr_file: TextIO = sys.stderr, *,
-                 member_name: Optional[str] = None) -> None:
-        """Create output settings or read them from a JSON source."""
+                 member_name: Optional[str] = None,
+                 ok_to_use_defaults: bool = False) -> None:
+        """Create output settings or read them from a JSON source.
+
+        Without a JSON source the character encoding is utf-8. A JSON
+        source that leaves the encoding out gives None, which also means
+        utf-8. With ok_to_use_defaults true, the JSON source may lack other
+        keys, which then keep the defaults that TableIO recommends.
+        """
         internal = format_name is not None and \
             is_internal_out_file_format(format_name)
         init_format = None if internal else format_name
@@ -39,13 +46,26 @@ class ExtractOutputConfig(TioJsonConfig):
                          include_all_options=include_all_options,
                          from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
-                         stderr_file=stderr_file, member_name=member_name)
-        if internal and from_json_data_text is None and \
-                from_json_filename is None:
-            assert format_name is not None
-            self.format_name = format_name
+                         stderr_file=stderr_file, member_name=member_name,
+                         ok_to_use_defaults=ok_to_use_defaults)
+        if from_json_data_text is None and from_json_filename is None:
+            self._use_own_defaults(format_name if internal else None,
+                                   implementation, stderr_file, member_name)
+
+    def _use_own_defaults(self, internal_format: Optional[str],
+                          implementation: Optional[str], stderr_file: TextIO,
+                          member_name: Optional[str]) -> None:
+        """Put the defaults of extract-list over those of TableIO.
+
+        An internal format is unknown to TableIO, so it is set here rather
+        than given to TableIO. The values are validated once they are set.
+        """
+        if self.character_encoding is None:
+            self.character_encoding = 'utf-8'
+        if internal_format is not None:
+            self.format_name = internal_format
             self.implementation = implementation
-            self.validate(stderr_file=stderr_file, member_name=member_name)
+        self.validate(stderr_file=stderr_file, member_name=member_name)
 
     def _format_names(self) -> list[str]:
         """Return internal output formats allowed for this configuration."""

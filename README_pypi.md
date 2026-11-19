@@ -308,7 +308,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1316 passed in 39s
+- Test result: 1355 passed in 52s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

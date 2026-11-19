@@ -111,24 +111,38 @@ class ExtractConfigOldReader(ReadOldConfiguration):
 class ExtractConfig(ExtractConfigParams, Config):
     """Configuration of extract a list of columns from JSON or XML."""
 
+    # pylint: disable-next=too-many-arguments
     def __init__(self, from_json_data_text: Optional[str] = None,
                  from_json_filename: Optional[PathOrStr] = None,
                  auto_ch_hook: Optional[ConfigAutoChangeHook] = None,
                  stderr_file: TextIO = sys.stderr, *,
-                 member_name: Optional[str] = None) -> None:
-        """Construct extract configuration object."""
+                 member_name: Optional[str] = None,
+                 ok_to_use_defaults: bool = False) -> None:
+        """Construct extract configuration object.
+
+        With ok_to_use_defaults true, the JSON data may lack keys, which
+        then keep their default values, also in the nested configurations.
+        """
         ExtractConfigParams.__init__(self, stderr_file=stderr_file)
         Config.__init__(self, from_json_data_text=from_json_data_text,
                         from_json_filename=from_json_filename,
                         auto_ch_hook=auto_ch_hook, stderr_file=stderr_file,
-                        member_name=member_name)
+                        member_name=member_name,
+                        ok_to_use_defaults=ok_to_use_defaults)
 
     def _output_factory(self, from_json_data_text: Optional[str] = None,
                         from_json_filename: Optional[PathOrStr] = None,
                         stderr_file: TextIO = sys.stderr, *,
-                        member_name: Optional[str] = None) \
+                        member_name: Optional[str] = None,
+                        ok_to_use_defaults: bool = False) \
             -> ExtractOutputConfig:
-        """Create nested output configuration from JSON."""
+        """Create nested output configuration from JSON.
+
+        The allowed formats depend on outfile_border and
+        outfile_filtered_area, which is why a factory is needed. With
+        ok_to_use_defaults true, keys that the JSON data lacks get the
+        defaults of ExtractOutputConfig.
+        """
         capabilities = get_outfile_capabilities(
             border=self.outfile_border,
             filtered_area=self.outfile_filtered_area)
@@ -139,7 +153,7 @@ class ExtractConfig(ExtractConfigParams, Config):
                 filtered_area=self.outfile_filtered_area),
             from_json_data_text=from_json_data_text,
             from_json_filename=from_json_filename, stderr_file=stderr_file,
-            member_name=member_name)
+            member_name=member_name, ok_to_use_defaults=ok_to_use_defaults)
 
     def nested_configs(self) -> NestedConfigs:
         """Get nested configuration declarations."""
