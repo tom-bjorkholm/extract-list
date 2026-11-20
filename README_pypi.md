@@ -11,20 +11,20 @@ table-like format.
 
 extract-list:
 
-* reads data from an XML file or a JSON file
-* extracts the configured parts of that input data
-* writes the extracted data as rows and columns
+- reads data from an XML file or a JSON file
+- extracts the configured parts of that input data
+- writes the extracted data as rows and columns
 
 Examples of output formats include:
 
-* Excel
-* CSV
-* ODS
-* HTML
-* Markdown
-* plain text
-* JSON
-* XML
+- Excel
+- CSV
+- ODS
+- HTML
+- Markdown
+- plain text
+- JSON
+- XML
 
 The exact output choices available in an installed environment can be listed
 with the `cfg-example --help` command. Some output formats are provided through
@@ -111,10 +111,10 @@ python3 -m extract_list editcfg -i example.cfg --ui tk
 
 (Use `python` instead of `python3` on Microsoft Windows.)
 
-* `-i` names the configuration file to edit. It must exist; create one with
+- `-i` names the configuration file to edit. It must exist; create one with
   `cfg-example` first.
-* `-o` names the file to save to, when that is not the input file.
-* `--ui` chooses the user interface. Without it the editor opens in a window
+- `-o` names the file to save to, when that is not the input file.
+- `--ui` chooses the user interface. Without it the editor opens in a window
   where there is a display, and in the terminal where there is none. The
   terminal editor is optional and is installed with
   `pip3 install --upgrade "extract-list[textual]"`. `--help` lists the user
@@ -173,8 +173,8 @@ point.
 The type of input file to read is determined by `infile_type`. `infile_type`
 can have these values:
 
-* `"JSON"`
-* `"XML"`
+- `"JSON"`
+- `"XML"`
 
 Both JSON and XML are text file formats, so the input file has a character
 encoding. This is specified with `infile_encoding`. Unless you know that you
@@ -189,15 +189,15 @@ normalized when the configuration is read.
 
 Examples of commonly useful `output.format_name` values include:
 
-* `"Excel"`
-* `"CSV"`
-* `"ODS"`
-* `"HTML"`
-* `"md"`
-* `"txt"`
-* `"JSON"`
-* `"XML"`
-* `"Plaintxt"`
+- `"Excel"`
+- `"CSV"`
+- `"ODS"`
+- `"HTML"`
+- `"md"`
+- `"txt"`
+- `"JSON"`
+- `"XML"`
+- `"Plaintxt"`
 
 Run `python3 -m extract_list cfg-example --help` on macOS or Linux, or
 `python -m extract_list cfg-example --help` on Windows, to see the full list of
@@ -251,7 +251,11 @@ purchase order may contain several purchased items. Because the output is a
 list of columns, such an input record must be expanded into several output
 rows. The shared values from the input record are duplicated on those output
 rows. The `expand_at` member contains the relative paths where this expansion
-should happen.
+should happen. The expansion works the same whether the records are held in a
+list or in a dictionary. A list at such a path gives one output row per
+element. A single value that is not a list, such as an XML element that occurs
+only once, or a missing value leaves the record as one row. An empty list gives
+no row, so that record is left out of the output.
 
 There can be only one `main_line`. There may be any number of linked lines.
 The linked lines are configured as an array in `linked_lines`.
@@ -308,7 +312,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1355 passed in 52s
+- Test result: 1368 passed in 51s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

@@ -194,7 +194,12 @@ def generate_syntax_txt(file: TextIO, outtype: str) -> None:
     Each such relative path is configured using a list of strings in the
     "expand_at" sub-parameter. As the "expand_at" holds a list of relative
     paths (list of list of strings), this expansion can be configured to be
-    done on zero, one or several places in the input record.
+    done on zero, one or several places in the input record. The expansion
+    is done in the same way whether the records are held in a list or in a
+    dictionary. A list at such a path gives one output line per element.
+    A single value that is not a list (for instance an XML element that
+    occurs only once) or no value at all leaves the record as one line.
+    An empty list gives no output line, so that record is left out.
 
     There can be only one main line, denoted by the "main_line" configuration
     parameter. In contrast there may be any number of linked lines.

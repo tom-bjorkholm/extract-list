@@ -134,11 +134,16 @@ _LINE_SPEC: dict[ConfigPath, str] = {
         'Paths inside the record to lists that are split into one output '
         'line per list element, such as ["items"] for an order holding '
         'several items. The rest of the record is repeated on each of these '
-        'lines. Leave empty when each record gives one output line.',
+        'lines. This works the same whether the records at "line" are in a '
+        'list or a dictionary. Leave empty when each record gives one '
+        'output line.',
     ('expand_at', EVERY):
         'Path inside the record to one list that is split into one output '
         'line per element. A column path through this path continues inside '
-        'the element, such as ["items", "quantity"] for ["items"].',
+        'the element, such as ["items", "quantity"] for ["items"]. A single '
+        'value that is not a list, such as one XML element, or no value, '
+        'leaves the record as one line. An empty list gives no line, so the '
+        'record is left out of the output.',
     ('expand_at', EVERY, EVERY): PATH_STEP
 }
 """Descriptions of the members of main_line and of each linked line."""

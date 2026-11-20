@@ -4,7 +4,7 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-from typing import Optional, Tuple, Generator, cast, Sequence
+from typing import Optional, Tuple, Generator, Iterable, Sequence
 import sys
 from copy import deepcopy
 from datetime import datetime, timedelta
@@ -71,72 +71,60 @@ def set_at_path(data: JsonType, path: Sequence[str | int],
 def expand_line(skey: Value, dline: JsonType,
                 expand: list[list[str]]) -> Generator[Tuple[Value, JsonType],
                                                       None, None]:
-    """Expand json line to several lines."""
-    assert isinstance(expand, list)
+    """Expand json line to one line per element of the lists at expand.
+
+    Each path in expand is applied in order. A list at a path gives one
+    line per element, with the element in place of the list, so an empty
+    list gives no line at all. Any other value at a path, such as a single
+    XML element, or no value, leaves the line as it is. Every line yielded
+    is a new object, and dline is never modified.
+    """
     if not expand:
         yield (skey, dline)
         return
-    local_expand = deepcopy(expand)
-    local_dline = deepcopy(dline)
-    path = local_expand[0]
-    assert isinstance(path, list)
-    atpath = get_at_path(indata=local_dline, path=path,
+    path, rest = expand[0], expand[1:]
+    atpath = get_at_path(indata=dline, path=path,
                          missing=MissingInputForColumn.EMPTY)
-    if atpath is None:
-        for ekey, eline in expand_line(skey=skey, dline=local_dline,
-                                       expand=expand[1:]):
-            yield (ekey, eline)
+    if not isinstance(atpath, list):
+        yield from expand_line(skey=skey, dline=dline, expand=rest)
         return
-    alt = deepcopy(atpath)
-    if isinstance(alt, list):
-        for elem in alt:
-            set_at_path(local_dline, path, elem)
-            for ekey, eline in expand_line(skey=skey, dline=local_dline,
-                                           expand=expand[1:]):
-                yield (ekey, eline)
-        return
-    yield (skey, local_dline)
+    for elem in atpath:
+        line = deepcopy(dline)
+        set_at_path(data=line, path=path, newdata=deepcopy(elem))
+        yield from expand_line(skey=skey, dline=line, expand=rest)
+
+
+def keyed_records(lines: list[JsonType] | dict[str, JsonType]) \
+        -> Iterable[Tuple[str | int, JsonType]]:
+    """Return the records with their list index or dict key."""
+    if isinstance(lines, list):
+        return enumerate(lines)
+    for key in lines:
+        if not isinstance(key, (int, str)):
+            print(f'Key "{key}" is not str or int as expected',
+                  file=sys.stderr)
+            sys.exit(1)
+    return lines.items()
 
 
 def get_lines(indata: JsonType, missing: MissingInputForColumn,
               path: list[str],
               expand_at: list[list[str]]) -> Generator[Tuple[Value, JsonType],
                                                        None, None]:
-    """Get (as generator) all items in indata under path."""
+    """Get (as generator) all items in indata under path.
+
+    The items may be held in a list or in a dict, and each item is
+    expanded at the paths in expand_at (see expand_line).
+    """
     lines: JsonType = get_at_path(indata=indata, path=path, missing=missing)
     if lines is None:
         yield (0, None)
         return
-    assert lines is not None
     if not isinstance(lines, (list, dict)):
         yield (0, lines)  # single value at path
         return
-    assert isinstance(lines, (list, dict))
-    if isinstance(lines, list):
-        assert isinstance(lines, list)
-        llines: list[JsonType] = lines
-        for key, dat in enumerate(llines):
-            yield (key, dat)
-    elif isinstance(lines, dict):
-        assert isinstance(lines, dict)
-        dlines: dict[str | int, JsonType] = \
-            cast(dict[str | int, JsonType], lines)
-        for skey, ddat in dlines.items():
-            if not isinstance(skey, (int, str)):
-                print(f'Key "{skey}" is not str or int as expected',
-                      file=sys.stderr)
-                sys.exit(1)
-            assert isinstance(skey, (int, str))
-            ddat = dlines[skey]
-            if len(expand_at) == 0:
-                yield (skey, ddat)
-            else:
-                for expkey, expline in expand_line(skey, ddat, expand_at):
-                    yield (expkey, expline)
-    else:  # pragma: no cover
-        print('internal error in get_line()', file=sys.stderr)
-        print(f'lines is {type(lines).__name__}', file=sys.stderr)
-        sys.exit(1)
+    for key, record in keyed_records(lines):
+        yield from expand_line(skey=key, dline=record, expand=expand_at)
 
 
 def get_columns(inline: JsonType, colspec: dict[str, list[str]],
