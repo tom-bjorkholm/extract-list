@@ -113,10 +113,10 @@ the built and installed application in the virtual environment `./venv`.
 
 ## Test summary
 
-- Test result: 1524 passed in 98s (0:01:38)
+- Test result: 1524 passed in 60s (0:01:00)
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
 - Built version(s): 0.8
-- Build and test using Python 3.13.17
+- Build and test using Python 3.14.9
