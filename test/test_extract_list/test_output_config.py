@@ -62,3 +62,24 @@ def test_output_no_encoding(capsys: pytest.CaptureFixture[str],
     assert cfg.output_encoding() == 'utf-8'
     assert not cfg.kept_value_paths()
     check_capsys(capsys=capsys)
+
+
+@pytest.mark.parametrize('format_name, expected_name',
+                         [(None, 'Excel'), ('CSV', 'CSV'), ('JSON', 'JSON'),
+                          ('Plaintxt', 'Plaintxt')])
+def test_output_all_options(capsys: pytest.CaptureFixture[str],
+                            format_name: Optional[str],
+                            expected_name: str) -> None:
+    """Test settings with all options, where TableIO gives the encoding.
+
+    The encoding TableIO gives is kept, and the options of other formats,
+    such as the CSV section, are included too.
+    """
+    cfg = ExtractOutputConfig(capabilities=get_outfile_capabilities(),
+                              file_access=FileAccess.CREATE,
+                              format_name=format_name,
+                              include_all_options=True, stderr_file=sys.stderr)
+    assert cfg.format_name == expected_name
+    assert cfg.character_encoding == 'utf-8'
+    assert cfg.csv is not None
+    check_capsys(capsys=capsys)

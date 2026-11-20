@@ -284,7 +284,8 @@ def test_gen_cfg_sw_xml_err(capsys: pytest.CaptureFixture[str],
     out, err = capsys.readouterr()
     assert out == ''
     assert err == 'Invalid configuration: XML output column names in ' + \
-        'column_order must not contain whitespace. Invalid column ' + \
+        'column_order must be XML names: a letter or _ and then only ' + \
+        'letters, digits, _, - or . (no whitespace). Invalid column ' + \
         'name(s): Sail Number, Boat Name, Club Name\n'
 
 

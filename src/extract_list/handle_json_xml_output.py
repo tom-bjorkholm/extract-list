@@ -25,19 +25,18 @@ def append_to_key(row: Row, key: str, prefix: str) -> None:
 
 
 def handle_xml_output(data: Data, filename: str, cfg: ExtractConfig) -> None:
-    """Handle output to XML file."""
-    indata = deepcopy(data)
-    outdata: dict[str, dict[str, Value]] = {}
-    for i, row in enumerate(indata):
+    """Handle output to XML file.
+
+    Each row is written as one <row> element in the <data> root element,
+    in order, so rows with equal values are all kept. The columns in
+    cfg.out_xml_attributes are attributes of <row>, and the other columns,
+    the key column included, are elements in it.
+    """
+    rows = deepcopy(data)
+    for row in rows:
         for key in cfg.out_xml_attributes:
             append_to_key(row=row, key=key, prefix='@')
-        rowkey = 'row_' + str(i)
-        if cfg.include_key and cfg.column_name_for_key in row:
-            key_value = row[cfg.column_name_for_key]
-            assert isinstance(key_value, str)
-            rowkey = key_value
-        outdata[rowkey] = row
-    to_output = {'data': outdata}
+    to_output = {'data': {'row': rows}}
     encoding = cfg.output_encoding()
     with open(file=filename, mode='w', encoding=encoding) as file:
         xmltodict.unparse(to_output, output=file, pretty=True,

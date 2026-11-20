@@ -4,14 +4,18 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
-from string import whitespace
 from typing import NoReturn, Optional, TextIO, cast
+import re
 import sys
 from config_as_json import Config, InvalidConfiguration, \
     MemberValidator, WholeConfigValidator, member_path
 from extract_list.extract_config_params import ExtractConfigParams, \
     LineSpecBase
 from extract_list.member_paths import element_path
+
+XML_NAME = re.compile(r'[^\W\d][\w.-]*')
+"""An XML element or attribute name: a letter or _ and then letters,
+digits, _, - or . (the XML Name rule, without namespace colons)."""
 
 
 def _raise_invalid_configuration(message: str,
@@ -127,7 +131,10 @@ class ColumnReferenceValidator(WholeConfigValidator):
 
 # pylint: disable-next=too-few-public-methods
 class XmlColumnNameValidator(MemberValidator):
-    """Validate XML output column names."""
+    """Validate that XML output column names are valid XML names.
+
+    Each column becomes an XML element or attribute name (see XML_NAME).
+    """
 
     def validate_member(self, config: Config, member_name: str,
                         member_value: object,
@@ -138,13 +145,13 @@ class XmlColumnNameValidator(MemberValidator):
             return member_value
         assert isinstance(member_value, list)
         column_order = cast(list[str], member_value)
-        invalid_names = [
-            name for name in column_order
-            if any(char in whitespace for char in name)]
+        invalid_names = [name for name in column_order
+                         if not XML_NAME.fullmatch(name)]
         if not invalid_names:
             return member_value
         msg = 'Invalid configuration: XML output column names in '
-        msg += f'{member_name} must not contain whitespace. '
+        msg += f'{member_name} must be XML names: a letter or _ and then '
+        msg += 'only letters, digits, _, - or . (no whitespace). '
         msg += 'Invalid column name(s): '
         msg += ', '.join(invalid_names)
         _raise_invalid_configuration(msg, stderr_file)

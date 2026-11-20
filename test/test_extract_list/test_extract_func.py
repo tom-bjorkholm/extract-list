@@ -50,21 +50,21 @@ def check_example_row(row: Row, num_calls: dict[str, dict[int, int]]) -> None:
         assert customer_name == 'Donald Duck'
         assert row['Street'] == 'Some Road'
         assert int(street_number) == 666
-        assert str(row['key col']) in ['345', 'i_345']
+        assert str(row['key_col']) in ['345', 'i_345']
     if what == 'orange' and 'Donald' in customer_name:
         incr_calls(num_calls, 'orange', 345)
         assert int(how_many) == 70
         assert customer_name == 'Donald Duck'
         assert row['Street'] == 'Some Road'
         assert int(street_number) == 666
-        assert str(row['key col']) in ['345', 'i_345']
+        assert str(row['key_col']) in ['345', 'i_345']
     if what == 'orange' and 'Mouse' in customer_name:
         incr_calls(num_calls, 'orange', 234)
         assert int(how_many) == 6
         assert customer_name == 'Mickey Mouse'
         assert row['Street'] == 'Another Street'
         assert int(street_number) == 7
-        assert str(row['key col']) in ['234', 'i_234']
+        assert str(row['key_col']) in ['234', 'i_234']
 
 
 @pytest.mark.parametrize('inpar',

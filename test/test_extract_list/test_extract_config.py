@@ -222,7 +222,7 @@ def test_cross_check_columns_ok(capsys: pytest.CaptureFixture[str],
     for elem in linked:
         col_order += deepcopy(list(elem.columns.keys()))
     if keyinc:
-        col_order.append('key col')
+        col_order.append('key_col')
     cfg = ExtractConfig()
     cfg.include_key = keyinc
     cfg.main_line.columns = main
@@ -305,7 +305,7 @@ def test_column_refs_all(capsys: pytest.CaptureFixture[str],
     """Test that every column reference problem is reported at once."""
     cfg = ExtractConfig()
     cfg.column_order = ['What', 'Bogus', 'Customer name', 'Street',
-                        'Street number', 'key col']
+                        'Street number', 'key_col']
     cfg.order_rows_by = ['Sorter']
     cfg.out_xml_attributes = ['Attr']
     with pytest.raises(InvalidConfiguration):
@@ -333,7 +333,7 @@ def test_check_extr_uniq_col_ok1(capsys: pytest.CaptureFixture[str]) -> None:
             lls.columns['c' + str(cnum) + '_' + str(ival)] = ['d', str(cnum)]
         cfg.linked_lines.append(lls)
     cfg.column_order = [name for lls in cfg.linked_lines
-                        for name in lls.columns] + ['a', 'b', 'key col']
+                        for name in lls.columns] + ['a', 'b', 'key_col']
     cfg.out_xml_attributes = []
     cfg.validate(stderr_file=sys.stderr)
     check_capsys(capsys=capsys)
@@ -385,13 +385,13 @@ def test_uniq_col_linked_path(capsys: pytest.CaptureFixture[str]) -> None:
 def test_uniq_col_key_path(capsys: pytest.CaptureFixture[str]) -> None:
     """Test that a repeat of the key column names column_name_for_key."""
     cfg = ExtractConfig()
-    cfg.main_line.columns = {'a': ['a1'], 'key col': ['k1']}
+    cfg.main_line.columns = {'a': ['a1'], 'key_col': ['k1']}
     cfg.linked_lines = []
     assert cfg.include_key
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
-    errmsg = ['Repeated column name(s): key col at '
-              'main_line.columns[key col], column_name_for_key']
+    errmsg = ['Repeated column name(s): key_col at '
+              'main_line.columns[key_col], column_name_for_key']
     check_capsys(capsys=capsys, in_err=errmsg)
 
 

@@ -34,9 +34,15 @@ class PathNotInData(KeyError):
 
 def get_at_path(indata: JsonType, path: list[str],
                 missing: MissingInputForColumn) -> Optional[JsonType]:
-    """Get the data at path in JSON indata."""
+    """Get the data at path in JSON indata.
+
+    None, such as an empty XML element, has no keys, so a path through it
+    is handled like a missing key, as given by missing.
+    """
     assert len(path) >= 1
     pkey = path[0]
+    if indata is None:
+        indata = {}
     if not isinstance(indata, dict):
         print('Input data does not match configuration.', file=sys.stderr)
         print(f'Trying to extract data at {path} in data that is ' +
@@ -124,7 +130,9 @@ def get_lines(indata: JsonType, missing: MissingInputForColumn,
     The items may be held in a list or in a dict, and each item is
     expanded at the paths in spec.expand_at (see expand_line). With
     spec.dict_at_line_is_record true, a dict under spec.line is one item
-    (see keyed_records).
+    (see keyed_records). An item that is None, such as an empty XML
+    element, holds no record and is skipped. When there is no value at
+    spec.line, the only item yielded is (0, None).
     """
     lines: JsonType = get_at_path(indata=indata, path=spec.line,
                                   missing=missing)
@@ -135,7 +143,9 @@ def get_lines(indata: JsonType, missing: MissingInputForColumn,
         yield (0, lines)  # single value at path
         return
     for key, record in keyed_records(lines, spec.dict_at_line_is_record):
-        yield from expand_line(skey=key, dline=record, expand=spec.expand_at)
+        if record is not None:
+            yield from expand_line(skey=key, dline=record,
+                                   expand=spec.expand_at)
 
 
 def get_columns(inline: JsonType, colspec: dict[str, list[str]],
@@ -237,6 +247,45 @@ def add_from_linked_to_main(from_main: Data, from_linked: Data) -> Data:
     return ret
 
 
+def _sign[T: (str, float, datetime, timedelta)](left: T, right: T) -> int:
+    """Return -1, 0 or 1 as left is less than, equal to or above right."""
+    return int(left > right) - int(left < right)
+
+
+def _as_timedelta(value: Value, other: Value) -> Value:
+    """Return value as seconds when compared to a timedelta (other)."""
+    if isinstance(other, timedelta) and isinstance(value, (int, float)):
+        return timedelta(seconds=value)
+    return value
+
+
+def _same_awareness(left: datetime, right: datetime) -> bool:
+    """Return True if both datetimes are naive or both are aware."""
+    return (left.utcoffset() is None) == (right.utcoffset() is None)
+
+
+def compare_values(left: Value, right: Value) -> int:
+    """Compare two values, returning -1, 0 or 1 as for sorting.
+
+    None comes before any other value. Numbers compare by value with
+    numbers, and with a timedelta as that many seconds. Two timedeltas, or
+    two datetimes that are both naive or both aware, compare by value. Any
+    other mix of types, such as a str and a number, compares as the str of
+    each value.
+    """
+    if left is None or right is None:
+        return int(left is not None) - int(right is not None)
+    left, right = _as_timedelta(left, right), _as_timedelta(right, left)
+    if isinstance(left, timedelta) and isinstance(right, timedelta):
+        return _sign(left, right)
+    if isinstance(left, datetime) and isinstance(right, datetime) and \
+            _same_awareness(left, right):
+        return _sign(left, right)
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return _sign(left, right)
+    return _sign(str(left), str(right))
+
+
 class RowCompare:  # pylint: disable=too-few-public-methods
     """Function object class to compare rows for sorting."""
 
@@ -244,67 +293,15 @@ class RowCompare:  # pylint: disable=too-few-public-methods
         """Construct object that will be used to compare rows."""
         self.cols: list[str] = cols
 
-    def _timedelta_compare(self, left: Value, right: Value) -> int:
-        """Compare a timedelta value to another value.
+    def compare(self, left_row: Row, right_row: Row) -> int:
+        """Compare two Rows by the values in cols (see compare_values).
 
-        The other value can be timedelta or not.
+        The first column in cols where the values differ decides.
         """
-        assert isinstance(left, timedelta) or isinstance(right, timedelta)
-        if isinstance(left, (int, float)):
-            left = timedelta(seconds=left)
-        if isinstance(right, (int, float)):
-            right = timedelta(seconds=right)
-        if isinstance(left, (str, datetime)) or \
-                isinstance(right, (str, datetime)):
-            s_left = str(left)
-            s_right = str(right)
-            if s_left < s_right:
-                return -1
-            if s_right < s_left:
-                return 1
-            return 0
-        assert isinstance(left, timedelta)
-        assert isinstance(right, timedelta)
-        if left < right:
-            return -1
-        if right < left:
-            return 1
-        return 0
-
-    def compare(self,  # pylint: disable=too-many-return-statements
-                left_row: Row, right_row: Row) -> int:
-        """Compare two Rows."""
         for col in self.cols:
-            left = left_row[col]
-            right = right_row[col]
-            if left is None and right is not None:
-                return -1
-            if left is not None and right is None:
-                return 1
-            if left is None and right is None:
-                continue
-            assert left is not None  # keep mypy happy
-            assert right is not None  # keep mypy happy
-            if isinstance(left, timedelta) or isinstance(right, timedelta):
-                tdcmp = self._timedelta_compare(left, right)
-                if tdcmp != 0:
-                    return tdcmp
-            assert not isinstance(left, timedelta)
-            assert not isinstance(right, timedelta)
-            if isinstance(left, (str, datetime)) or \
-               isinstance(right, (str, datetime)):
-                # keep mypy happy
-                if str(left) < str(right):
-                    return -1
-                if str(right) < str(left):
-                    return 1
-            else:
-                assert not isinstance(left, (str, datetime))
-                assert not isinstance(right, (str, datetime))
-                if left < right:
-                    return -1
-                if right < left:
-                    return 1
+            result = compare_values(left_row[col], right_row[col])
+            if result != 0:
+                return result
         return 0
 
 

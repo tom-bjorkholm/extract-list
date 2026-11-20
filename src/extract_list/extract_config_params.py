@@ -175,7 +175,7 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
         self.infile_encoding: str = 'utf-8'
         self.in_xml_strip_at: bool = False
         self.include_key: bool = True
-        self.column_name_for_key: str = 'key col'
+        self.column_name_for_key: str = 'key_col'
         self.missing_input_for_column: MissingInputForColumn = \
             MissingInputForColumn.EMPTY
         self.main_line: MainLineSpec = self.example_main_line()
@@ -186,7 +186,7 @@ class ExtractConfigParams:  # pylint: disable=too-many-instance-attributes
         self.output: ExtractOutputConfig = self.default_output_config(
             stderr_file=stderr_file)
         self.column_order: list[str] = ['What', 'How many', 'Customer name',
-                                        'Street', 'Street number', 'key col']
+                                        'Street', 'Street number', 'key_col']
         self.order_rows_by: list[str] = []
         self.out_xml_attributes: list[str] = ['What']
 

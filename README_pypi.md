@@ -297,8 +297,11 @@ the input has XML attributes, the attribute key has an `@` prefix. To handle
 this, `in_xml_strip_at` can be set to `true` or `false`. If it is `true`, a
 leading `@` character is stripped from each key.
 
-The `out_xml_attributes` setting specifies column names that should be written
-as XML attributes in XML output instead of as nested objects.
+XML output has the root element `<data>` with one `<row>` element per output
+line, in output order. The `out_xml_attributes` setting specifies column names
+that should be written as XML attributes of `<row>` instead of as nested
+elements. For XML output each column name must be a valid XML name: a letter
+or `_` and then only letters, digits, `_`, `-` or `.`.
 
 ### Output column order
 
@@ -323,7 +326,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1412 passed in 56s
+- Test result: 1524 passed in 58s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

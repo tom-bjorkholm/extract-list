@@ -32,7 +32,7 @@ def test_extract_config_params_default_values(
     assert params.infile_encoding == 'utf-8'
     assert not params.in_xml_strip_at
     assert params.include_key
-    assert params.column_name_for_key == 'key col'
+    assert params.column_name_for_key == 'key_col'
     assert params.missing_input_for_column == MissingInputForColumn.EMPTY
     assert isinstance(params.main_line, MainLineSpec)
     assert len(params.linked_lines) == 1
@@ -46,7 +46,7 @@ def test_extract_config_params_default_values(
     assert params.output.character_encoding == 'utf-8'
     assert params.output.implementation is None
     assert params.column_order == ['What', 'How many', 'Customer name',
-                                   'Street', 'Street number', 'key col']
+                                   'Street', 'Street number', 'key_col']
     assert not params.order_rows_by
     assert params.out_xml_attributes == ['What']
     check_capsys(capsys=capsys)

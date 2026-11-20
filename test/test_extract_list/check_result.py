@@ -8,15 +8,15 @@ from extract_list.commontypes import Data, Row, Value
 
 ex_res: Data = [
     {'What': 'apple', 'How many': 5, 'Customer name': 'Donald Duck',
-     'Street': 'Some Road', 'Street number': 666, 'key col': '123'},
+     'Street': 'Some Road', 'Street number': 666, 'key_col': '123'},
     {'What': 'banana', 'How many': 1, 'Customer name': 'Mickey Mouse',
-     'Street': 'Another Street', 'Street number': 7, 'key col': '234'},
+     'Street': 'Another Street', 'Street number': 7, 'key_col': '234'},
     {'What': 'carrot', 'How many': 2, 'Customer name': 'Donald Duck',
-     'Street': 'Some Road', 'Street number': 666, 'key col': '345'},
+     'Street': 'Some Road', 'Street number': 666, 'key_col': '345'},
     {'What': 'orange', 'How many': 6, 'Customer name': 'Mickey Mouse',
-     'Street': 'Another Street', 'Street number': 7, 'key col': '234'},
+     'Street': 'Another Street', 'Street number': 7, 'key_col': '234'},
     {'What': 'orange', 'How many': 70, 'Customer name': 'Donald Duck',
-     'Street': 'Some Road', 'Street number': 666, 'key col': '345'}
+     'Street': 'Some Road', 'Street number': 666, 'key_col': '345'}
 ]
 
 ex2_res: Data = [

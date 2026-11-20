@@ -113,26 +113,41 @@ def test_append_to_key_ok(capsys: pytest.CaptureFixture[str], row: Row,
 @pytest.mark.parametrize('dat, attr, key, res',
                          [([{'a': 'b', 'c': 2, 'd': 'e'},
                             {'a': 'x', 'c': 7, 'd': 'y'}], ['d'], None,
-                           {'data': {'row_0': {'a': 'b', 'c': '2',
-                                               '@d': 'e'},
-                                     'row_1': {'a': 'x', 'c': '7',
-                                               '@d': 'y'}}}),
+                           {'data': {'row': [{'a': 'b', 'c': '2', '@d': 'e'},
+                                             {'a': 'x', 'c': '7',
+                                              '@d': 'y'}]}}),
                           ([{'a': 'b', 'c': '2', 'd': 'e'},
                             {'a': 'xåäö', 'c': '7', 'd': 'y'}], ['c'], None,
-                           {'data': {'row_0': {'a': 'b', '@c': '2',
-                                               'd': 'e'},
-                                     'row_1': {'a': 'xåäö', '@c': '7',
-                                               'd': 'y'}}}),
+                           {'data': {'row': [{'a': 'b', '@c': '2', 'd': 'e'},
+                                             {'a': 'xåäö', '@c': '7',
+                                              'd': 'y'}]}}),
                           ([{'a': 'b', 'c': 2, 'd': 'e'},
                             {'a': 'x', 'c': 7, 'd': 'y'}], ['d'], 'a',
-                           {'data': {'b': {'a': 'b', 'c': '2', '@d': 'e'},
-                                     'x': {'a': 'x', 'c': '7', '@d': 'y'}}})
-                          ])
+                           {'data': {'row': [{'a': 'b', 'c': '2', '@d': 'e'},
+                                             {'a': 'x', 'c': '7',
+                                              '@d': 'y'}]}}),
+                          ([{'k': 'o1', 'w': 'apple'},
+                            {'k': 'o1', 'w': 'carrot'}], [], 'k',
+                           {'data': {'row': [{'k': 'o1', 'w': 'apple'},
+                                             {'k': 'o1', 'w': 'carrot'}]}}),
+                          ([{'k': 0, 'w': 'apple'}, {'k': 1, 'w': 'pear'}],
+                           [], 'k',
+                           {'data': {'row': [{'k': '0', 'w': 'apple'},
+                                             {'k': '1', 'w': 'pear'}]}}),
+                          ([{'k': '123', 'w': 'apple'}], [], 'k',
+                           {'data': {'row': {'k': '123', 'w': 'apple'}}}),
+                          ([{'k': '123', 'w': 'apple'}], ['k'], 'k',
+                           {'data': {'row': {'@k': '123', 'w': 'apple'}}}),
+                          ([], [], None, {'data': None})])
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def test_xml_output_1(capsys: pytest.CaptureFixture[str], enc: str, dat: Data,
                       attr: list[str], key: Optional[str], res: JsonType) \
                           -> None:
-    """Test xml output in first way."""
+    """Test xml output, read back from the written file.
+
+    Every row is a <row> element, also rows with equal or int keys, and a
+    key such as "123" is a value, never an element name.
+    """
     with TemporaryDirectory() as dirname:
         fname = dirname + '/a.xml'
         cfg = ExtractConfig()
@@ -160,14 +175,12 @@ def dict_add(thedict: dict[str, list[str]], dictkey: str, addtxt: str) -> None:
 @pytest.mark.parametrize('dat, key, res',
                          [([{'a': 'b', 'c': 2, 'd': 'e'},
                             {'a': 'x', 'c': 7, 'd': 'y'}], None,
-                           {'data': {'row_0': {'a': 'b', 'c': 2,
-                                               'd': 'e'},
-                                     'row_1': {'a': 'x', 'c': 7,
-                                               'd': 'y'}}}),
+                           {'data': {'row': [{'a': 'b', 'c': 2, 'd': 'e'},
+                                             {'a': 'x', 'c': 7, 'd': 'y'}]}}),
                           ([{'a': 'b', 'c': 2, 'd': 'e'},
                             {'a': 'x', 'c': 7, 'd': 'y'}], 'a',
-                           {'data': {'b': {'a': 'b', 'c': 2, 'd': 'e'},
-                                     'x': {'a': 'x', 'c': 7, 'd': 'y'}}})])
+                           {'data': {'row': [{'a': 'b', 'c': 2, 'd': 'e'},
+                                             {'a': 'x', 'c': 7, 'd': 'y'}]}})])
 @pytest.mark.parametrize('attr', [[], ['a'], ['a', 'd']])
 # pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def test_xml_output_2(capsys: pytest.CaptureFixture[str],

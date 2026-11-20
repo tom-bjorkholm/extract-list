@@ -5,7 +5,7 @@
 # Copyright (c) 2024 - 2025 Tom Björkholm
 # MIT License
 
-import sys
+import sys  # pragma: no cover
 from extract_list.extract_cmd import extract_cmd  # pragma: no cover # noqa: E501
 
 if __name__ == '__main__':  # pragma: no cover

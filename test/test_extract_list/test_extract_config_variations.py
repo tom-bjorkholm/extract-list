@@ -71,7 +71,7 @@ def test_extract_config_var2(capsys: pytest.CaptureFixture[str], strip: bool,
     cfg.missing_input_for_column = deepcopy(miss)
     cfg.out_xml_attributes = deepcopy(attr)
     if not inck:
-        cfg.column_order.remove('key col')
+        cfg.column_order.remove('key_col')
     txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
     check_cfgs_equal(cfg, cf2)
@@ -96,7 +96,7 @@ def test_extract_config_var3(capsys: pytest.CaptureFixture[str], coname: str,
     cfg.output.csv = TioJsonCsvConfig(dialect=deepcopy(csv_dialect),
                                       delimiter=deepcopy(deli))
     cfg.output.implementation = deepcopy(excl)
-    cfg.column_order.remove('key col')
+    cfg.column_order.remove('key_col')
     cfg.column_order.append(deepcopy(coname))
     txt = cfg.as_json_string(stderr_file=sys.stderr)
     cf2 = ExtractConfig(from_json_data_text=txt)
@@ -115,13 +115,13 @@ ml1.columns['Box'] = ['box', 'number']
 ll1 = deepcopy(ExtractConfig.example_linked_line())
 ll1.columns['Zip'] = ['address', 'zip']
 kord1 = ['What', 'How many', 'Customer name',
-         'Street', 'Street number', 'key col',
+         'Street', 'Street number', 'key_col',
          'Box', 'Zip']
 ml2 = deepcopy(ExtractConfig.example_main_line())
 del ml2.columns['How many']
 ll2 = deepcopy(ExtractConfig.example_linked_line())
 del ll2.columns['Street number']
-kord2 = ['What', 'Customer name', 'Street', 'key col']
+kord2 = ['What', 'Customer name', 'Street', 'key_col']
 
 
 @pytest.mark.parametrize('main,linked,order',
@@ -220,13 +220,13 @@ def _set_config_value(config: ExtractConfig, member_path: str,
                            ['extracted column "Customer name" is missing']),
                           ('column_order',
                            ['What', 'How many', 'Customer name',
-                            'Street', 'Street number', 'key col', 'abc'],
+                            'Street', 'Street number', 'key_col', 'abc'],
                            InvalidConfiguration,
                            ['column_order includes column "abc"',
                             'but that column is not extracted']),
                           ('column_order',
                            ['What', 'How many', 'What', 'Customer name',
-                            'Street', 'Street number', 'key col'],
+                            'Street', 'Street number', 'key_col'],
                            InvalidConfiguration,
                            ['Value What for column_order at index 2',
                             'duplicates the value at index 0.']),
@@ -323,6 +323,10 @@ def test_old_format_obj(capsys: pytest.CaptureFixture[str],
 @pytest.mark.parametrize('old_value, expected',
                          [(7, 7),
                           ({'name': 'csv.unix_dialect'}, {'dialect': 'UNIX'}),
+                          ({'name': 'csv.excel_tab'},
+                           {'dialect': 'EXCEL', 'delimiter': '\t'}),
+                          ({'name': 'csv.excel_tab', 'delimiter': ';'},
+                           {'dialect': 'EXCEL', 'delimiter': ';'}),
                           ({'name': 'custom', 'quoting': 'csv.quote_none',
                             'delimiter': ';'},
                            {'dialect': 'custom', 'quoting': 'none',
@@ -392,7 +396,7 @@ def test_current_output_wins_over_old_keys(
                            'column_order'),
                           ((), 'column_order',
                            ['What', 'How many', 'Customer name', 'Street',
-                            'Street number', 'key col', 'Zip'],
+                            'Street number', 'key_col', 'Zip'],
                            'column_order includes column "Zip", but that '
                            'column is not extracted')])
 def test_extract_config_err2(capsys: pytest.CaptureFixture[str],
@@ -421,8 +425,8 @@ def test_xml_column_names_nok(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(InvalidConfiguration):
         cfg.validate(stderr_file=sys.stderr)
     msgs = ['XML output column names in column_order',
-            'must not contain whitespace', 'How many', 'Customer name',
-            'Street number', 'key col']
+            'must be XML names', 'How many', 'Customer name',
+            'Street number']
     check_capsys(capsys=capsys, in_err=msgs)
 
 

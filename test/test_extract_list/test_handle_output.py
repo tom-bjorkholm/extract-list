@@ -61,12 +61,15 @@ def read_txt(filename: str, cfg: ExtractConfig) -> Data:
 
 
 def read_xml(filename: str, cfg: ExtractConfig) -> Data:
-    """Read from XML."""
+    """Read the rows from XML output, where each row is a <row> element.
+
+    One <row> element is read as a dict, so it is put in a list.
+    """
     indata = read_in_xml(filename=filename, encoding=cfg.output_encoding(),
                          strip_at=True)
     root = cast(dict[str, dict[str, JsonType]], indata)
-    data = cast(Data, list(root['data'].values()))
-    return data
+    rows = root['data']['row']
+    return cast(Data, rows if isinstance(rows, list) else [rows])
 
 
 def read_json(filename: str, cfg: ExtractConfig) -> Data:

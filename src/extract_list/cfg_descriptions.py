@@ -49,7 +49,8 @@ _TOP_LEVEL: dict[ConfigPath, str] = {
         'record. Only used when include_key is true. Like every extracted '
         'column it must also be listed in column_order.',
     ('missing_input_for_column',):
-        'What to do when a record has no value at the path of a column. '
+        'What to do when a record has no value at the path of a column, '
+        'such as when the path passes through an empty XML element. '
         'EMPTY leaves that cell empty, which suits input where records may '
         'leave out optional items. ERROR stops the extraction with a '
         'message, which helps to find misspelled paths.',
@@ -93,7 +94,9 @@ _TOP_LEVEL: dict[ConfigPath, str] = {
         'every extracted column exactly once and nothing else: every name '
         'in main_line.columns and in the columns of each linked line, and '
         'column_name_for_key when include_key is true. For XML output the '
-        'names become element names and must not contain whitespace.',
+        'names become element or attribute names, so each must start with '
+        'a letter or _ and then hold only letters, digits, _, - or . '
+        '(no whitespace).',
     ('column_order', EVERY):
         'Name of one extracted column. Its place in this list is its place '
         'in the output.',
@@ -103,8 +106,9 @@ _TOP_LEVEL: dict[ConfigPath, str] = {
     ('order_rows_by', EVERY):
         'Name of one extracted column to sort by.',
     ('out_xml_attributes',):
-        'Only used for XML output. Columns to write as XML attributes of the '
-        'element of each output line, rather than as nested elements.',
+        'Only used for XML output, where each output line is a <row> '
+        'element in the root element <data>. Columns to write as XML '
+        'attributes of the <row> element, rather than as nested elements.',
     ('out_xml_attributes', EVERY):
         'Name of one extracted column to write as an XML attribute.'
 }
@@ -117,7 +121,8 @@ _LINE_SPEC: dict[ConfigPath, str] = {
         'records. Example: ["orders"] for {"orders": {"o1": {...}}}. For XML '
         'input the path starts with the root element, such as '
         '["data", "orders", "order"]. See dict_at_line_is_record for when '
-        'the path ends at a repeated XML element.',
+        'the path ends at a repeated XML element. An empty XML element (null '
+        'in JSON) found as a record holds no data and is skipped.',
     ('line', EVERY): PATH_STEP,
     ('columns',):
         'Output columns taken from each record. The name of each entry is '
@@ -161,12 +166,15 @@ _LINK: dict[ConfigPath, str] = {
     ('linked_main_column',):
         'Path inside the main line record to the value that links it, such '
         'as ["customer"]. A linked record is linked to it when the value at '
-        'linked_column in the linked record is equal.',
+        'linked_column in the linked record is equal. A main line record '
+        'without this value stops the extraction, whatever '
+        'missing_input_for_column says.',
     ('linked_main_column', EVERY): PATH_STEP,
     ('linked_column',):
         'Path inside this linked record to the value that must equal the '
         'value at linked_main_column in the main line record, such as '
-        '["customer_number"].',
+        '["customer_number"]. A linked record without this value stops the '
+        'extraction, whatever missing_input_for_column says.',
     ('linked_column', EVERY): PATH_STEP
 }
 """Descriptions of the members only a linked line has."""
