@@ -6,7 +6,9 @@
 
 # from typing import TextIO
 from enum import Enum
-from config_as_json import string_best_match, string_to_enum_best_match
+import sys
+from config_as_json import InvalidConfiguration, string_best_match, \
+    string_to_enum_best_match
 from config_as_json.file_extension import fix_file_extension
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, list_out_file_formats
@@ -33,7 +35,7 @@ def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
         cfg.infile_type = InFileType.XML
         cfg.main_line.line.insert(0, 'data')
         cfg.linked_lines[0].line.insert(0, 'data')
-    cfg.write(to_json_filename=outfilename)
+    cfg.write(to_json_filename=outfilename, stderr_file=sys.stderr)
     return 0
 
 
@@ -74,7 +76,7 @@ def generate_cfg_example2(outfilename: str, cfgtype: CfgTypes,
         cfg.main_line.line.insert(0, 'data')
         cfg.linked_lines[0].line.insert(0, 'data')
         cfg.linked_lines[1].line.insert(0, 'data')
-    cfg.write(to_json_filename=outfilename)
+    cfg.write(to_json_filename=outfilename, stderr_file=sys.stderr)
     return 0
 
 
@@ -108,7 +110,7 @@ def generate_cfg_sw_to_rrs(outfilename: str, cfgtype: CfgTypes,
         cfg.infile_type = InFileType.XML
         cfg.main_line.line.insert(0, 'sailwave-data')
         cfg.main_line.line.append('competitor')
-    cfg.write(to_json_filename=outfilename)
+    cfg.write(to_json_filename=outfilename, stderr_file=sys.stderr)
     return 0
 
 
@@ -147,8 +149,12 @@ def generate_example_cfg(filename: str, cfgtype: str,
                               filtered_area=FormatRequest.NO),
         'output format')
     cfgout = fix_file_extension(filename=filename, ext_to_add='.cfg')
-    ret = CFGFUNCS[type_of_cfg](outfilename=cfgout, cfgtype=type_of_cfg,
-                                outtype=type_out)
+    try:
+        ret = CFGFUNCS[type_of_cfg](outfilename=cfgout, cfgtype=type_of_cfg,
+                                    outtype=type_out)
+    except InvalidConfiguration:
+        # The validator has already explained the problem on stderr.
+        return 1
     if ret != 0:  # pragma: no cover
         return ret
     txtout = fix_file_extension(filename=filename, ext_to_add='.txt',

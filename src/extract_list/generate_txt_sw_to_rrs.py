@@ -7,21 +7,30 @@
 from typing import TextIO
 import sys
 from extract_list.commontypes import CfgTypes
+from extract_list.config_enums import list_readable_formats
 from extract_list.generate_txt_syntax import generate_syntax_txt
+
+
+def _notice_unreadable(file: TextIO, outtype: str) -> None:
+    """Notify if excel-list-transform (using tableio) cannot read outtype."""
+    readable = list_readable_formats()
+    if outtype.lower() in [fmt.lower() for fmt in readable]:
+        return
+    noticemsg = '\nNotice: The expected next step excel-list-transform\n'
+    noticemsg += '        will require input in a format that tableio can '
+    noticemsg += 'read\n        (' + ', '.join(readable) + ')!\n'
+    noticemsg += '        But the selected output type is: '
+    noticemsg += outtype
+    noticemsg += '!\n\n'
+    print(noticemsg, file=sys.stderr)
+    print(noticemsg, file=file)
 
 
 def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
                            outtype: str) -> int:
     """Write text describing configuration example_json."""
     assert cfgtype in (CfgTypes.SW_JSON_TO_RRS, CfgTypes.SW_XML_TO_RRS)
-    if outtype.lower() not in ('csv', 'excel'):
-        noticemsg = '\nNotice: The expected next step excel-list-transform\n'
-        noticemsg += '        will require input in excel or CSV format!\n'
-        noticemsg += '        But the selected output type is: '
-        noticemsg += outtype
-        noticemsg += '!\n\n'
-        print(noticemsg, file=sys.stderr)
-        print(noticemsg, file=file)
+    _notice_unreadable(file=file, outtype=outtype)
     path = '"competitors"'
     msg = '''
     This is an example created to show how data exported from

@@ -7,7 +7,7 @@
 from tempfile import TemporaryDirectory
 from collections.abc import Callable
 from pathlib import Path
-from typing import cast
+from typing import Optional, cast
 import sys
 import pytest
 from config_as_json import JsonType
@@ -75,26 +75,33 @@ def read_json(filename: str, cfg: ExtractConfig) -> Data:
                                    encoding=cfg.output_encoding()))
 
 
-def read_csv(filename: str, cfg: ExtractConfig) -> Data:
-    """Read from CSV."""
+def _read_tableio(filename: str, cfg: ExtractConfig, format_name: str,
+                  implementation: str,
+                  args: Optional[OptionalArgsDict] = None) -> Data:
+    """Read a table file using tableio, after validating cfg."""
     cfg.validate(stderr_file=sys.stderr)
-    args = cast(OptionalArgsDict,
-                {'character_encoding': cfg.output_encoding()})
-    with create_tableio(format_name='CSV', file_name=filename,
-                        file_access=FileAccess.READ, implementation='csv',
-                        args=args) as table:
+    with create_tableio(format_name=format_name, file_name=filename,
+                        file_access=FileAccess.READ,
+                        implementation=implementation, args=args) as table:
         data = table.read_table_dictdata().data
     return data
+
+
+def read_csv(filename: str, cfg: ExtractConfig) -> Data:
+    """Read from CSV."""
+    args = cast(OptionalArgsDict,
+                {'character_encoding': cfg.output_encoding()})
+    return _read_tableio(filename, cfg, 'CSV', 'csv', args)
 
 
 def read_excel(filename: str, cfg: ExtractConfig) -> Data:
     """Read from Excel."""
-    cfg.validate(stderr_file=sys.stderr)
-    with create_tableio(format_name='Excel', file_name=filename,
-                        file_access=FileAccess.READ,
-                        implementation='OpenPyXL') as table:
-        data = table.read_table_dictdata().data
-    return data
+    return _read_tableio(filename, cfg, 'Excel', 'OpenPyXL')
+
+
+def read_ods(filename: str, cfg: ExtractConfig) -> Data:
+    """Read from ODS."""
+    return _read_tableio(filename, cfg, 'ODS', 'odfdo')
 
 
 def test_internal_exists(capsys: pytest.CaptureFixture[str]) -> None:

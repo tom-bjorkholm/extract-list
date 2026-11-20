@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 from json import loads as json_loads
 from shutil import copyfile
 from collections.abc import Callable
+from pathlib import Path
 from typing import Optional, cast
 import sys
 import pytest
@@ -20,9 +21,14 @@ from extract_list.extract_func import extract_func
 from extract_list.extract_cmd import extract_cmd
 from .example_data import ExampleData
 from .test_handle_output import read_csv, read_excel, \
-    read_json
+    read_json, read_ods
 from .check_capsys import check_capsys
 from .check_result import check_result, ex_res, ex2_res
+
+
+SW_NOTICE_MSGS = ['Notice: The expected next step excel-list-transform',
+                  'will require input in a format that tableio can read',
+                  '(CSV, Excel, ODS)!', 'But the selected output type is:']
 
 
 def assert_cfg_text_output(cfgtxt: str, output_format: str) -> None:
@@ -173,7 +179,9 @@ def check_txt_file_for_cfg(cfg_fname: str,
                          [('excel', read_excel,
                            'b.xlsx'),
                           ('csv', read_csv,
-                           'b.csv')])
+                           'b.csv'),
+                          ('ods', read_ods,
+                           'b.ods')])
 @pytest.mark.parametrize('inp',
                          [('sw_json_to_rrs',
                            'test/test_extract_list/SW.json',
@@ -237,11 +245,6 @@ def test_gen_cfg_sw_warn(capsys: pytest.CaptureFixture[str],  # pylint: disable=
         extr_cmd = ['extract', '-i', in_fname, '-o', out_fname,
                     '-c', cfg_fname]
         ret2 = extract_cmd(extr_cmd)
-        notice_msgs = [
-            'Notice: The expected next step excel-list-transform',
-            'will require input in excel or CSV format!',
-            'But the selected output type is:'
-        ]
         with open(file=cfg_fname, mode='r', encoding='utf-8') as file:
             cfgtxt = file.read().lower()
             assert_cfg_text_output(cfgtxt=cfgtxt, output_format=outp[0])
@@ -250,8 +253,39 @@ def test_gen_cfg_sw_warn(capsys: pytest.CaptureFixture[str],  # pylint: disable=
         assert ret == 0
         assert ret2 == 0
         check_result(result_data=data, other_result=sw_res_data)
-        check_txt_file_for_cfg(cfg_fname=cfg_fname, othermsgs=notice_msgs)
-    check_capsys(capsys=capsys, in_err=notice_msgs)
+        check_txt_file_for_cfg(cfg_fname=cfg_fname, othermsgs=SW_NOTICE_MSGS)
+    check_capsys(capsys=capsys, in_err=SW_NOTICE_MSGS)
+
+
+@pytest.mark.parametrize('outtype', ['md', 'txt', 'pdf', 'Plaintxt', 'JSON'])
+@pytest.mark.parametrize('kind', ['sw_json_to_rrs', 'sw_xml_to_rrs'])
+def test_gen_cfg_sw_notice(capsys: pytest.CaptureFixture[str], outtype: str,
+                           kind: str) -> None:
+    """Test notice when output cannot be read by excel-list-transform."""
+    with TemporaryDirectory() as folder:
+        cfg_fname = folder + '/' + 'c.cfg'
+        ret = extract_cmd(['cfg-example', '-k', kind, '-t', outtype,
+                           '-o', cfg_fname])
+        assert ret == 0
+        msgs = SW_NOTICE_MSGS + [f'output type is: {outtype}!']
+        check_txt_file_for_cfg(cfg_fname=cfg_fname, othermsgs=msgs)
+    check_capsys(capsys=capsys, in_err=msgs)
+
+
+@pytest.mark.parametrize('kind', ['sw_json_to_rrs', 'sw_xml_to_rrs'])
+def test_gen_cfg_sw_xml_err(capsys: pytest.CaptureFixture[str],
+                            kind: str) -> None:
+    """Test that invalid generated cfg gives only a message and ret 1."""
+    with TemporaryDirectory() as folder:
+        ret = extract_cmd(['cfg-example', '-k', kind, '-t', 'XML',
+                           '-o', folder + '/c.cfg'])
+        assert ret == 1
+        assert not list(Path(folder).iterdir())
+    out, err = capsys.readouterr()
+    assert out == ''
+    assert err == 'Invalid configuration: XML output column names in ' + \
+        'column_order must not contain whitespace. Invalid column ' + \
+        'name(s): Sail Number, Boat Name, Club Name\n'
 
 
 @pytest.mark.parametrize('outp',

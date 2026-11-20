@@ -73,6 +73,12 @@ def list_out_file_formats(border: FormatRequest = FormatRequest.NO,
     return formats
 
 
+def list_readable_formats() -> list[str]:
+    """List file formats that tableio can read (and thus can be input)."""
+    cap = Capabilities(can_read=CAP_NEEDED)
+    return list_registered_tableio(capabilities=cap, empty_is_ok=True)
+
+
 def is_internal_out_file_format(format_name: str) -> bool:
     """Return True if the output format is handled inside extract-list."""
     return format_name.lower() in [x.lower() for x in INTERNAL_OUTFILE_FORMATS]
