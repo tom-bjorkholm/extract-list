@@ -26,6 +26,13 @@ def _notice_unreadable(file: TextIO, outtype: str) -> None:
     print(noticemsg, file=file)
 
 
+SW_XML_SINGLE = '''
+    For XML input "dict_at_line_is_record" is set to true. Each
+    <competitor> element is one record, so also a file with only one
+    competitor is read as one record and not as records keyed by name.
+    '''
+
+
 def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
                            outtype: str) -> int:
     """Write text describing configuration example_json."""
@@ -52,7 +59,7 @@ def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
     Some rewriting of phone numbers to international format may also
     be needed before RRS import depending on how they entered into SW.
 
-    Here we choose {path} to be the path of to the main line.
+    Here we choose {path} to be the path to the main line.
     The dictionary key directly following "competitors" could be included
     in the output as a key value, but we choose to exclude it by setting
     "include_key" to false.
@@ -66,6 +73,8 @@ def generate_txt_sw_to_rrs(file: TextIO, cfgtype: CfgTypes,
 
     In this case there will be no linked lines.
     '''
+    if cfgtype == CfgTypes.SW_XML_TO_RRS:
+        msg += SW_XML_SINGLE
     print(msg, file=file)
     generate_syntax_txt(file=file, outtype=outtype)
     return 0

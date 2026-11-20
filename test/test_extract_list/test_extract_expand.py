@@ -70,8 +70,10 @@ def test_get_lines_expand(capsys: pytest.CaptureFixture[str],
     """Test that get_lines expands records held in a list or in a dict."""
     indata: JsonType = {'top': {'recs': records}}
     original = deepcopy(indata)
+    spec = MainLineSpec(data={'line': ['top', 'recs'], 'columns': {},
+                              'expand_at': [['items']]})
     result = list(get_lines(indata=indata, missing=MissingInputForColumn.ERROR,
-                            path=['top', 'recs'], expand_at=[['items']]))
+                            spec=spec))
     assert result == list(zip(keys, EXPANDED))
     assert indata == original
     check_capsys(capsys=capsys)

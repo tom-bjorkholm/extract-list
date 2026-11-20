@@ -238,6 +238,17 @@ The `line` member of `main_line` and `linked_lines` is a list of strings. This
 list is the path of keys to the input records. Directly below that path there
 is either a list or a dictionary of records.
 
+A dictionary directly below that path is normally read as records indexed by
+their keys. For XML input this is ambiguous: an element that is repeated gives
+a list, but the same element occurring only once gives a single record, which
+then would be misread as records indexed by key. Set the
+`dict_at_line_is_record` member to `true` when the path ends at such a repeated
+element (for example one `<customers>` element per customer). A dictionary
+directly below the path is then read as one single record. Keep it `false`
+when the path ends at an element holding the records keyed by their element
+names (for example `<orders><o1>...</o1><o2>...</o2></orders>`). The same rule
+applies to JSON input.
+
 The records of the `main_line` are indexed in the input, either by integer
 position in a list or by key in a dictionary. If you want this index or key in
 the output, set `include_key` to `true`. If not, set it to `false`. The output
@@ -312,7 +323,7 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1382 passed in 54s
+- Test result: 1412 passed in 56s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.

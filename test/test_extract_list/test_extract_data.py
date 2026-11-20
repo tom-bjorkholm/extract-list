@@ -19,6 +19,11 @@ from extract_list.commontypes import Data, Row
 from .check_capsys import check_capsys
 
 
+def line_spec(path: list[str]) -> MainLineSpec:
+    """Return a line specification of path, with no columns."""
+    return MainLineSpec(data={'line': path, 'columns': {}, 'expand_at': []})
+
+
 da1: dict[str, JsonType] = {'ab': 'c', 'de': 'g', 'fg': 9}
 da2: dict[str, JsonType] = {'ax': 'h', 'bx': 'ij', 'cx': 7}
 db1: dict[str, JsonType] = {'xq': da1, 'xw': 'kl', 'xe': da2}
@@ -143,8 +148,8 @@ def test_get_lines_ok1(capsys: pytest.CaptureFixture[str],
     result = deepcopy(res)
     counter = 0
     for index, (_, line) in enumerate(get_lines(indata=deepcopy(inp),
-                                                missing=mis, path=pat,
-                                                expand_at=[])):
+                                                missing=mis,
+                                                spec=line_spec(pat))):
         assert line == result[index]
         counter += 1
     assert len(result) == counter
@@ -163,8 +168,8 @@ def test_get_lines_ok2(capsys: pytest.CaptureFixture[str], inp: JsonType,
     counter = 0
     for index, (_, line) in \
         enumerate(get_lines(indata=deepcopy(inp),
-                            missing=MissingInputForColumn.EMPTY, path=pat,
-                            expand_at=[])):
+                            missing=MissingInputForColumn.EMPTY,
+                            spec=line_spec(pat))):
         assert line is None
         counter += 1
         assert 0 == index
@@ -185,8 +190,8 @@ def test_get_lines_nok1(capsys: pytest.CaptureFixture[str], inp: JsonType,
     with pytest.raises(SystemExit):
         for index, (_, line) in \
             enumerate(get_lines(indata=deepcopy(inp),
-                                missing=MissingInputForColumn.ERROR, path=pat,
-                                expand_at=[])):
+                                missing=MissingInputForColumn.ERROR,
+                                spec=line_spec(pat))):
             assert line is None
             counter += 1
             assert 0 == index
@@ -207,8 +212,8 @@ def test_get_lines_nok2(capsys: pytest.CaptureFixture[str], inp: object,
     with pytest.raises(SystemExit):
         for index, (_, line) in \
             enumerate(get_lines(indata=cast(JsonType, deepcopy(inp)),
-                                missing=MissingInputForColumn.EMPTY, path=pat,
-                                expand_at=[])):
+                                missing=MissingInputForColumn.EMPTY,
+                                spec=line_spec(pat))):
             assert line is None
             counter += 1
             assert 0 == index

@@ -116,7 +116,8 @@ _LINE_SPEC: dict[ConfigPath, str] = {
         'element. What is found there must be a list or a dictionary of '
         'records. Example: ["orders"] for {"orders": {"o1": {...}}}. For XML '
         'input the path starts with the root element, such as '
-        '["data", "orders", "order"].',
+        '["data", "orders", "order"]. See dict_at_line_is_record for when '
+        'the path ends at a repeated XML element.',
     ('line', EVERY): PATH_STEP,
     ('columns',):
         'Output columns taken from each record. The name of each entry is '
@@ -144,7 +145,15 @@ _LINE_SPEC: dict[ConfigPath, str] = {
         'value that is not a list, such as one XML element, or no value, '
         'leaves the record as one line. An empty list gives no line, so the '
         'record is left out of the output.',
-    ('expand_at', EVERY, EVERY): PATH_STEP
+    ('expand_at', EVERY, EVERY): PATH_STEP,
+    ('dict_at_line_is_record',):
+        'How a dictionary found at "line" is read. false: it holds the '
+        'records keyed by name, such as {"o1": {...}, "o2": {...}}, or for '
+        'XML <orders><o1>...</o1><o2>...</o2></orders>. true: it is one '
+        'single record. Set true when "line" ends at an XML element that '
+        'is repeated once per record, such as <order>: two or more give a '
+        'list, but only one gives a dictionary, which must then be read as '
+        'one record. A list at "line" is read the same either way.'
 }
 """Descriptions of the members of main_line and of each linked line."""
 

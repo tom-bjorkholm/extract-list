@@ -163,10 +163,22 @@ def generate_syntax_txt(file: TextIO, outtype: str) -> None:
     some item in the linked line has the same value as some other item in
     the main line.
 
-    The "line" sub-parameter of the the "main_line" and "linked_lines"
+    The "line" sub-parameter of the "main_line" and "linked_lines"
     configuration parameters includes a list of strings. This list of
     strings is the path of keywords to the records. Directly below this
     path is either a list or a dictionary of the records.
+
+    A dictionary directly below this path is normally read as records
+    indexed by their keys. For XML input this is ambiguous: an element that
+    is repeated gives a list, but the same element occurring only once
+    gives a single record, which then would be misread as records indexed
+    by key. Set the "dict_at_line_is_record" sub-parameter to true when the
+    path ends at such a repeated element (for instance one <customers>
+    element per customer). A dictionary directly below the path is then
+    read as one single record. Keep it false when the path ends at an
+    element holding the records keyed by their element names (for
+    instance <orders><o1>...</o1><o2>...</o2></orders>). The same rule
+    applies to JSON input.
 
     The dictionary of the records of the "main_line" are indexed in the input
     (either by an integer index in the case of a list, or by the key in case
@@ -186,7 +198,7 @@ def generate_syntax_txt(file: TextIO, outtype: str) -> None:
     dictionary referenced by the "line" sub-parameter, can contain several
     sub-records. For instance if the record is a purchase order, then the
     order may include several purchased items. As the output format of a list
-    of columns does not support such nesting, the single input redord needs
+    of columns does not support such nesting, the single input record needs
     to be split into several output lines. The common items in the input
     record is then duplicated on all such lines split from the same input
     record. The configuration sub-parameter "expand_at" holds a list of
@@ -203,7 +215,7 @@ def generate_syntax_txt(file: TextIO, outtype: str) -> None:
 
     There can be only one main line, denoted by the "main_line" configuration
     parameter. In contrast there may be any number of linked lines.
-    The linked lines are described be an array for the the "linked_lines"
+    The linked lines are described by an array for the "linked_lines"
     configuration parameter. The sub-parameters described for the "main_line"
     shall also be configured for each item in the "linked_lines" array.
 
@@ -213,7 +225,7 @@ def generate_syntax_txt(file: TextIO, outtype: str) -> None:
     the input records using the familiar list of strings syntax.
     The "linked_column" sub-parameter denotes an item in the linked line
     record that shall have the same value as the item in the main line record
-    denoted by the the "linked_main_column" sub-parameter.
+    denoted by the "linked_main_column" sub-parameter.
 
     The data items used to link a linked line to a main line may be extracted
     to the output using the "column" sub-parameter, but this is totally
@@ -230,7 +242,7 @@ def generate_syntax_txt(file: TextIO, outtype: str) -> None:
     several linked lines tied to one main line will be flagged as an error.
 
     As items in records are optional in the input formats (JSON and XML) it
-    is possible the that there is no data at the paths specified for columns
+    is possible that there is no data at the paths specified for columns
     or specified for records.
     The configuration parameter "missing_input_for_column" determines how
     missing data in input is handled. The possible values are "EMPTY" and

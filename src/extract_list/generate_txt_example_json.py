@@ -59,7 +59,7 @@ This example is based on JSON input data in this format:
 
 ORDERS_MAIN_LINE_JSON = '''
 
-Here we choose "orders" to be the path of to the main line.
+Here we choose "orders" to be the path to the main line.
 In the following description we refer to this main line record
 as the order record.'''
 

@@ -35,6 +35,7 @@ def generate_cfg_example(outfilename: str, cfgtype: CfgTypes,
         cfg.infile_type = InFileType.XML
         cfg.main_line.line.insert(0, 'data')
         cfg.linked_lines[0].line.insert(0, 'data')
+        cfg.linked_lines[0].dict_at_line_is_record = True
     cfg.write(to_json_filename=outfilename, stderr_file=sys.stderr)
     return 0
 
@@ -76,6 +77,8 @@ def generate_cfg_example2(outfilename: str, cfgtype: CfgTypes,
         cfg.main_line.line.insert(0, 'data')
         cfg.linked_lines[0].line.insert(0, 'data')
         cfg.linked_lines[1].line.insert(0, 'data')
+        cfg.main_line.dict_at_line_is_record = True
+        cfg.linked_lines[1].dict_at_line_is_record = True
     cfg.write(to_json_filename=outfilename, stderr_file=sys.stderr)
     return 0
 
@@ -110,6 +113,7 @@ def generate_cfg_sw_to_rrs(outfilename: str, cfgtype: CfgTypes,
         cfg.infile_type = InFileType.XML
         cfg.main_line.line.insert(0, 'sailwave-data')
         cfg.main_line.line.append('competitor')
+        cfg.main_line.dict_at_line_is_record = True
     cfg.write(to_json_filename=outfilename, stderr_file=sys.stderr)
     return 0
 

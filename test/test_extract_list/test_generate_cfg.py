@@ -78,7 +78,7 @@ def test_gen_cfg_ex_ok1(capsys: pytest.CaptureFixture[str],
                                    str, Data,
                                    Callable[[str, CfgTypes, str],
                                             int]]) -> None:
-    """Test OK cases 1 of generate cfg exmaple."""
+    """Test OK cases 1 of generate cfg example."""
     with TemporaryDirectory() as folder:
         out_fname = folder + '/' + outp[2]
         in_fname = folder + '/' + inp[2]
@@ -130,7 +130,7 @@ def test_gen_cfg_sw_ok1(capsys: pytest.CaptureFixture[str],
                                     Callable[[str, ExtractConfig], Data],
                                     str],
                         inp: tuple[CfgTypes, str, str]) -> None:
-    """Test OK cases 1 of generate cfg exmaple."""
+    """Test OK cases 1 of generate cfg example."""
     with TemporaryDirectory() as folder:
         out_fname = folder + '/' + outp[2]
         in_fname = folder + '/' + inp[2]
@@ -194,7 +194,7 @@ def test_gen_cfg_sw_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
                                     Callable[[str, ExtractConfig], Data],
                                     str],
                         inp: tuple[str, str, str]) -> None:
-    """Test OK cases 2 of generate cfg exmaple."""
+    """Test OK cases 2 of generate cfg example."""
     with TemporaryDirectory() as folder:
         out_fname = folder + '/' + outp[2]
         in_fname = folder + '/' + inp[2]
@@ -233,7 +233,7 @@ def test_gen_cfg_sw_warn(capsys: pytest.CaptureFixture[str],  # pylint: disable=
                                      Callable[[str, ExtractConfig], Data],
                                      str],
                          inp: tuple[str, str, str]) -> None:
-    """Test OK cases of generate cfg exmaple with warnings."""
+    """Test OK cases of generate cfg example with warnings."""
     with TemporaryDirectory() as folder:
         out_fname = folder + '/' + outp[2]
         in_fname = folder + '/' + inp[2]
@@ -314,7 +314,7 @@ def test_gen_cfg_ex_ok2(capsys: pytest.CaptureFixture[str],  # pylint: disable=t
                                     str],
                         inp: tuple[str, Callable[[ExampleData, str], None],
                                    str, Data]) -> None:
-    """Test OK cases 2 of generate cfg exmaple."""
+    """Test OK cases 2 of generate cfg example."""
     with TemporaryDirectory() as folder:
         out_fname = folder + '/' + outp[2]
         in_fname = folder + '/' + inp[2]

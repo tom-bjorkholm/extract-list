@@ -11,7 +11,8 @@ from datetime import datetime, timedelta
 from functools import cmp_to_key
 from config_as_json import JsonType
 from extract_list.extract_config import ExtractConfig
-from extract_list.extract_config_params import LinkedLineSpec
+from extract_list.extract_config_params import LineSpecBase, \
+    LinkedLineSpec
 from extract_list.config_enums import MissingInputForColumn
 from extract_list.commontypes import Data, Row, Value
 
@@ -94,11 +95,19 @@ def expand_line(skey: Value, dline: JsonType,
         yield from expand_line(skey=skey, dline=line, expand=rest)
 
 
-def keyed_records(lines: list[JsonType] | dict[str, JsonType]) \
+def keyed_records(lines: list[JsonType] | dict[str, JsonType],
+                  dict_is_record: bool) \
         -> Iterable[Tuple[str | int, JsonType]]:
-    """Return the records with their list index or dict key."""
+    """Return the records with their list index or dict key.
+
+    With dict_is_record true, a dict is not records keyed by name but a
+    single record, such as an XML element that occurs only once. It is
+    then returned like a list of that one record, with index 0.
+    """
     if isinstance(lines, list):
         return enumerate(lines)
+    if dict_is_record:
+        return enumerate([lines])
     for key in lines:
         if not isinstance(key, (int, str)):
             print(f'Key "{key}" is not str or int as expected',
@@ -108,23 +117,25 @@ def keyed_records(lines: list[JsonType] | dict[str, JsonType]) \
 
 
 def get_lines(indata: JsonType, missing: MissingInputForColumn,
-              path: list[str],
-              expand_at: list[list[str]]) -> Generator[Tuple[Value, JsonType],
-                                                       None, None]:
-    """Get (as generator) all items in indata under path.
+              spec: LineSpecBase) -> Generator[Tuple[Value, JsonType],
+                                               None, None]:
+    """Get (as generator) all items in indata under spec.line.
 
     The items may be held in a list or in a dict, and each item is
-    expanded at the paths in expand_at (see expand_line).
+    expanded at the paths in spec.expand_at (see expand_line). With
+    spec.dict_at_line_is_record true, a dict under spec.line is one item
+    (see keyed_records).
     """
-    lines: JsonType = get_at_path(indata=indata, path=path, missing=missing)
+    lines: JsonType = get_at_path(indata=indata, path=spec.line,
+                                  missing=missing)
     if lines is None:
         yield (0, None)
         return
     if not isinstance(lines, (list, dict)):
         yield (0, lines)  # single value at path
         return
-    for key, record in keyed_records(lines):
-        yield from expand_line(skey=key, dline=record, expand=expand_at)
+    for key, record in keyed_records(lines, spec.dict_at_line_is_record):
+        yield from expand_line(skey=key, dline=record, expand=spec.expand_at)
 
 
 def get_columns(inline: JsonType, colspec: dict[str, list[str]],
@@ -150,8 +161,7 @@ def extract_main_line(indata: JsonType,
     """Extract columns with values according to main_line spec."""
     for key, line in get_lines(indata=indata,
                                missing=cfg.missing_input_for_column,
-                               path=cfg.main_line.line,
-                               expand_at=cfg.main_line.expand_at):
+                               spec=cfg.main_line):
         if line is None:
             print('No data matching main line in input', file=sys.stderr)
             print(f'Main line path is {cfg.main_line.line}', file=sys.stderr)
@@ -187,8 +197,7 @@ def extract_linked_line(indata: JsonType, main_line: MainDataLine,
                                    missing=MissingInputForColumn.ERROR)
     for _, line in get_lines(indata=indata,
                              missing=cfg.missing_input_for_column,
-                             path=linked_spec.line,
-                             expand_at=linked_spec.expand_at):
+                             spec=linked_spec):
         if line is None:
             break
         assert line is not None

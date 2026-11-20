@@ -101,6 +101,8 @@ def _assert_common_values(cfg: ExtractConfig, cfg_name: str) -> None:
     assert cfg.missing_input_for_column == _expected_missing(cfg_name)
     assert cfg.include_key == _expected_include_key(cfg_name)
     assert len(cfg.linked_lines) == _expected_link_count(cfg_name)
+    specs = [cfg.main_line, *cfg.linked_lines]
+    assert not any(spec.dict_at_line_is_record for spec in specs)
 
 
 def _assert_example_values(cfg: ExtractConfig, cfg_name: str) -> None:

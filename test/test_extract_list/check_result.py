@@ -37,7 +37,7 @@ def _check_value_equal(*,  # pylint: disable=too-many-arguments
                        res_val: Value, other_val: Value, key: str,
                        res_row: Row, other_row: Row, res_data: Data,
                        other_data: Data, turned: bool = False) -> None:
-    """Check if values are equal, allowing allowed differnces."""
+    """Check if values are equal, allowing allowed differences."""
     if res_val == other_val:
         return
     if isinstance(res_val, int) and isinstance(other_val, str):

@@ -26,7 +26,7 @@ from .check_capsys import check_capsys
                                           'col2': ['sdf', 'b1']})])
 def test_mainlinespec_1(capsys: pytest.CaptureFixture[str], lin: list[str],
                         col: dict[str, list[str]]) -> None:
-    """Test MainLineSprec (case 1)."""
+    """Test MainLineSpec (case 1)."""
     spec = MainLineSpec()
     spec.line = deepcopy(lin)
     spec.columns = deepcopy(col)
@@ -46,7 +46,7 @@ def test_mainlinespec_1(capsys: pytest.CaptureFixture[str], lin: list[str],
                                           'col2': ['sdf', 'b1']})])
 def test_mainlinespec_2(capsys: pytest.CaptureFixture[str], lin: list[str],
                         col: dict[str, list[str]]) -> None:
-    """Test MainLineSprec (case 2)."""
+    """Test MainLineSpec (case 2)."""
     mld: MLineDict = {'line': deepcopy(lin),
                       'columns': deepcopy(col),
                       'expand_at': []}
@@ -95,7 +95,7 @@ def test_mlinespec_json(capsys: pytest.CaptureFixture[str], lin: list[str],
 def test_linklinespec_1(capsys: pytest.CaptureFixture[str], lin: list[str],
                         col: dict[str, list[str]], lmc: list[str],
                         lcol: list[str]) -> None:
-    """Test LinkedLineSprec (case 1)."""
+    """Test LinkedLineSpec (case 1)."""
     spec = LinkedLineSpec()
     spec.line = deepcopy(lin)
     spec.columns = deepcopy(col)
@@ -124,7 +124,7 @@ def test_linklinespec_1(capsys: pytest.CaptureFixture[str], lin: list[str],
 def test_linklinespec_2(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-locals # noqa: E501
                         lin: list[str], col: dict[str, list[str]],
                         lmc: list[str], lcol: list[str]) -> None:
-    """Test LinkedLineSprec (case 2)."""
+    """Test LinkedLineSpec (case 2)."""
     lld: LLineDict = {'line': deepcopy(lin),
                       'columns': deepcopy(col),
                       'linked_main_column': deepcopy(lmc),
@@ -461,7 +461,10 @@ def _line_spec(cfg: ExtractConfig, spec: str) -> LineSpecBase:
                           ('linked_lines[0]', 'linked_main_column',
                            ['xy', 'ab']),
                           ('linked_lines[0]', 'linked_column', []),
-                          ('linked_lines[0]', 'expand_at', [['a', 'b'], []])])
+                          ('linked_lines[0]', 'expand_at', [['a', 'b'], []]),
+                          ('main_line', 'dict_at_line_is_record', True),
+                          ('linked_lines[0]', 'dict_at_line_is_record',
+                           False)])
 def test_line_spec_value_ok(capsys: pytest.CaptureFixture[str], spec: str,
                             member: str, value: object) -> None:
     """Test OK values of the members of the line specifications."""
@@ -501,7 +504,13 @@ def test_line_spec_value_ok(capsys: pytest.CaptureFixture[str], spec: str,
                            ['xy', 4], 'Value 4 for {p}.linked_main_column '
                            'at index 1 is not of type str'),
                           ('linked_lines[0]', 'linked_column', 'ab',
-                           'Value for {p}.linked_column is not a list')])
+                           'Value for {p}.linked_column is not a list'),
+                          ('main_line', 'dict_at_line_is_record', 'yes',
+                           'Value for {p}.dict_at_line_is_record is not of '
+                           'type bool'),
+                          ('linked_lines[0]', 'dict_at_line_is_record', 1,
+                           'Value for {p}.dict_at_line_is_record is not of '
+                           'type bool')])
 def test_line_spec_value_nok(capsys: pytest.CaptureFixture[str],  # pylint: disable=too-many-arguments,too-many-positional-arguments # noqa: E501
                              member: Optional[str], prefix: str, spec: str,
                              attr: str, value: object, errmsg: str) -> None:

@@ -138,6 +138,22 @@ def test_editcfg_missing_key(capsys: pytest.CaptureFixture[str],
     check_capsys(capsys=capsys, in_out=msgs)
 
 
+@pytest.mark.parametrize('path', [
+    ('main_line', 'dict_at_line_is_record'),
+    ('linked_lines', 0, 'dict_at_line_is_record')])
+def test_editcfg_old_line(capsys: pytest.CaptureFixture[str], tmp_path: Path,
+                          path: JsonPath) -> None:
+    """Test that a line specification of an older format is filled in."""
+    write_cfg_without(tmp_path / 'old.cfg', path)
+    ret = extract_cmd(['editcfg', '-i', str(tmp_path / 'old.cfg'), '--ui',
+                       'dump'])
+    assert ret == 0
+    msgs = ['Reading this file changed it, so what is shown is not what the '
+            'file holds.', 'supplied because this file is in an older format',
+            'Nothing was saved.']
+    check_capsys(capsys=capsys, in_out=msgs)
+
+
 def test_editcfg_bad_ui(capsys: pytest.CaptureFixture[str]) -> None:
     """Test that only the user interfaces that can run here are accepted."""
     with pytest.raises(SystemExit):

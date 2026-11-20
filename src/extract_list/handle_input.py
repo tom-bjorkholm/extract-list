@@ -22,7 +22,7 @@ def read_in_json(filename: str, encoding: str) -> JsonType:
 
 
 def handle_json_input(filename: str, cfg: ExtractConfig) -> JsonType:
-    """Handle input of data from JDON file."""
+    """Handle input of data from JSON file."""
     return read_in_json(filename=filename, encoding=cfg.infile_encoding)
 
 
@@ -54,12 +54,12 @@ def read_in_xml(filename: str, encoding: str, strip_at: bool) -> JsonType:
 
 
 def handle_xml_input(filename: str, cfg: ExtractConfig) -> JsonType:
-    """Handle input of data from XML§ file."""
+    """Handle input of data from XML file."""
     return read_in_xml(filename=filename, encoding=cfg.infile_encoding,
                        strip_at=cfg.in_xml_strip_at)
 
 
-FILE_EXTESION = {
+FILE_EXTENSION = {
     InFileType.JSON: '.json',
     InFileType.XML: '.xml'
 }
@@ -72,7 +72,7 @@ IN_DISPATCH = {
 
 def handle_input(filename: str, cfg: ExtractConfig) -> JsonType:
     """Read in data from file parsing correct format."""
-    extension = FILE_EXTESION[cfg.infile_type]
+    extension = FILE_EXTENSION[cfg.infile_type]
     fixed_fname = fix_file_extension(filename=filename, ext_to_add=extension,
                                      for_reading=True)
     file_must_exist(filename=fixed_fname)

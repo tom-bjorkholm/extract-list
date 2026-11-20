@@ -4,11 +4,11 @@
 # Copyright (c) 2026 Tom Björkholm
 # MIT License
 
-from typing import Optional, TextIO, TypedDict, override
+from typing import NotRequired, Optional, TextIO, TypedDict, override
 import sys
-from config_as_json import Config, DictKeyValueTypesValidator, \
+from config_as_json import Config, ConfigPath, DictKeyValueTypesValidator, \
     ListForEachValidator, ListValueTypeValidator, MemberValidationStep, \
-    PathOrStr, ValidationPlan
+    PathOrStr, ReadOldConfiguration, ValidationPlan, ValueTypeValidator
 from tableio import FileAccess
 from extract_list.config_enums import FormatRequest, InFileType, \
     MissingInputForColumn, get_outfile_capabilities
@@ -17,12 +17,24 @@ from extract_list.output_config import ExtractOutputConfig
 
 MLineDict = TypedDict('MLineDict', {'line': list[str],
                                     'columns': dict[str, list[str]],
-                                    'expand_at': list[list[str]]})
+                                    'expand_at': list[list[str]],
+                                    'dict_at_line_is_record':
+                                    NotRequired[bool]})
 LLineDict = TypedDict('LLineDict', {'line': list[str],
                                     'columns': dict[str, list[str]],
                                     'linked_main_column': list[str],
                                     'linked_column': list[str],
-                                    'expand_at': list[list[str]]})
+                                    'expand_at': list[list[str]],
+                                    'dict_at_line_is_record':
+                                    NotRequired[bool]})
+
+
+class LineSpecOldReader(ReadOldConfiguration):
+    """Normalize line specifications written before a member existed."""
+
+    def get_missing_path_values(self) -> dict[ConfigPath, object]:
+        """Return values for members that older files lack."""
+        return {('dict_at_line_is_record',): False}
 
 
 class LineSpecBase(Config):
@@ -42,7 +54,8 @@ class LineSpecBase(Config):
         """Construct the shared members from data, JSON or else empty.
 
         With ok_to_use_defaults true, the JSON data may lack keys, which
-        then keep the values from data, or else empty values.
+        then keep the values from data, or else empty values. When data
+        lacks dict_at_line_is_record, it is false.
         """
         # The column names are chosen by the user, so the keys of columns
         # are checked by the validation plan and not against the default.
@@ -52,10 +65,18 @@ class LineSpecBase(Config):
             {} if data is None else data['columns']
         self.expand_at: list[list[str]] = \
             [] if data is None else data['expand_at']
+        self.dict_at_line_is_record: bool = \
+            False if data is None else data.get('dict_at_line_is_record',
+                                                False)
         super().__init__(from_json_data_text=from_json_data_text,
                          from_json_filename=from_json_filename,
                          stderr_file=stderr_file, member_name=member_name,
                          ok_to_use_defaults=ok_to_use_defaults)
+
+    @override
+    def _get_read_old_config(self) -> ReadOldConfiguration:
+        """Return old-file compatibility rules."""
+        return LineSpecOldReader()
 
     def __str__(self) -> str:
         """Get the class name and the public members."""
@@ -73,7 +94,9 @@ class LineSpecBase(Config):
             MemberValidationStep(['columns'], DictKeyValueTypesValidator(
                 key_type=str, value_type=list, value_validator=list_str)),
             MemberValidationStep(['expand_at'], ListForEachValidator(
-                element_validators=[list_str]))]
+                element_validators=[list_str])),
+            MemberValidationStep(['dict_at_line_is_record'],
+                                 ValueTypeValidator(bool))]
 
 
 class MainLineSpec(LineSpecBase):

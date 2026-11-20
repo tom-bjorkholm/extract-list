@@ -75,29 +75,41 @@ This example is based on XML input data in this format:
 </data>
 '''
 
+REPEATED_XML = '''
+The last element of this path is repeated, one element per record. Two or
+more of them are read as a list, but a file with only one of them gives a
+single record that is not in a list. We therefore set
+"dict_at_line_is_record" to true, so that a single element is read as one
+record and not as records keyed by name.'''
+
+KEYED_ORDERS_XML = '''
+The single <orders> element holds the order records keyed by their
+element names (i_123, i_234 and i_345). We therefore keep
+"dict_at_line_is_record" false.'''
+
 ORDERS_MAIN_LINE_XML = '''
 
-Here we choose ["data", "orders"] to be the path of to the main line.
+Here we choose ["data", "orders"] to be the path to the main line.
 In the following description we refer to this main line record
-as the order record.'''
+as the order record.''' + KEYED_ORDERS_XML
 
 CUST_MAIN_LINE_XML = '''
 
 Here we choose ["data", "customers"] to be the path to main line.
 In the following description we refer to this main line record
-as the customer record.'''
+as the customer record.''' + REPEATED_XML
 
 CUST_LLINE_XML = '''
 
 We choose ["data", "customers"] as the single linked line in "linked_lines".
 In the following description we refer to this linked line record
-as the customer record.'''
+as the customer record.''' + REPEATED_XML
 
 ORDERS_LLINE_XML = '''
 
 We choose ["data", "orders"] as one linked line in "linked_lines".
 In the following description we refer to this linked line record
-as the order record'''
+as the order record.''' + KEYED_ORDERS_XML
 
 
 def generate_txt_example_xml(file: TextIO, cfgtype: CfgTypes,
@@ -123,7 +135,7 @@ def generate_txt_example2_xml(file: TextIO, cfgtype: CfgTypes,
     msg += EXAMPLE_XML + CUST_MAIN_LINE_XML + EX2_CUST
     msg += ORDERS_LLINE_XML + EX2_ORDERS_AND_REST
     msg += '\nWe choose ["data", "delivery_method"] as the second ' +\
-        'linked line.'
+        'linked line.' + REPEATED_XML
     msg += DELIVERY_COL
     print(msg, file=file)
     generate_syntax_txt(file=file, outtype=outtype)
