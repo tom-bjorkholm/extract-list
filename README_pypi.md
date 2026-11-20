@@ -326,10 +326,10 @@ Source code and tests are available at
 
 ## Test summary
 
-- Test result: 1524 passed in 58s
+- Test result: 1524 passed in 57s
 - No flake8 warnings.
 - No mypy errors found.
 - No pylint warnings.
 - No python layout warnings.
-- Built version(s): 0.7.1
+- Built version(s): 0.8
 - Build and test using Python 3.15.2
